@@ -341,6 +341,78 @@ const app = createApp({
         };
     }
 };
+        // Add this function definition INSIDE your setup() function:
+
+const editOnCallSchedule = (scheduleOrDay) => {
+    console.log('Editing on-call schedule:', scheduleOrDay);
+    
+    if (!hasPermission('oncall_schedule', 'update')) {
+        showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
+        return;
+    }
+    
+    // Check if it's a day object (from 7-day schedule) or schedule object (from table)
+    if (scheduleOrDay.date) {
+        // It's a day object from the 7-day schedule
+        const day = scheduleOrDay;
+        
+        if (day.schedule) {
+            // Edit existing schedule
+            onCallModal.value = {
+                show: true,
+                mode: 'edit',
+                schedule: day.schedule,
+                form: {
+                    duty_date: day.schedule.duty_date,
+                    schedule_id: day.schedule.schedule_id,
+                    shift_type: day.schedule.shift_type || 'backup_call',
+                    primary_physician_id: day.schedule.primary_physician_id,
+                    backup_physician_id: day.schedule.backup_physician_id || '',
+                    start_time: day.schedule.start_time?.slice(0, 5) || '08:00',
+                    end_time: day.schedule.end_time?.slice(0, 5) || '20:00',
+                    coverage_notes: day.schedule.coverage_notes || ''
+                }
+            };
+        } else {
+            // Create new schedule for this day
+            onCallModal.value = {
+                show: true,
+                mode: 'add',
+                schedule: null,
+                form: {
+                    duty_date: day.date,
+                    schedule_id: `ONCALL-${day.date.replace(/-/g, '')}-001`,
+                    shift_type: 'backup_call',
+                    primary_physician_id: '',
+                    backup_physician_id: '',
+                    start_time: '08:00',
+                    end_time: '20:00',
+                    coverage_notes: ''
+                }
+            };
+        }
+    } else {
+        // It's a schedule object from the table
+        const schedule = scheduleOrDay;
+        onCallModal.value = {
+            show: true,
+            mode: 'edit',
+            schedule: schedule,
+            form: {
+                duty_date: schedule.duty_date,
+                schedule_id: schedule.schedule_id,
+                shift_type: schedule.shift_type || 'backup_call',
+                primary_physician_id: schedule.primary_physician_id,
+                backup_physician_id: schedule.backup_physician_id || '',
+                start_time: schedule.start_time?.slice(0, 5) || '08:00',
+                end_time: schedule.end_time?.slice(0, 5) || '20:00',
+                coverage_notes: schedule.coverage_notes || ''
+            }
+        };
+    }
+    
+    logAudit('ONCALL_EDIT', `Editing on-call schedule`, 'oncall_schedule');
+};
           const assignResidentsToUnit = (unit) => {
         if (!hasPermission('placements', 'create')) {
             showAdvancedToast('Permission Denied', 'Need create permission for placements', 'permission');
@@ -386,6 +458,42 @@ const app = createApp({
                 duration: 4
             }
         });
+        // Add these function definitions:
+
+const overrideOnCall = (scheduleOrDay) => {
+    if (!hasPermission('oncall_schedule', 'override')) {
+        showAdvancedToast('Permission Denied', 'Need override permission', 'permission');
+        return;
+    }
+    
+    const date = scheduleOrDay.date || scheduleOrDay.duty_date;
+    
+    if (!confirm(`Emergency override for ${formatDate(date)}? This will replace any existing schedule.`)) return;
+    
+    onCallModal.value = {
+        show: true,
+        mode: 'add',
+        schedule: null,
+        form: {
+            duty_date: date,
+            schedule_id: `EMERGENCY-${date.replace(/-/g, '')}-${Date.now().toString().slice(-4)}`,
+            shift_type: 'backup_call',
+            primary_physician_id: '',
+            backup_physician_id: '',
+            start_time: '00:00',
+            end_time: '23:59',
+            coverage_notes: 'EMERGENCY OVERRIDE - Manual schedule entry'
+        }
+    };
+    
+    showAdvancedToast('Emergency Override', 'Emergency schedule override mode activated', 'warning');
+    logAudit('ONCALL_OVERRIDE', `Emergency override for ${formatDate(date)}`, 'oncall_schedule');
+};
+
+const viewScheduleDetails = (date) => {
+    showAdvancedToast('Schedule Details', `Viewing schedule for ${formatDate(date)}`, 'info');
+    logAudit('SCHEDULE_VIEW', `Viewed schedule details for ${formatDate(date)}`, 'oncall_schedule');
+};
         
         const communicationsModal = ref({
             show: false,
@@ -2921,6 +3029,9 @@ const app = createApp({
             exportAuditLogs,
             exportStaffList,
             showImportModal,
+              deleteOnCallSchedule,  // Make sure this is also defined and returned
+    extendRotation,        // Make sure this is also defined and returned
+    deleteRotation,  
             
             // Actions
             sendBulkNotifications,
