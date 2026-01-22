@@ -230,6 +230,52 @@ const app = createApp({
         const systemSettings = ref({});
         const userNotifications = ref([]);
         const emergencyContacts = ref([]);
+        // ============ ADVANCED STATE MANAGEMENT ============
+const currentUser = ref(null);
+const loginForm = ref({
+    email: '',
+    password: '',
+    user_role: 'resident_manager',
+    require_mfa: false,
+    mfa_code: ''
+});
+
+const loading = ref(false);
+const saving = ref(false);
+const permissionLoading = ref(false);
+const savingPermissions = ref(false);
+
+// Navigation states
+const currentView = ref('login');
+const sidebarCollapsed = ref(false);
+const mobileMenuOpen = ref(false);
+const showPermissionManager = ref(false);
+const searchQuery = ref('');
+const permissionFilter = ref([]);
+const userMenuOpen = ref(false);
+const expandedStaffId = ref(null);
+const staffDailyActivities = ref({});
+const unitDropZone = ref(null);
+
+// ADD THIS LINE HERE - Announcements Panel state
+const announcementsPanel = ref({
+    open: false
+});
+
+// Data stores
+const medicalStaff = ref([]);
+const trainingUnits = ref([]);
+const residentRotations = ref([]);
+const dailyAssignments = ref([]);
+const leaveRequests = ref([]);
+const onCallSchedule = ref([]);
+// ADD THIS LINE HERE - Announcements data
+const announcements = ref([]);
+const auditLogs = ref([]);
+const systemRoles = ref([]);
+const systemSettings = ref({});
+const userNotifications = ref([]);
+const emergencyContacts = ref([]);
 
         // Stats
         const systemStats = ref({
@@ -880,6 +926,13 @@ const app = createApp({
                 availableSupervisors: supervisors.length
             };
         });
+        const unreadAnnouncements = computed(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return announcements.value.filter(a => 
+        a.publish_start_date <= today && 
+        (!a.publish_end_date || a.publish_end_date >= today)
+    ).length;
+});
 
         const filteredMedicalStaff = computed(() => {
             let filtered = medicalStaff.value;
