@@ -186,6 +186,7 @@ const PermissionSystem = {
 
 // ============ VUE APPLICATION ============
 const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+
 // Create the Vue App
 const app = createApp({
     setup() {
@@ -215,11 +216,6 @@ const app = createApp({
         const expandedStaffId = ref(null);
         const staffDailyActivities = ref({});
         const unitDropZone = ref(null);
-        
-        // Announcements Panel state
-        const announcementsPanel = ref({
-            open: false
-        });
 
         // Data stores
         const medicalStaff = ref([]);
@@ -884,13 +880,6 @@ const app = createApp({
                 availableSupervisors: supervisors.length
             };
         });
-        const unreadAnnouncements = computed(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return announcements.value.filter(a => 
-        a.publish_start_date <= today && 
-        (!a.publish_end_date || a.publish_end_date >= today)
-    ).length;
-});
 
         const filteredMedicalStaff = computed(() => {
             let filtered = medicalStaff.value;
@@ -1147,20 +1136,6 @@ const app = createApp({
             };
             return subtitles[currentView.value] || 'Advanced DRBA Hospital Management System';
         };
-        const toggleAnnouncementsPanel = () => {
-    announcementsPanel.value.open = !announcementsPanel.value.open;
-    if (announcementsPanel.value.open) {
-        loadAnnouncements();
-    }
-};
-
-const toggleMobileMenu = () => {
-    mobileMenuOpen.value = !mobileMenuOpen.value;
-};
-
-const closeMobileMenu = () => {
-    mobileMenuOpen.value = false;
-};
 
         const getSearchPlaceholder = () => {
             const placeholders = {
@@ -1171,6 +1146,10 @@ const closeMobileMenu = () => {
                 resident_rotations: 'Search rotations by resident, unit, or ID...'
             };
             return placeholders[currentView.value] || 'Search...';
+        };
+
+        const toggleMobileMenu = () => {
+            mobileMenuOpen.value = !mobileMenuOpen.value;
         };
 
         const closeMobileMenu = () => {
@@ -3386,9 +3365,6 @@ const closeMobileMenu = () => {
             loadViewData,
             logAudit,
             removeToast,
-            announcementsPanel,
-    unreadAnnouncements,
-    toggleAnnouncementsPanel,
             loadStaffDailyActivities,
             getTodaysSchedule,
             getUpcomingOnCall,
