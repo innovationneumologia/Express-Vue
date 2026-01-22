@@ -154,14 +154,12 @@ const PermissionSystem = {
         }
     },
 
-    // Check if user has permission for a resource action
     hasPermission(userRole, resource, action) {
         const role = this.roles[userRole];
         if (!role || !role.permissions[resource]) return false;
         return role.permissions[resource][action] === true;
     },
 
-    // Get permission level for a resource
     getPermissionLevel(userRole, resource) {
         const role = this.roles[userRole];
         if (!role || !role.permissions[resource]) return 'none';
@@ -171,25 +169,15 @@ const PermissionSystem = {
         if (permissions.create || permissions.update) return 'write';
         if (permissions.read) return 'read';
         return 'none';
-    },
-
-    // Get all resources user has access to
-    getAccessibleResources(userRole) {
-        const role = this.roles[userRole];
-        if (!role) return [];
-        
-        return Object.keys(this.resources).filter(resource => 
-            Object.values(role.permissions[resource] || {}).some(v => v === true)
-        );
     }
 };
 
 // ============ VUE APPLICATION ============
-const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
-// Create the Vue App
+const { createApp, ref, computed, onMounted, watch } = Vue;
+
 const app = createApp({
     setup() {
-        // ============ ADVANCED STATE MANAGEMENT ============
+        // ============ STATE MANAGEMENT ============
         const currentUser = ref(null);
         const loginForm = ref({
             email: '',
@@ -201,7 +189,6 @@ const app = createApp({
         
         const loading = ref(false);
         const saving = ref(false);
-        const permissionLoading = ref(false);
         const savingPermissions = ref(false);
 
         // Navigation states
@@ -262,17 +249,6 @@ const app = createApp({
                 professional_email: '',
                 resident_category: '',
                 training_year: null
-            }
-        });
-
-        const addRoleModal = ref({
-            show: false,
-            mode: 'add',
-            role: null,
-            form: {
-                name: '',
-                description: '',
-                level: 'read'
             }
         });
 
@@ -445,32 +421,6 @@ const app = createApp({
             );
         };
 
-        const getViewPermission = (view) => {
-            if (!currentUser.value) return 'none';
-            
-            const viewMap = {
-                medical_staff: 'medical_staff',
-                training_units: 'training_units',
-                resident_rotations: 'resident_rotations',
-                placements: 'placements',
-                daily_operations: 'daily_operations',
-                oncall_schedule: 'oncall_schedule',
-                leave_requests: 'leave_requests',
-                announcements: 'announcements',
-                audit_logs: 'audit',
-                department_overview: 'medical_staff',
-                staff_management: 'medical_staff',
-                schedule_approval: 'leave_requests',
-                permission_management: 'system',
-                system_settings: 'system'
-            };
-            
-            const resource = viewMap[view];
-            if (!resource) return 'none';
-            
-            return PermissionSystem.getPermissionLevel(currentUser.value.user_role, resource);
-        };
-
         const getUserPermissionLevel = () => {
             if (!currentUser.value) return 'none';
             const role = PermissionSystem.roles[currentUser.value.user_role];
@@ -479,7 +429,7 @@ const app = createApp({
 
         const togglePermission = (roleId, resource, action) => {
             if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
+                showToast('Permission Denied', 'Admin access required', 'permission');
                 return;
             }
             
@@ -494,7 +444,7 @@ const app = createApp({
             }
             systemRoles.value[roleIndex].permissions[resource][action] = newState;
             
-            showAdvancedToast(
+            showToast(
                 'Permission Updated',
                 `${action} permission for ${resource} ${newState ? 'granted' : 'revoked'}`,
                 'permission'
@@ -508,7 +458,7 @@ const app = createApp({
 
         const savePermissionChanges = async () => {
             if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
+                showToast('Permission Denied', 'Admin access required', 'permission');
                 return;
             }
             
@@ -516,7 +466,7 @@ const app = createApp({
             try {
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                showAdvancedToast(
+                showToast(
                     'Permissions Saved',
                     'All permission changes have been saved',
                     'success'
@@ -524,7 +474,7 @@ const app = createApp({
                 logAudit('PERMISSIONS_SAVED', 'Updated system permissions', 'system');
             } catch (error) {
                 console.error('Error saving permissions:', error);
-                showAdvancedToast('Save Failed', 'Failed to save permission changes', 'error');
+                showToast('Save Failed', 'Failed to save permission changes', 'error');
             } finally {
                 savingPermissions.value = false;
                 showPermissionManager.value = false;
@@ -551,12 +501,6 @@ const app = createApp({
 
         const formatActionName = (action) => {
             return action.charAt(0).toUpperCase() + action.slice(1);
-        };
-
-        const formatResourceName = (resource) => {
-            return resource.split('_').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
         };
 
         // ============ AUDIT LOGGING SYSTEM ============
@@ -587,8 +531,8 @@ const app = createApp({
             }
         };
 
-        // ============ ADVANCED UTILITIES ============
-        const showAdvancedToast = (title, message, type = 'info', duration = 5000) => {
+        // ============ UTILITY FUNCTIONS ============
+        const showToast = (title, message, type = 'info', duration = 5000) => {
             const icons = {
                 info: 'fas fa-info-circle',
                 success: 'fas fa-check-circle',
@@ -721,67 +665,6 @@ const app = createApp({
             return statuses[status] || status;
         };
 
-        // ============ STAFF ACTIVITY FUNCTIONS ============
-        const loadStaffDailyActivities = async (staffId) => {
-            expandedStaffId.value = expandedStaffId.value === staffId ? null : staffId;
-            
-            if (expandedStaffId.value === staffId) {
-                const today = new Date().toISOString().split('T')[0];
-                
-                const { data: assignments } = await supabaseClient
-                    .from('daily_assignments')
-                    .select('*')
-                    .eq('staff_id', staffId)
-                    .eq('assignment_date', today);
-                
-                const { data: oncall } = await supabaseClient
-                    .from('oncall_schedule')
-                    .select('*')
-                    .eq('primary_physician_id', staffId)
-                    .gte('duty_date', today)
-                    .order('duty_date', { ascending: true })
-                    .limit(1);
-                
-                staffDailyActivities.value[staffId] = [
-                    ...(assignments || []).map(a => ({
-                        type: 'assignment',
-                        title: a.assignment_type,
-                        time: `${a.start_time.slice(0,5)}-${a.end_time.slice(0,5)}`,
-                        location: a.location_name
-                    })),
-                    ...(oncall || []).map(o => ({
-                        type: 'oncall',
-                        title: 'On-call Duty',
-                        time: `${o.start_time.slice(0,5)}-${o.end_time.slice(0,5)}`,
-                        location: 'Hospital-wide'
-                    }))
-                ];
-            }
-        };
-
-        const getTodaysSchedule = (staffId) => {
-            const today = new Date().toISOString().split('T')[0];
-            return onCallSchedule.value.find(o => 
-                o.primary_physician_id === staffId && o.duty_date === today
-            );
-        };
-
-        const getUpcomingOnCall = (staffId) => {
-            const today = new Date().toISOString().split('T')[0];
-            return onCallSchedule.value.find(o => 
-                o.primary_physician_id === staffId && o.duty_date >= today
-            );
-        };
-
-        const getActivityIcon = (type) => {
-            return type === 'oncall' ? 'fas fa-phone-alt' : 'fas fa-tasks';
-        };
-
-        const formatScheduleTime = (schedule) => {
-            if (!schedule) return '';
-            return `${schedule.start_time.slice(0,5)}-${schedule.end_time.slice(0,5)}`;
-        };
-
         // ============ HELPER FUNCTIONS ============
         const getResidentName = (residentId) => {
             const resident = medicalStaff.value.find(s => s.id === residentId);
@@ -830,33 +713,6 @@ const app = createApp({
                    'badge-supervisor-advanced';
         };
 
-        const formatPriorityLevel = (priority) => {
-            const priorities = {
-                low: 'Low',
-                medium: 'Medium',
-                high: 'High',
-                urgent: 'Urgent'
-            };
-            return priorities[priority] || priority;
-        };
-
-        const getPriorityClass = (priority) => {
-            return priority === 'urgent' ? 'status-critical' :
-                   priority === 'high' ? 'status-reported' :
-                   priority === 'medium' ? 'status-oncall' :
-                   'status-available';
-        };
-
-        const formatAudience = (audience) => {
-            const audiences = {
-                all: 'All Staff',
-                residents: 'Residents Only',
-                attendings: 'Attending Physicians',
-                nursing: 'Nursing Staff'
-            };
-            return audiences[audience] || audience;
-        };
-
         const formatDateShort = (dateString) => {
             if (!dateString) return '';
             return new Date(dateString).toLocaleDateString('en-US', {
@@ -873,24 +729,21 @@ const app = createApp({
             const attendings = medicalStaff.value.filter(s => 
                 s.staff_type === 'attending_physician' && s.employment_status === 'active'
             );
-            const supervisors = medicalStaff.value.filter(s => 
-                s.can_supervise_residents && s.employment_status === 'active'
-            );
             
             return {
                 totalStaff: medicalStaff.value.length,
                 activeResidents: residents.length,
-                attendings: attendings.length,
-                availableSupervisors: supervisors.length
+                attendings: attendings.length
             };
         });
+
         const unreadAnnouncements = computed(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return announcements.value.filter(a => 
-        a.publish_start_date <= today && 
-        (!a.publish_end_date || a.publish_end_date >= today)
-    ).length;
-});
+            const today = new Date().toISOString().split('T')[0];
+            return announcements.value.filter(a => 
+                a.publish_start_date <= today && 
+                (!a.publish_end_date || a.publish_end_date >= today)
+            ).length;
+        });
 
         const filteredMedicalStaff = computed(() => {
             let filtered = medicalStaff.value;
@@ -914,24 +767,10 @@ const app = createApp({
             return filtered;
         });
 
-        const todaysAssignments = computed(() => {
-            const today = new Date().toISOString().split('T')[0];
-            return dailyAssignments.value
-                .filter(a => a.assignment_date === today)
-                .slice(0, 5);
-        });
-
         const todaysOnCall = computed(() => {
             const today = new Date().toISOString().split('T')[0];
             return onCallSchedule.value
                 .filter(o => o.duty_date === today)
-                .slice(0, 3);
-        });
-
-        const recentAnnouncements = computed(() => {
-            const today = new Date().toISOString().split('T')[0];
-            return announcements.value
-                .filter(a => a.publish_start_date <= today && (!a.publish_end_date || a.publish_end_date >= today))
                 .slice(0, 3);
         });
 
@@ -951,23 +790,10 @@ const app = createApp({
             return [
                 {
                     id: 1,
-                    title: 'ICU Capacity Warning',
                     message: 'ICU at 95% capacity - Consider diverting non-critical cases',
                     priority: 'high'
                 }
             ];
-        });
-
-        const departmentStats = computed(() => {
-            const activeStaff = medicalStaff.value.filter(s => s.employment_status === 'active').length;
-            const activeUnits = trainingUnits.value.filter(u => u.unit_status === 'active').length;
-            
-            return {
-                totalStaff: medicalStaff.value.length,
-                activeUnits: activeUnits,
-                coverageRate: medicalStaff.value.length > 0 ? Math.round((activeStaff / medicalStaff.value.length) * 100) : 0,
-                pendingApprovals: leaveRequests.value.filter(r => r.status === 'pending').length
-            };
         });
 
         const nextSevenDays = computed(() => {
@@ -1037,61 +863,8 @@ const app = createApp({
             ).sort((a, b) => a.full_name.localeCompare(b.full_name));
         });
 
-        const pendingSchedules = computed(() => {
-            return residentRotations.value.filter(r => 
-                r.rotation_status === 'pending_approval' || 
-                (r.approval_status && r.approval_status === 'pending')
-            );
-        });
-
-        const departmentAnalytics = computed(() => {
-            const today = new Date();
-            const thirtyDaysAgo = new Date(today);
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            
-            const recentRotations = residentRotations.value.filter(r => 
-                new Date(r.rotation_start_date) >= thirtyDaysAgo
-            );
-            
-            const activeStaff = medicalStaff.value.filter(s => 
-                s.employment_status === 'active'
-            ).length;
-            
-            let totalCapacity = 0;
-            let totalOccupied = 0;
-            trainingUnits.value.forEach(unit => {
-                totalCapacity += unit.maximum_residents || 0;
-                totalOccupied += unit.current_residents || 0;
-            });
-            
-            const occupancyRate = totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0;
-            
-            return {
-                recentRotations: recentRotations.length,
-                activeStaff: activeStaff,
-                occupancyRate: occupancyRate,
-                complianceRate: 95
-            };
-        });
-
         const unreadNotifications = computed(() => {
             return userNotifications.value.filter(n => !n.read).length;
-        });
-
-        const criticalAlerts = computed(() => {
-            return emergencyAlerts.value.filter(a => a.priority === 'high' || a.priority === 'urgent');
-        });
-
-        const staffByDepartment = computed(() => {
-            const departments = {};
-            medicalStaff.value.forEach(staff => {
-                const dept = staff.primary_clinic || 'Unassigned';
-                if (!departments[dept]) {
-                    departments[dept] = [];
-                }
-                departments[dept].push(staff);
-            });
-            return departments;
         });
 
         const activeTrainingUnits = computed(() => {
@@ -1110,7 +883,7 @@ const app = createApp({
         // ============ NAVIGATION & UI ============
         const switchView = async (view) => {
             currentView.value = view;
-            closeMobileMenu();
+            mobileMenuOpen.value = false;
             logAudit('VIEW_CHANGE', `Switched to ${view} view`, 'navigation');
             
             await loadViewData(view);
@@ -1126,12 +899,9 @@ const app = createApp({
                 oncall_schedule: 'On-call Schedule',
                 leave_requests: 'Leave Requests',
                 department_overview: 'Department Overview',
-                staff_management: 'Staff Management',
-                schedule_approval: 'Schedule Approval',
-                system_settings: 'System Settings',
-                user_profile: 'User Profile'
+                system_settings: 'System Settings'
             };
-            return titles[currentView.value] || 'PneumoCare';
+            return titles[currentView.value] || 'DRBA HMS';
         };
 
         const getCurrentSubtitle = () => {
@@ -1142,25 +912,17 @@ const app = createApp({
                 audit_logs: 'Track all system activities and changes',
                 oncall_schedule: 'Manage on-call duties and coverage',
                 leave_requests: 'Review and approve leave requests',
-                department_overview: 'Department analytics and insights',
                 system_settings: 'Configure system-wide settings'
             };
             return subtitles[currentView.value] || 'Advanced DRBA Hospital Management System';
         };
+
         const toggleAnnouncementsPanel = () => {
-    announcementsPanel.value.open = !announcementsPanel.value.open;
-    if (announcementsPanel.value.open) {
-        loadAnnouncements();
-    }
-};
-
-const toggleMobileMenu = () => {
-    mobileMenuOpen.value = !mobileMenuOpen.value;
-};
-
-const closeMobileMenu = () => {
-    mobileMenuOpen.value = false;
-};
+            announcementsPanel.value.open = !announcementsPanel.value.open;
+            if (announcementsPanel.value.open) {
+                loadAnnouncements();
+            }
+        };
 
         const getSearchPlaceholder = () => {
             const placeholders = {
@@ -1222,28 +984,17 @@ const closeMobileMenu = () => {
                         account_status: 'active'
                     };
                 } else {
-                    // Try to get from app_users table
-                    const { data: existingUser } = await supabaseClient
-                        .from('app_users')
-                        .select('*')
-                        .eq('email', email)
-                        .maybeSingle();
+                    // Create new user for demo
+                    userData = {
+                        id: generateUUID(),
+                        email: email,
+                        full_name: email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        user_role: selectedRole,
+                        account_status: 'active'
+                    };
                     
-                    if (existingUser) {
-                        userData = existingUser;
-                    } else {
-                        // Create new user for demo
-                        userData = {
-                            id: generateUUID(),
-                            email: email,
-                            full_name: email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                            user_role: selectedRole,
-                            account_status: 'active'
-                        };
-                        
-                        // Save to database
-                        await supabaseClient.from('app_users').insert([userData]);
-                    }
+                    // Save to database
+                    await supabaseClient.from('app_users').insert([userData]);
                 }
                 
                 currentUser.value = userData;
@@ -1253,7 +1004,7 @@ const closeMobileMenu = () => {
                 await loadCurrentUserProfile();
                 await loadUserNotifications();
                 
-                showAdvancedToast(
+                showToast(
                     'Login Successful',
                     `Welcome ${userData.full_name}!`,
                     'success'
@@ -1274,7 +1025,7 @@ const closeMobileMenu = () => {
                 
             } catch (error) {
                 console.error('Login error:', error);
-                showAdvancedToast(
+                showToast(
                     'Login Failed',
                     error.message || 'Invalid credentials',
                     'error'
@@ -1291,7 +1042,7 @@ const closeMobileMenu = () => {
                 currentUser.value = null;
                 currentView.value = 'login';
                 userMenuOpen.value = false;
-                showAdvancedToast('Logged Out', 'You have been successfully logged out', 'info');
+                showToast('Logged Out', 'You have been successfully logged out', 'info');
             } catch (error) {
                 console.error('Logout error:', error);
             }
@@ -1306,19 +1057,16 @@ const closeMobileMenu = () => {
                     loadTrainingUnits(),
                     loadResidentRotations(),
                     loadLeaveRequests(),
-                    loadDailyAssignments(),
                     loadOnCallSchedule(),
                     loadAnnouncements(),
                     loadAuditLogs(),
-                    loadSystemStats(),
-                    loadEmergencyContacts(),
                     loadSystemSettings()
                 ]);
                 
-                showAdvancedToast('System Ready', 'All data loaded successfully', 'success');
+                showToast('System Ready', 'All data loaded successfully', 'success');
             } catch (error) {
                 console.error('Error loading initial data:', error);
-                showAdvancedToast('Data Load Error', 'Failed to load system data', 'error');
+                showToast('Data Load Error', 'Failed to load system data', 'error');
             } finally {
                 loading.value = false;
             }
@@ -1335,7 +1083,6 @@ const closeMobileMenu = () => {
                         break;
                     case 'daily_operations':
                         await Promise.all([
-                            loadDailyAssignments(),
                             loadOnCallSchedule(),
                             loadAnnouncements()
                         ]);
@@ -1351,9 +1098,6 @@ const closeMobileMenu = () => {
                         break;
                     case 'resident_rotations':
                         await loadResidentRotations();
-                        break;
-                    case 'department_overview':
-                        await loadDepartmentAnalytics();
                         break;
                     case 'system_settings':
                         await loadSystemSettings();
@@ -1470,21 +1214,6 @@ const closeMobileMenu = () => {
             }
         };
 
-        const loadDailyAssignments = async () => {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('daily_assignments')
-                    .select('*')
-                    .order('assignment_date', { ascending: false });
-                
-                if (error) throw error;
-                dailyAssignments.value = data || [];
-            } catch (error) {
-                console.error('Error loading daily assignments:', error);
-                dailyAssignments.value = [];
-            }
-        };
-
         const loadOnCallSchedule = async () => {
             try {
                 console.log('🔄 Loading on-call schedule...');
@@ -1541,15 +1270,6 @@ const closeMobileMenu = () => {
                 console.error('Error loading audit logs:', error);
                 auditLogs.value = [];
             }
-        };
-
-        const loadSystemStats = async () => {
-            systemStats.value = {
-                active_users: 42,
-                total_staff: medicalStaff.value.length,
-                today_assignments: todaysAssignments.value.length,
-                pending_approvals: leaveRequests.value.filter(r => r.status === 'pending').length
-            };
         };
 
         const loadSystemRoles = () => {
@@ -1618,44 +1338,10 @@ const closeMobileMenu = () => {
             }
         };
 
-        const loadEmergencyContacts = async () => {
-            try {
-                emergencyContacts.value = [
-                    {
-                        id: '1',
-                        contact_name: 'Hospital Security',
-                        phone: '+1 (555) 911-0000',
-                        email: 'security@hospital.org',
-                        department: 'Security',
-                        emergency_type: 'security'
-                    },
-                    {
-                        id: '2',
-                        contact_name: 'IT Support',
-                        phone: '+1 (555) 555-1234',
-                        email: 'it-support@hospital.org',
-                        department: 'IT',
-                        emergency_type: 'technical'
-                    }
-                ];
-            } catch (error) {
-                console.error('Error loading emergency contacts:', error);
-                emergencyContacts.value = [];
-            }
-        };
-
-        const loadDepartmentAnalytics = async () => {
-            return departmentAnalytics.value;
-        };
-
         // ============ MEDICAL STAFF CRUD ============
         const showAddMedicalStaffModal = () => {
             if (!hasPermission('medical_staff', 'create')) {
-                showAdvancedToast(
-                    'Permission Denied',
-                    'You need create permission to add medical staff',
-                    'permission'
-                );
+                showToast('Permission Denied', 'You need create permission to add medical staff', 'permission');
                 return;
             }
             
@@ -1681,11 +1367,7 @@ const closeMobileMenu = () => {
 
         const editMedicalStaff = (staff) => {
             if (!hasPermission('medical_staff', 'update')) {
-                showAdvancedToast(
-                    'Permission Denied',
-                    'You need update permission to edit medical staff',
-                    'permission'
-                );
+                showToast('Permission Denied', 'You need update permission to edit medical staff', 'permission');
                 return;
             }
             
@@ -1701,7 +1383,7 @@ const closeMobileMenu = () => {
 
         const saveMedicalStaff = async () => {
             if (!hasPermission('medical_staff', medicalStaffModal.value.mode === 'add' ? 'create' : 'update')) {
-                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
+                showToast('Permission Denied', 'Insufficient permissions', 'permission');
                 return;
             }
             
@@ -1725,7 +1407,7 @@ const closeMobileMenu = () => {
                     if (error) throw error;
                     
                     medicalStaff.value.unshift(data);
-                    showAdvancedToast('Success', 'Medical staff added successfully', 'success');
+                    showToast('Success', 'Medical staff added successfully', 'success');
                     logAudit('STAFF_CREATE', `Added: ${data.full_name}`, 'medical_staff', data.id);
                 } else {
                     const { data, error } = await supabaseClient
@@ -1745,14 +1427,14 @@ const closeMobileMenu = () => {
                         medicalStaff.value[index] = data;
                     }
                     
-                    showAdvancedToast('Success', 'Medical staff updated successfully', 'success');
+                    showToast('Success', 'Medical staff updated successfully', 'success');
                     logAudit('STAFF_UPDATE', `Updated: ${data.full_name}`, 'medical_staff', data.id);
                 }
                 
                 medicalStaffModal.value.show = false;
             } catch (error) {
                 console.error('Error saving medical staff:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
@@ -1760,11 +1442,7 @@ const closeMobileMenu = () => {
 
         const deleteMedicalStaff = async (staff) => {
             if (!hasPermission('medical_staff', 'delete')) {
-                showAdvancedToast(
-                    'Permission Denied',
-                    'You need delete permission to remove medical staff',
-                    'permission'
-                );
+                showToast('Permission Denied', 'You need delete permission to remove medical staff', 'permission');
                 return;
             }
             
@@ -1785,18 +1463,18 @@ const closeMobileMenu = () => {
                     medicalStaff.value.splice(index, 1);
                 }
                 
-                showAdvancedToast('Deleted', `${staff.full_name} has been removed`, 'success');
+                showToast('Deleted', `${staff.full_name} has been removed`, 'success');
                 logAudit('STAFF_DELETE', `Deleted: ${staff.full_name}`, 'medical_staff', staff.id);
             } catch (error) {
                 console.error('Error deleting medical staff:', error);
-                showAdvancedToast('Delete Failed', error.message, 'error');
+                showToast('Delete Failed', error.message, 'error');
             }
         };
 
         // ============ ANNOUNCEMENTS MODAL FUNCTIONS ============
         const showAddAnnouncementModal = () => {
             if (!hasPermission('announcements', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+                showToast('Permission Denied', 'Need create permission', 'permission');
                 return;
             }
             
@@ -1817,30 +1495,9 @@ const closeMobileMenu = () => {
             };
         };
 
-        const editAnnouncement = (announcement) => {
-            if (!hasPermission('announcements', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
-                return;
-            }
-            
-            announcementModal.value = {
-                show: true,
-                mode: 'edit',
-                announcement: announcement,
-                form: {
-                    announcement_title: announcement.announcement_title,
-                    announcement_content: announcement.announcement_content,
-                    publish_start_date: announcement.publish_start_date,
-                    publish_end_date: announcement.publish_end_date || '',
-                    priority_level: announcement.priority_level || 'medium',
-                    target_audience: announcement.target_audience || 'all'
-                }
-            };
-        };
-
         const saveAnnouncement = async () => {
             if (!hasPermission('announcements', announcementModal.value.mode === 'add' ? 'create' : 'update')) {
-                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
+                showToast('Permission Denied', 'Insufficient permissions', 'permission');
                 return;
             }
             
@@ -1883,7 +1540,7 @@ const closeMobileMenu = () => {
                     result = data;
                     
                     announcements.value.unshift(result);
-                    showAdvancedToast('Published', 'Announcement published successfully', 'success');
+                    showToast('Published', 'Announcement published successfully', 'success');
                     logAudit('ANNOUNCEMENT_CREATE', `Published: ${result.announcement_title}`, 'announcements', result.id);
                     
                 } else {
@@ -1900,7 +1557,7 @@ const closeMobileMenu = () => {
                     const index = announcements.value.findIndex(a => a.id === result.id);
                     if (index !== -1) announcements.value[index] = result;
                     
-                    showAdvancedToast('Updated', 'Announcement updated successfully', 'success');
+                    showToast('Updated', 'Announcement updated successfully', 'success');
                     logAudit('ANNOUNCEMENT_UPDATE', `Updated: ${result.announcement_title}`, 'announcements', result.id);
                 }
                 
@@ -1908,43 +1565,16 @@ const closeMobileMenu = () => {
                 
             } catch (error) {
                 console.error('Error saving announcement:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
-            }
-        };
-
-        const deleteAnnouncement = async (announcement) => {
-            if (!hasPermission('announcements', 'delete')) {
-                showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
-                return;
-            }
-            
-            if (!confirm(`Delete announcement "${announcement.announcement_title}"?`)) return;
-            
-            try {
-                const { error } = await supabaseClient
-                    .from('department_announcements')
-                    .delete()
-                    .eq('id', announcement.id);
-                
-                if (error) throw error;
-                
-                announcements.value = announcements.value.filter(a => a.id !== announcement.id);
-                
-                showAdvancedToast('Deleted', 'Announcement deleted', 'success');
-                logAudit('ANNOUNCEMENT_DELETE', `Deleted: ${announcement.announcement_title}`, 'announcements', announcement.id);
-                
-            } catch (error) {
-                console.error('Error deleting announcement:', error);
-                showAdvancedToast('Delete Failed', error.message, 'error');
             }
         };
 
         // ============ LEAVE REQUESTS MODAL FUNCTIONS ============
         const showAddLeaveRequestModal = () => {
             if (!hasPermission('leave_requests', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+                showToast('Permission Denied', 'Need create permission', 'permission');
                 return;
             }
             
@@ -1986,7 +1616,7 @@ const closeMobileMenu = () => {
 
         const approveLeaveRequest = async (request) => {
             if (!hasPermission('leave_requests', 'approve')) {
-                showAdvancedToast('Permission Denied', 'Need approve permission', 'permission');
+                showToast('Permission Denied', 'Need approve permission', 'permission');
                 return;
             }
             
@@ -2009,18 +1639,18 @@ const closeMobileMenu = () => {
                 const index = leaveRequests.value.findIndex(r => r.id === data.id);
                 if (index !== -1) leaveRequests.value[index] = data;
                 
-                showAdvancedToast('Approved', `Leave request approved`, 'success');
+                showToast('Approved', `Leave request approved`, 'success');
                 logAudit('LEAVE_APPROVE', `Approved leave request for ${request.staff_name}`, 'leave_requests', request.id);
                 
             } catch (error) {
                 console.error('Error approving leave:', error);
-                showAdvancedToast('Approval Failed', error.message, 'error');
+                showToast('Approval Failed', error.message, 'error');
             }
         };
 
         const rejectLeaveRequest = async (request) => {
             if (!hasPermission('leave_requests', 'reject')) {
-                showAdvancedToast('Permission Denied', 'Need reject permission', 'permission');
+                showToast('Permission Denied', 'Need reject permission', 'permission');
                 return;
             }
             
@@ -2043,12 +1673,12 @@ const closeMobileMenu = () => {
                 const index = leaveRequests.value.findIndex(r => r.id === data.id);
                 if (index !== -1) leaveRequests.value[index] = data;
                 
-                showAdvancedToast('Rejected', `Leave request rejected`, 'error');
+                showToast('Rejected', `Leave request rejected`, 'error');
                 logAudit('LEAVE_REJECT', `Rejected leave request for ${request.staff_name}`, 'leave_requests', request.id);
                 
             } catch (error) {
                 console.error('Error rejecting leave:', error);
-                showAdvancedToast('Rejection Failed', error.message, 'error');
+                showToast('Rejection Failed', error.message, 'error');
             }
         };
 
@@ -2093,7 +1723,7 @@ const closeMobileMenu = () => {
                     if (error) throw error;
                     
                     leaveRequests.value.unshift(data);
-                    showAdvancedToast('Success', 'Leave request submitted', 'success');
+                    showToast('Success', 'Leave request submitted', 'success');
                     logAudit('LEAVE_CREATE', `Submitted leave request`, 'leave_requests', data.id);
                     
                 } else {
@@ -2117,7 +1747,7 @@ const closeMobileMenu = () => {
                     const index = leaveRequests.value.findIndex(r => r.id === data.id);
                     if (index !== -1) leaveRequests.value[index] = data;
                     
-                    showAdvancedToast('Success', 'Leave request updated', 'success');
+                    showToast('Success', 'Leave request updated', 'success');
                     logAudit('LEAVE_UPDATE', `Updated leave request status to ${data.status}`, 'leave_requests', data.id);
                 }
                 
@@ -2125,7 +1755,7 @@ const closeMobileMenu = () => {
                 
             } catch (error) {
                 console.error('Error saving leave request:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
@@ -2134,7 +1764,7 @@ const closeMobileMenu = () => {
         // ============ RESIDENT ROTATIONS MODAL FUNCTIONS ============
         const showAddRotationModal = () => {
             if (!hasPermission('resident_rotations', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+                showToast('Permission Denied', 'Need create permission', 'permission');
                 return;
             }
             
@@ -2167,7 +1797,7 @@ const closeMobileMenu = () => {
 
         const editRotation = (rotation) => {
             if (!hasPermission('resident_rotations', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
+                showToast('Permission Denied', 'Need update permission', 'permission');
                 return;
             }
             
@@ -2190,38 +1820,10 @@ const closeMobileMenu = () => {
             };
         };
 
-        const extendRotation = (rotation) => {
-            if (!hasPermission('resident_rotations', 'extend')) {
-                showAdvancedToast('Permission Denied', 'Need extend permission', 'permission');
-                return;
-            }
-            
-            const newEndDate = new Date(rotation.rotation_end_date);
-            newEndDate.setDate(newEndDate.getDate() + 30);
-            
-            rotationModal.value = {
-                show: true,
-                mode: 'edit',
-                rotation: rotation,
-                form: {
-                    rotation_id: rotation.rotation_id + '-EXT',
-                    resident_id: rotation.resident_id,
-                    training_unit_id: rotation.training_unit_id,
-                    supervising_attending_id: rotation.supervising_attending_id || '',
-                    rotation_start_date: rotation.rotation_end_date,
-                    rotation_end_date: newEndDate.toISOString().split('T')[0],
-                    rotation_category: rotation.rotation_category,
-                    rotation_status: 'scheduled',
-                    clinical_notes: 'Extended rotation - ' + rotation.clinical_notes,
-                    supervisor_evaluation: ''
-                }
-            };
-        };
-
         const saveRotation = async () => {
             const permissionNeeded = rotationModal.value.mode === 'add' ? 'create' : 'update';
             if (!hasPermission('resident_rotations', permissionNeeded)) {
-                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
+                showToast('Permission Denied', 'Insufficient permissions', 'permission');
                 return;
             }
             
@@ -2263,7 +1865,7 @@ const closeMobileMenu = () => {
                     result = data;
                     
                     residentRotations.value.unshift(result);
-                    showAdvancedToast('Success', 'Rotation scheduled successfully', 'success');
+                    showToast('Success', 'Rotation scheduled successfully', 'success');
                     logAudit('ROTATION_CREATE', `Created rotation ${rotationData.rotation_id}`, 'resident_rotations', result.id);
                     
                 } else {
@@ -2280,7 +1882,7 @@ const closeMobileMenu = () => {
                     const index = residentRotations.value.findIndex(r => r.id === result.id);
                     if (index !== -1) residentRotations.value[index] = result;
                     
-                    showAdvancedToast('Success', 'Rotation updated successfully', 'success');
+                    showToast('Success', 'Rotation updated successfully', 'success');
                     logAudit('ROTATION_UPDATE', `Updated rotation ${rotationData.rotation_id}`, 'resident_rotations', result.id);
                 }
                 
@@ -2288,7 +1890,7 @@ const closeMobileMenu = () => {
                 
             } catch (error) {
                 console.error('Error saving rotation:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
@@ -2296,7 +1898,7 @@ const closeMobileMenu = () => {
 
         const deleteRotation = async (rotation) => {
             if (!hasPermission('resident_rotations', 'delete')) {
-                showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
+                showToast('Permission Denied', 'Need delete permission', 'permission');
                 return;
             }
             
@@ -2317,18 +1919,18 @@ const closeMobileMenu = () => {
                     residentRotations.value.splice(index, 1);
                 }
                 
-                showAdvancedToast('Deleted', `Rotation ${rotation.rotation_id} has been removed`, 'success');
+                showToast('Deleted', `Rotation ${rotation.rotation_id} has been removed`, 'success');
                 logAudit('ROTATION_DELETE', `Deleted rotation: ${rotation.rotation_id}`, 'resident_rotations', rotation.id);
             } catch (error) {
                 console.error('Error deleting rotation:', error);
-                showAdvancedToast('Delete Failed', error.message, 'error');
+                showToast('Delete Failed', error.message, 'error');
             }
         };
 
         // ============ TRAINING UNIT FUNCTIONS ============
         const showAddTrainingUnitModal = () => {
             if (!hasPermission('training_units', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+                showToast('Permission Denied', 'Need create permission', 'permission');
                 return;
             }
             trainingUnitModal.value = {
@@ -2350,7 +1952,7 @@ const closeMobileMenu = () => {
 
         const editTrainingUnit = (unit) => {
             if (!hasPermission('training_units', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
+                showToast('Permission Denied', 'Need update permission', 'permission');
                 return;
             }
             trainingUnitModal.value = {
@@ -2363,7 +1965,7 @@ const closeMobileMenu = () => {
 
         const saveTrainingUnit = async () => {
             if (!hasPermission('training_units', trainingUnitModal.value.mode === 'add' ? 'create' : 'update')) {
-                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
+                showToast('Permission Denied', 'Insufficient permissions', 'permission');
                 return;
             }
             
@@ -2390,7 +1992,7 @@ const closeMobileMenu = () => {
                     
                     if (error) throw error;
                     trainingUnits.value.unshift(data);
-                    showAdvancedToast('Success', 'Training unit added', 'success');
+                    showToast('Success', 'Training unit added', 'success');
                     logAudit('TRAINING_UNIT_CREATE', `Added unit: ${unitData.unit_name}`, 'training_units', data.id);
                 } else {
                     const { data, error } = await supabaseClient
@@ -2403,14 +2005,14 @@ const closeMobileMenu = () => {
                     if (error) throw error;
                     const index = trainingUnits.value.findIndex(u => u.id === data.id);
                     if (index !== -1) trainingUnits.value[index] = data;
-                    showAdvancedToast('Success', 'Training unit updated', 'success');
+                    showToast('Success', 'Training unit updated', 'success');
                     logAudit('TRAINING_UNIT_UPDATE', `Updated unit: ${unitData.unit_name}`, 'training_units', data.id);
                 }
                 
                 trainingUnitModal.value.show = false;
             } catch (error) {
                 console.error('Error saving training unit:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
@@ -2419,7 +2021,7 @@ const closeMobileMenu = () => {
         // ============ ON-CALL SCHEDULE FUNCTIONS ============
         const showAddOnCallModal = () => {
             if (!hasPermission('oncall_schedule', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+                showToast('Permission Denied', 'Need create permission', 'permission');
                 return;
             }
             
@@ -2446,7 +2048,7 @@ const closeMobileMenu = () => {
 
         const editOnCallSchedule = (day) => {
             if (!hasPermission('oncall_schedule', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
+                showToast('Permission Denied', 'Need update permission', 'permission');
                 return;
             }
             
@@ -2488,7 +2090,7 @@ const closeMobileMenu = () => {
 
         const saveOnCallSchedule = async () => {
             if (!hasPermission('oncall_schedule', onCallModal.value.mode === 'add' ? 'create' : 'update')) {
-                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
+                showToast('Permission Denied', 'Insufficient permissions', 'permission');
                 return;
             }
             
@@ -2525,7 +2127,7 @@ const closeMobileMenu = () => {
                     if (error) throw error;
                     result = data;
                     onCallSchedule.value.push(result);
-                    showAdvancedToast('Success', 'On-call schedule created', 'success');
+                    showToast('Success', 'On-call schedule created', 'success');
                     
                 } else {
                     const { data, error } = await supabaseClient
@@ -2541,14 +2143,14 @@ const closeMobileMenu = () => {
                     const index = onCallSchedule.value.findIndex(s => s.id === result.id);
                     if (index !== -1) onCallSchedule.value[index] = result;
                     
-                    showAdvancedToast('Success', 'On-call schedule updated', 'success');
+                    showToast('Success', 'On-call schedule updated', 'success');
                 }
                 
                 onCallModal.value.show = false;
                 
             } catch (error) {
                 console.error('Error saving on-call schedule:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
@@ -2556,7 +2158,7 @@ const closeMobileMenu = () => {
 
         const overrideOnCall = (day) => {
             if (!hasPermission('oncall_schedule', 'override')) {
-                showAdvancedToast('Permission Denied', 'Need override permission', 'permission');
+                showToast('Permission Denied', 'Need override permission', 'permission');
                 return;
             }
             
@@ -2579,138 +2181,10 @@ const closeMobileMenu = () => {
             };
         };
 
-        // ============ DRAG & DROP FUNCTIONS ============
-        const handleDragStart = (event, resident) => {
-            event.dataTransfer.setData('text/plain', resident.id);
-            event.dataTransfer.effectAllowed = 'move';
-        };
-
-        const handleDragDropPlacement = async (residentId, unitId) => {
-            if (!hasPermission('placements', 'drag_drop')) {
-                showAdvancedToast('Permission Denied', 'Need drag & drop permission', 'permission');
-                return;
-            }
-            
-            try {
-                const rotationId = `PLACEMENT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*1000)}`;
-                const startDate = new Date().toISOString().split('T')[0];
-                const endDate = new Date();
-                endDate.setMonth(endDate.getMonth() + 3);
-                
-                const { data, error } = await supabaseClient
-                    .from('resident_rotations')
-                    .insert([{
-                        rotation_id: rotationId,
-                        resident_id: residentId,
-                        training_unit_id: unitId,
-                        rotation_start_date: startDate,
-                        rotation_end_date: endDate.toISOString().split('T')[0],
-                        rotation_category: 'clinical_rotation',
-                        rotation_status: 'scheduled',
-                        clinical_notes: 'Placed via drag & drop',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }])
-                    .select()
-                    .single();
-                
-                if (error) throw error;
-                
-                residentRotations.value.unshift(data);
-                showAdvancedToast('Placement Created', 'Resident placed in unit via drag & drop', 'success');
-                logAudit('PLACEMENT_CREATE', `Drag & drop placement created`, 'placements', data.id);
-                
-            } catch (error) {
-                console.error('Drag & drop error:', error);
-                showAdvancedToast('Placement Failed', error.message, 'error');
-            }
-        };
-
-        const handleDrop = async (event, unit) => {
-            event.preventDefault();
-            
-            const residentId = event.dataTransfer.getData('text/plain');
-            if (!residentId || !unit) return;
-            
-            if (!hasPermission('placements', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission for placements', 'permission');
-                return;
-            }
-            
-            try {
-                await handleDragDropPlacement(residentId, unit.id);
-                
-                const unitIndex = trainingUnits.value.findIndex(u => u.id === unit.id);
-                if (unitIndex !== -1) {
-                    trainingUnits.value[unitIndex].current_residents = 
-                        (trainingUnits.value[unitIndex].current_residents || 0) + 1;
-                }
-                
-                const residentName = getResidentName(residentId);
-                showAdvancedToast('Placement Created', `${residentName} assigned to ${unit.unit_name}`, 'success');
-                
-            } catch (error) {
-                console.error('Drop error:', error);
-                showAdvancedToast('Placement Failed', error.message, 'error');
-            }
-        };
-
-        const removePlacement = async (residentId, unitId) => {
-            if (!hasPermission('placements', 'delete')) {
-                showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
-                return;
-            }
-            
-            const residentName = getResidentName(residentId);
-            const unitName = getTrainingUnitName(unitId);
-            
-            if (!confirm(`Remove ${residentName} from ${unitName}?`)) return;
-            
-            try {
-                const rotationIndex = residentRotations.value.findIndex(r => 
-                    r.resident_id === residentId && 
-                    r.training_unit_id === unitId && 
-                    (r.rotation_status === 'active' || r.rotation_status === 'scheduled')
-                );
-                
-                if (rotationIndex !== -1) {
-                    const rotation = residentRotations.value[rotationIndex];
-                    
-                    const { data, error } = await supabaseClient
-                        .from('resident_rotations')
-                        .update({
-                            rotation_status: 'cancelled',
-                            clinical_notes: (rotation.clinical_notes || '') + '\nRemoved via placement interface',
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', rotation.id)
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    residentRotations.value[rotationIndex] = data;
-                    
-                    const unitIndex = trainingUnits.value.findIndex(u => u.id === unitId);
-                    if (unitIndex !== -1) {
-                        trainingUnits.value[unitIndex].current_residents = 
-                            Math.max(0, (trainingUnits.value[unitIndex].current_residents || 0) - 1);
-                    }
-                    
-                    showAdvancedToast('Placement Removed', `${residentName} removed from ${unitName}`, 'success');
-                    logAudit('PLACEMENT_REMOVE', `Removed resident ${residentName} from unit ${unitName}`, 'placements', rotation.id);
-                }
-                
-            } catch (error) {
-                console.error('Error removing placement:', error);
-                showAdvancedToast('Removal Failed', error.message, 'error');
-            }
-        };
-
         // ============ QUICK PLACEMENT MODAL FUNCTIONS ============
         const showQuickPlacementModal = () => {
             if (!hasPermission('placements', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission for placements', 'permission');
+                showToast('Permission Denied', 'Need create permission for placements', 'permission');
                 return;
             }
             
@@ -2726,7 +2200,7 @@ const closeMobileMenu = () => {
 
         const saveQuickPlacement = async () => {
             if (!hasPermission('placements', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+                showToast('Permission Denied', 'Need create permission', 'permission');
                 return;
             }
             
@@ -2768,132 +2242,14 @@ const closeMobileMenu = () => {
                         (trainingUnits.value[unitIndex].current_residents || 0) + 1;
                 }
                 
-                showAdvancedToast('Success', 'Resident placed successfully', 'success');
+                showToast('Success', 'Resident placed successfully', 'success');
                 logAudit('QUICK_PLACEMENT', `Quick placement created for resident`, 'placements', data.id);
                 
                 quickPlacementModal.value.show = false;
                 
             } catch (error) {
                 console.error('Error saving quick placement:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
-            } finally {
-                saving.value = false;
-            }
-        };
-
-        // ============ ROLE MANAGEMENT ============
-        const showAddRoleModal = () => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            addRoleModal.value = {
-                show: true,
-                mode: 'add',
-                role: null,
-                form: {
-                    name: '',
-                    description: '',
-                    level: 'read'
-                }
-            };
-        };
-
-        const editRole = (role) => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            addRoleModal.value = {
-                show: true,
-                mode: 'edit',
-                role: role,
-                form: {
-                    name: role.name,
-                    description: role.description,
-                    level: role.level
-                }
-            };
-        };
-
-        const cloneRole = (role) => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            addRoleModal.value = {
-                show: true,
-                mode: 'add',
-                role: null,
-                form: {
-                    name: `${role.name} (Copy)`,
-                    description: role.description,
-                    level: role.level
-                }
-            };
-        };
-
-        const deleteRole = (role) => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            if (role.id === 'system_admin') {
-                showAdvancedToast('Cannot Delete', 'System Admin role cannot be deleted', 'error');
-                return;
-            }
-            
-            if (confirm(`Are you sure you want to delete the "${role.name}" role?`)) {
-                systemRoles.value = systemRoles.value.filter(r => r.id !== role.id);
-                showAdvancedToast('Role Deleted', `${role.name} has been removed`, 'success');
-                logAudit('ROLE_DELETE', `Deleted role: ${role.name}`, 'system');
-            }
-        };
-
-        const saveRole = async () => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            saving.value = true;
-            try {
-                const newRole = {
-                    id: addRoleModal.value.mode === 'add' ? 
-                        addRoleModal.value.form.name.toLowerCase().replace(/\s+/g, '_') : 
-                        addRoleModal.value.role.id,
-                    name: addRoleModal.value.form.name,
-                    description: addRoleModal.value.form.description,
-                    level: addRoleModal.value.form.level,
-                    permissions: {}
-                };
-                
-                const templateRole = PermissionSystem.roles[addRoleModal.value.form.level === 'full' ? 'system_admin' : 'resident_manager'];
-                if (templateRole) {
-                    newRole.permissions = { ...templateRole.permissions };
-                }
-                
-                if (addRoleModal.value.mode === 'add') {
-                    systemRoles.value.push(newRole);
-                    showAdvancedToast('Success', 'New role created successfully', 'success');
-                    logAudit('ROLE_CREATE', `Created role: ${newRole.name}`, 'system');
-                } else {
-                    const index = systemRoles.value.findIndex(r => r.id === newRole.id);
-                    if (index !== -1) {
-                        systemRoles.value[index] = newRole;
-                    }
-                    showAdvancedToast('Success', 'Role updated successfully', 'success');
-                    logAudit('ROLE_UPDATE', `Updated role: ${newRole.name}`, 'system');
-                }
-                
-                addRoleModal.value.show = false;
-            } catch (error) {
-                console.error('Error saving role:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
@@ -2902,7 +2258,7 @@ const closeMobileMenu = () => {
         // ============ SYSTEM SETTINGS FUNCTIONS ============
         const showSystemSettingsModal = () => {
             if (!hasPermission('system', 'read')) {
-                showAdvancedToast('Permission Denied', 'Need read permission for system settings', 'permission');
+                showToast('Permission Denied', 'Need read permission for system settings', 'permission');
                 return;
             }
             
@@ -2914,7 +2270,7 @@ const closeMobileMenu = () => {
 
         const saveSystemSettings = async () => {
             if (!hasPermission('system', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission for system settings', 'permission');
+                showToast('Permission Denied', 'Need update permission for system settings', 'permission');
                 return;
             }
             
@@ -2922,13 +2278,13 @@ const closeMobileMenu = () => {
             try {
                 systemSettings.value = { ...systemSettingsModal.value.form };
                 
-                showAdvancedToast('Settings Saved', 'System settings updated successfully', 'success');
+                showToast('Settings Saved', 'System settings updated successfully', 'success');
                 logAudit('SETTINGS_UPDATE', 'Updated system settings', 'system');
                 
                 systemSettingsModal.value.show = false;
             } catch (error) {
                 console.error('Error saving system settings:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
@@ -2957,236 +2313,30 @@ const closeMobileMenu = () => {
                     ...userProfileModal.value.form
                 };
                 
-                showAdvancedToast('Profile Updated', 'Your profile has been updated', 'success');
+                showToast('Profile Updated', 'Your profile has been updated', 'success');
                 logAudit('PROFILE_UPDATE', 'Updated user profile', 'user_profile');
                 
                 userProfileModal.value.show = false;
             } catch (error) {
                 console.error('Error saving profile:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
+                showToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
         };
 
         // ============ IMPORT/EXPORT FUNCTIONS ============
-        const showImportExportModal = (mode = 'export', table = null) => {
-            if (mode === 'export' && !hasPermission('audit', 'export')) {
-                showAdvancedToast('Permission Denied', 'Need export permission', 'permission');
-                return;
-            }
-            
-            if (mode === 'import' && !hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required for import', 'permission');
-                return;
-            }
-            
-            importExportModal.value = {
-                show: true,
-                mode: mode,
-                selectedTable: table || 'medical_staff',
-                importFile: null,
-                exportFormat: 'csv'
-            };
-        };
-
-        const exportData = async () => {
-            if (!hasPermission('audit', 'export')) {
-                showAdvancedToast('Permission Denied', 'Need export permission', 'permission');
-                return;
-            }
-            
-            saving.value = true;
-            try {
-                let data = [];
-                let filename = '';
-                
-                switch (importExportModal.value.selectedTable) {
-                    case 'medical_staff':
-                        data = medicalStaff.value;
-                        filename = 'medical_staff';
-                        break;
-                    case 'training_units':
-                        data = trainingUnits.value;
-                        filename = 'training_units';
-                        break;
-                    case 'resident_rotations':
-                        data = residentRotations.value;
-                        filename = 'resident_rotations';
-                        break;
-                    case 'audit_logs':
-                        data = auditLogs.value;
-                        filename = 'audit_logs';
-                        break;
-                    default:
-                        throw new Error('Invalid table selected');
-                }
-                
-                if (data.length === 0) {
-                    throw new Error('No data to export');
-                }
-                
-                const headers = Object.keys(data[0]).join(',');
-                const rows = data.map(row => 
-                    Object.values(row).map(value => 
-                        typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value
-                    ).join(',')
-                );
-                
-                const csvContent = [headers, ...rows].join('\n');
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                
-                a.href = url;
-                a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                
-                showAdvancedToast('Export Complete', `${data.length} records exported`, 'success');
-                logAudit('DATA_EXPORT', `Exported ${filename} data`, 'export');
-                
-                importExportModal.value.show = false;
-            } catch (error) {
-                console.error('Error exporting data:', error);
-                showAdvancedToast('Export Failed', error.message, 'error');
-            } finally {
-                saving.value = false;
-            }
-        };
-
-        const importData = async () => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            if (!importExportModal.value.importFile) {
-                showAdvancedToast('Import Failed', 'Please select a file', 'error');
-                return;
-            }
-            
-            saving.value = true;
-            try {
-                const file = importExportModal.value.importFile;
-                const reader = new FileReader();
-                
-                reader.onload = async (e) => {
-                    try {
-                        const csv = e.target.result;
-                        const lines = csv.split('\n');
-                        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-                        
-                        const data = lines.slice(1)
-                            .filter(line => line.trim())
-                            .map(line => {
-                                const values = line.split(',');
-                                const obj = {};
-                                headers.forEach((header, index) => {
-                                    let value = values[index] || '';
-                                    value = value.trim().replace(/^"|"$/g, '');
-                                    
-                                    if (!isNaN(value) && value !== '') {
-                                        value = Number(value);
-                                    } else if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
-                                        value = value.toLowerCase() === 'true';
-                                    }
-                                    
-                                    obj[header] = value;
-                                });
-                                return obj;
-                            });
-                        
-                        const { error } = await supabaseClient
-                            .from(importExportModal.value.selectedTable)
-                            .insert(data);
-                        
-                        if (error) throw error;
-                        
-                        await loadViewData(importExportModal.value.selectedTable.replace('_', ''));
-                        
-                        showAdvancedToast('Import Successful', `${data.length} records imported`, 'success');
-                        logAudit('DATA_IMPORT', `Imported ${data.length} records to ${importExportModal.value.selectedTable}`, 'import');
-                        
-                        importExportModal.value.show = false;
-                    } catch (error) {
-                        console.error('Error processing import:', error);
-                        showAdvancedToast('Import Failed', error.message, 'error');
-                    }
-                };
-                
-                reader.readAsText(file);
-            } catch (error) {
-                console.error('Error importing data:', error);
-                showAdvancedToast('Import Failed', error.message, 'error');
-            } finally {
-                saving.value = false;
-            }
-        };
-
-        const handleFileSelect = (event) => {
-            importExportModal.value.importFile = event.target.files[0];
-        };
-
-        // ============ NOTIFICATION FUNCTIONS ============
-        const markNotificationAsRead = (notificationId) => {
-            const index = userNotifications.value.findIndex(n => n.id === notificationId);
-            if (index !== -1) {
-                userNotifications.value[index].read = true;
-            }
-        };
-
-        const markAllNotificationsAsRead = () => {
-            userNotifications.value.forEach(n => n.read = true);
-            showAdvancedToast('Notifications Cleared', 'All notifications marked as read', 'success');
-        };
-
-        // ============ ACTION HANDLERS ============
-        const viewStaffSchedule = (staff) => {
-            showAdvancedToast('Info', `Viewing schedule for ${staff.full_name}`, 'info');
-            logAudit('SCHEDULE_VIEW', `Viewed schedule for ${staff.full_name}`, 'schedules', staff.id);
-        };
-
-        const quickAssignToUnit = (alert) => {
-            if (!hasPermission('placements', 'create')) {
-                showAdvancedToast(
-                    'Permission Denied',
-                    'You need create permission to assign residents',
-                    'permission'
-                );
-                return;
-            }
-            
-            showAdvancedToast('Assign', `Assigning residents to ${alert.unit_name}`, 'info');
-            logAudit('QUICK_ASSIGN', `Quick assigning to unit: ${alert.unit_name}`, 'placements', alert.id);
-        };
-
         const exportAuditLogs = () => {
             if (!hasPermission('audit', 'export')) {
-                showAdvancedToast(
-                    'Permission Denied',
-                    'You need export permission to download audit logs',
-                    'permission'
-                );
+                showToast('Permission Denied', 'Need export permission', 'permission');
                 return;
             }
             
-            showImportExportModal('export', 'audit_logs');
+            showToast('Export', 'Export functionality would open here', 'info');
         };
 
         const handleAdvancedSearch = () => {
             logAudit('SEARCH', `Searched for: ${searchQuery.value}`, 'system');
-        };
-
-        const togglePermissionFilter = (level) => {
-            const index = permissionFilter.value.indexOf(level);
-            if (index > -1) {
-                permissionFilter.value.splice(index, 1);
-            } else {
-                permissionFilter.value.push(level);
-            }
         };
 
         const showUserProfile = () => {
@@ -3195,15 +2345,66 @@ const closeMobileMenu = () => {
         };
 
         const assignResidentsToUnit = (unit) => {
-            showAdvancedToast('Info', `Assigning residents to ${unit.unit_name}`, 'info');
+            showToast('Info', `Assigning residents to ${unit.unit_name}`, 'info');
         };
 
-        const showAddStaffModal = () => {
-            showAdvancedToast('Info', 'Add staff modal would open here', 'info');
+        // ============ NOTIFICATION FUNCTIONS ============
+        const markAllNotificationsAsRead = () => {
+            userNotifications.value.forEach(n => n.read = true);
+            showToast('Notifications Cleared', 'All notifications marked as read', 'success');
+        };
+
+        // ============ ACTION HANDLERS ============
+        const loadStaffDailyActivities = async (staffId) => {
+            expandedStaffId.value = expandedStaffId.value === staffId ? null : staffId;
+            
+            if (expandedStaffId.value === staffId) {
+                const today = new Date().toISOString().split('T')[0];
+                
+                const { data: assignments } = await supabaseClient
+                    .from('daily_assignments')
+                    .select('*')
+                    .eq('staff_id', staffId)
+                    .eq('assignment_date', today);
+                
+                const { data: oncall } = await supabaseClient
+                    .from('oncall_schedule')
+                    .select('*')
+                    .eq('primary_physician_id', staffId)
+                    .gte('duty_date', today)
+                    .order('duty_date', { ascending: true })
+                    .limit(1);
+                
+                staffDailyActivities.value[staffId] = [
+                    ...(assignments || []).map(a => ({
+                        type: 'assignment',
+                        title: a.assignment_type,
+                        time: `${a.start_time.slice(0,5)}-${a.end_time.slice(0,5)}`,
+                        location: a.location_name
+                    })),
+                    ...(oncall || []).map(o => ({
+                        type: 'oncall',
+                        title: 'On-call Duty',
+                        time: `${o.start_time.slice(0,5)}-${o.end_time.slice(0,5)}`,
+                        location: 'Hospital-wide'
+                    }))
+                ];
+            }
+        };
+
+        const quickAssignToUnit = (alert) => {
+            if (!hasPermission('placements', 'create')) {
+                showToast('Permission Denied', 'You need create permission to assign residents', 'permission');
+                return;
+            }
+            
+            showToast('Assign', `Assigning residents to ${alert.unit_name}`, 'info');
+            logAudit('QUICK_ASSIGN', `Quick assigning to unit: ${alert.unit_name}`, 'placements', alert.id);
         };
 
         // ============ INITIALIZATION ============
         onMounted(() => {
+            // Check for existing session
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 if (session) {
                     console.log('Existing session found');
@@ -3212,12 +2413,13 @@ const closeMobileMenu = () => {
                 console.error('Error getting session:', error);
             });
             
+            // Load system roles for permission manager
             loadSystemRoles();
         });
 
-        // ============ RETURN ============
+        // ============ RETURN ALL REACTIVE PROPERTIES ============
         return {
-            // ============ STATE ============
+            // State
             currentUser,
             loginForm,
             loading,
@@ -3232,7 +2434,6 @@ const closeMobileMenu = () => {
             userMenuOpen,
             availableAttendings,
             medicalStaffModal,
-            addRoleModal,
             announcementModal,
             onCallModal,
             leaveRequestModal,
@@ -3260,42 +2461,38 @@ const closeMobileMenu = () => {
             rotationFilter,
             toasts,
             permissionResources,
+            
+            // Computed
             stats,
+            unreadAnnouncements,
             filteredMedicalStaff,
-            todaysAssignments,
             todaysOnCall,
-            recentAnnouncements,
             coverageAlerts,
             emergencyAlerts,
-            departmentStats,
             nextSevenDays,
             filteredRotations,
             availableResidents,
-            pendingSchedules,
-            departmentAnalytics,
             unreadNotifications,
-            criticalAlerts,
-            staffByDepartment,
             availablePhysicians,
             activeTrainingUnits,
+            
+            // Permission functions
             hasPermission,
             hasAnyPermission,
-            getViewPermission,
             getUserPermissionLevel,
             getResourcePermissionLevel,
             getPermissionDescription,
             formatActionName,
-            formatResourceName,
             userPermissions,
             togglePermission,
             savePermissionChanges,
+            
+            // Helper functions
             getPhysicianName,
             switchView,
             getCurrentTitle,
             getCurrentSubtitle,
             getSearchPlaceholder,
-            toggleMobileMenu,
-            closeMobileMenu,
             togglePermissionManager,
             toggleUserMenu,
             getDayStatus,
@@ -3311,32 +2508,23 @@ const closeMobileMenu = () => {
             getAuditIcon,
             formatResidentCategory,
             formatEmploymentStatus,
-            generateUUID,
-            showAdvancedToast,
+            
+            // Data functions
             getResidentName,
             getTrainingUnitName,
             getAttendingName,
             getAssignedResidents,
             formatRotationCategory,
             getRotationCategoryClass,
-            formatPriorityLevel,
-            getPriorityClass,
-            formatAudience,
             formatDateShort,
+            
+            // Modal functions
             showAddMedicalStaffModal,
             editMedicalStaff,
             saveMedicalStaff,
             deleteMedicalStaff,
-            viewStaffSchedule,
-            showAddRoleModal,
-            editRole,
-            cloneRole,
-            deleteRole,
-            saveRole,
             showAddAnnouncementModal,
-            editAnnouncement,
             saveAnnouncement,
-            deleteAnnouncement,
             showAddOnCallModal,
             editOnCallSchedule,
             saveOnCallSchedule,
@@ -3352,46 +2540,30 @@ const closeMobileMenu = () => {
             assignResidentsToUnit,
             showAddRotationModal,
             editRotation,
-            extendRotation,
             saveRotation,
-            handleDragDropPlacement,
             deleteRotation,
-            handleDragStart,
-            handleDrop,
-            removePlacement,
             showQuickPlacementModal,
             saveQuickPlacement,
             showSystemSettingsModal,
             saveSystemSettings,
             showUserProfileModal,
             saveUserProfile,
-            showImportExportModal,
-            exportData,
-            importData,
-            handleFileSelect,
-            markNotificationAsRead,
-            markAllNotificationsAsRead,
-            quickAssignToUnit,
+            
+            // Other functions
             exportAuditLogs,
             handleAdvancedSearch,
-            togglePermissionFilter,
             showUserProfile,
-            showAddStaffModal,
-            loadInitialData,
-            loadViewData,
-            logAudit,
-            removeToast,
-            announcementsPanel,
-    unreadAnnouncements,
-    toggleAnnouncementsPanel,
             loadStaffDailyActivities,
-            getTodaysSchedule,
-            getUpcomingOnCall,
-            getActivityIcon,
-            formatScheduleTime,
-            expandedStaffId,
-            staffDailyActivities,
-            unitDropZone
+            quickAssignToUnit,
+            markAllNotificationsAsRead,
+            
+            // UI functions
+            toggleAnnouncementsPanel,
+            announcementsPanel,
+            
+            // Utility functions
+            showToast,
+            removeToast
         };
     }
 });
