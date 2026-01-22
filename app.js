@@ -292,55 +292,7 @@ const app = createApp({
                 current_residents: 0
             }
         });
-        const editOnCallSchedule = (scheduleOrDay) => {
-    if (!hasPermission('oncall_schedule', 'update')) {
-        showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
-        return;
-    }
-    
-    // Handle both schedule object or day object
-    if (scheduleOrDay.date) {
-        // It's a day object from the 7-day schedule
-        if (scheduleOrDay.schedule) {
-            onCallModal.value = {
-                show: true,
-                mode: 'edit',
-                schedule: scheduleOrDay.schedule,
-                form: {
-                    duty_date: scheduleOrDay.schedule.duty_date,
-                    schedule_id: scheduleOrDay.schedule.schedule_id,
-                    shift_type: scheduleOrDay.schedule.shift_type || 'backup_call',
-                    primary_physician_id: scheduleOrDay.schedule.primary_physician_id,
-                    backup_physician_id: scheduleOrDay.schedule.backup_physician_id || '',
-                    start_time: scheduleOrDay.schedule.start_time?.slice(0, 5) || '08:00',
-                    end_time: scheduleOrDay.schedule.end_time?.slice(0, 5) || '20:00',
-                    coverage_notes: scheduleOrDay.schedule.coverage_notes || ''
-                }
-            };
-        } else {
-            // Create new for this day
-            showAddOnCallModal();
-            onCallModal.value.form.duty_date = scheduleOrDay.date;
-        }
-    } else {
-        // It's a schedule object from the table
-        onCallModal.value = {
-            show: true,
-            mode: 'edit',
-            schedule: scheduleOrDay,
-            form: {
-                duty_date: scheduleOrDay.duty_date,
-                schedule_id: scheduleOrDay.schedule_id,
-                shift_type: scheduleOrDay.shift_type || 'backup_call',
-                primary_physician_id: scheduleOrDay.primary_physician_id,
-                backup_physician_id: scheduleOrDay.backup_physician_id || '',
-                start_time: scheduleOrDay.start_time?.slice(0, 5) || '08:00',
-                end_time: scheduleOrDay.end_time?.slice(0, 5) || '20:00',
-                coverage_notes: scheduleOrDay.coverage_notes || ''
-            }
-        };
-    }
-};
+     
         // Add this function definition INSIDE your setup() function:
 
 const editOnCallSchedule = (scheduleOrDay) => {
@@ -2992,7 +2944,6 @@ const viewScheduleDetails = (date) => {
             showAddOnCallModal,
             saveOnCallSchedule,
             deleteOnCallSchedule,
-            editOnCallSchedule,
             overrideOnCall,
             
             showAddLeaveRequestModal,
