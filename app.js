@@ -1173,13 +1173,6 @@ const closeMobileMenu = () => {
             return placeholders[currentView.value] || 'Search...';
         };
 
-        const toggleMobileMenu = () => {
-            mobileMenuOpen.value = !mobileMenuOpen.value;
-        };
-
-        const closeMobileMenu = () => {
-            mobileMenuOpen.value = false;
-        };
 
         const togglePermissionManager = () => {
             showPermissionManager.value = !showPermissionManager.value;
