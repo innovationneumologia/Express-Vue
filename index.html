@@ -4158,69 +4158,70 @@
                 </div>
             </main>
         </div>
-
         <!-- ============ MODALS ============ -->
         
-        <!-- Staff Details Modal -->
-        <div v-if="announcementModal.show" class="modal-overlay">
+<!-- Staff Details Modal -->
+<div v-if="staffDetailsModal.show" class="modal-overlay">
 
-            <div class="modal-container">
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <i class="fas fa-user-md"></i>
-                        Staff Profile
-                    </div>
-                    <button class="modal-close" @click="staffDetailsModal.show = false">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="staff-header">
-                        <div class="staff-avatar-large">{{ getInitials(staffDetailsModal.staff.full_name) }}</div>
-                        <div class="staff-info">
-                            <div class="staff-name">{{ staffDetailsModal.staff.full_name }}</div>
-                            <div class="staff-meta">
-                                <div class="staff-meta-item">
-                                    <i class="fas fa-id-badge"></i>
-                                    {{ staffDetailsModal.staff.staff_id }}
-                                </div>
-                                <div class="staff-meta-item">
-                                    <i class="fas fa-envelope"></i>
-                                    {{ staffDetailsModal.staff.professional_email }}
-                                </div>
-                                <div class="staff-meta-item">
-                                    <i class="fas fa-hospital"></i>
-                                    {{ staffDetailsModal.staff.primary_clinic || 'Unassigned' }}
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <span class="badge" :class="getStaffTypeClass(staffDetailsModal.staff.staff_type)">
-                                    {{ formatStaffType(staffDetailsModal.staff.staff_type) }}
-                                </span>
-                                <span class="badge" :class="staffDetailsModal.staff.employment_status === 'active' ? 'status-available' : 'status-busy'">
-                                    {{ formatEmploymentStatus(staffDetailsModal.staff.employment_status) }}
-                                </span>
-                            </div>
-                            <div class="staff-stats">
-                                <div class="staff-stat">
-                                    <div class="staff-stat-value">{{ staffDetailsModal.stats.completedRotations || 0 }}</div>
-                                    <div class="staff-stat-label">Rotations</div>
-                                </div>
-                                <div class="staff-stat">
-                                    <div class="staff-stat-value">{{ staffDetailsModal.stats.oncallShifts || 0 }}</div>
-                                    <div class="staff-stat-label">On-call</div>
-                                </div>
-                                <div class="staff-stat">
-                                    <div class="staff-stat-value">{{ staffDetailsModal.stats.leaveDays || 0 }}</div>
-                                    <div class="staff-stat-label">Leave Days</div>
-                                </div>
-                                <div class="staff-stat">
-                                    <div class="staff-stat-value">{{ staffDetailsModal.stats.supervisionCount || 0 }}</div>
-                                    <div class="staff-stat-label">Supervised</div>
-                                </div>
-                            </div>
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fas fa-user-md"></i>
+                Staff Profile
+            </div>
+            <button class="modal-close" @click="staffDetailsModal.show = false">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="staff-header">
+                <div class="staff-avatar-large">{{ getInitials(staffDetailsModal.staff.full_name) }}</div>
+                <div class="staff-info">
+                    <div class="staff-name">{{ staffDetailsModal.staff.full_name }}</div>
+                    <div class="staff-meta">
+                        <div class="staff-meta-item">
+                            <i class="fas fa-id-badge"></i>
+                            {{ staffDetailsModal.staff.staff_id }}
+                        </div>
+                        <div class="staff-meta-item">
+                            <i class="fas fa-envelope"></i>
+                            {{ staffDetailsModal.staff.professional_email }}
+                        </div>
+                        <div class="staff-meta-item">
+                            <i class="fas fa-hospital"></i>
+                            {{ staffDetailsModal.staff.primary_clinic || 'Unassigned' }}
                         </div>
                     </div>
+                    <div class="flex gap-4">
+                        <span class="badge" :class="getStaffTypeClass(staffDetailsModal.staff.staff_type)">
+                            {{ formatStaffType(staffDetailsModal.staff.staff_type) }}
+                        </span>
+                        <span class="badge" :class="staffDetailsModal.staff.employment_status === 'active' ? 'status-available' : 'status-busy'">
+                            {{ formatEmploymentStatus(staffDetailsModal.staff.employment_status) }}
+                        </span>
+                    </div>
+                    <div class="staff-stats">
+                        <div class="staff-stat">
+                            <div class="staff-stat-value">{{ staffDetailsModal.stats.completedRotations || 0 }}</div>
+                            <div class="staff-stat-label">Rotations</div>
+                        </div>
+                        <div class="staff-stat">
+                            <div class="staff-stat-value">{{ staffDetailsModal.stats.oncallShifts || 0 }}</div>
+                            <div class="staff-stat-label">On-call</div>
+                        </div>
+                        <div class="staff-stat">
+                            <div class="staff-stat-value">{{ staffDetailsModal.stats.leaveDays || 0 }}</div>
+                            <div class="staff-stat-label">Leave Days</div>
+                        </div>
+                        <div class="staff-stat">
+                            <div class="staff-stat-value">{{ staffDetailsModal.stats.supervisionCount || 0 }}</div>
+                            <div class="staff-stat-label">Supervised</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+    
 
                     <div class="modal-tabs">
                         <button class="modal-tab" :class="{ active: staffDetailsModal.activeTab === 'details' }" 
