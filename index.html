@@ -3419,12 +3419,12 @@
                                                         <i class="fas fa-ellipsis-v"></i>
                                                     </button>
                                                     <div class="action-menu">
-                                                        <div class="action-menu-item" @click="editOnCallSchedule({date: schedule.duty_date, schedule})"
+                                                        <div class="action-menu-item" @click="editOnCallSchedule(schedule)"
                                                                 v-if="hasPermission('oncall_schedule', 'update')">
                                                             <i class="fas fa-edit"></i>
                                                             Edit
                                                         </div>
-                                                        <div class="action-menu-item" @click="overrideOnCall({date: schedule.duty_date})"
+                                                        <div class="action-menu-item" @click="overrideOnCall(schedule)"
                                                                 v-if="hasPermission('oncall_schedule', 'override')">
                                                             <i class="fas fa-exclamation-triangle"></i>
                                                             Override
@@ -3537,6 +3537,38 @@
                                     v-if="hasPermission('resident_rotations', 'create')">
                                 <i class="fas fa-plus"></i> Add Rotation
                             </button>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="filter-bar mb-6">
+                            <div class="filter-group">
+                                <div class="filter-label">Rotation Category</div>
+                                <select class="form-select form-select-sm" v-model="rotationFilter.category">
+                                    <option value="">All Categories</option>
+                                    <option value="clinical_rotation">Clinical Rotation</option>
+                                    <option value="elective_rotation">Elective Rotation</option>
+                                    <option value="research_rotation">Research</option>
+                                    <option value="vacation_rotation">Vacation</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <div class="filter-label">Status</div>
+                                <select class="form-select form-select-sm" v-model="rotationFilter.status">
+                                    <option value="">All Statuses</option>
+                                    <option value="scheduled">Scheduled</option>
+                                    <option value="active">Active</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-sm btn-secondary" @click="resetRotationFilters">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                                <button class="btn btn-sm btn-primary" @click="applyRotationFilters">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Rotations Table -->
@@ -3671,148 +3703,6 @@
                                             v-if="hasPermission('placements', 'create')">
                                         <i class="fas fa-user-plus"></i> Assign
                                     </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Audit Logs View -->
-                    <div v-if="currentView === 'audit_logs'">
-                        <div class="section-header mb-6">
-                            <div>
-                                <h2 class="section-title">Audit Logs</h2>
-                                <p class="text-muted">Track all system activities and permission changes</p>
-                            </div>
-                            <button class="btn btn-primary" @click="exportAuditLogs" v-if="hasPermission('audit', 'export')">
-                                <i class="fas fa-download"></i> Export Logs
-                            </button>
-                        </div>
-
-                        <!-- Audit Table -->
-                        <div class="card">
-                            <div v-if="loading" class="loading-overlay">
-                                <div class="loading-spinner"></div>
-                            </div>
-                            <div v-else-if="auditLogs.length === 0" class="empty-state p-6">
-                                <i class="fas fa-history empty-state-icon"></i>
-                                <div class="empty-state-title">No Audit Logs</div>
-                                <div class="empty-state-description">
-                                    No system activities have been recorded yet.
-                                </div>
-                            </div>
-                            <div v-else class="table-responsive">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>User</th>
-                                            <th>Action</th>
-                                            <th>Resource</th>
-                                            <th>Details</th>
-                                            <th>Permission Level</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="log in auditLogs" :key="log.id">
-                                            <td>{{ formatDateTime(log.timestamp) }}</td>
-                                            <td>
-                                                <div class="flex items-center gap-2">
-                                                    <div class="user-avatar">{{ getInitials(log.user_name) }}</div>
-                                                    <div>
-                                                        <div class="font-medium">{{ log.user_name }}</div>
-                                                        <div class="text-sm text-gray-500">{{ getUserRoleDisplay(log.user_role) }}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="flex items-center gap-2">
-                                                    <i :class="getAuditIcon(log.action)" class="text-blue-500"></i>
-                                                    <span>{{ log.action }}</span>
-                                                </div>
-                                            </td>
-                                            <td>{{ log.resource }}</td>
-                                            <td class="max-w-xs truncate">{{ log.details }}</td>
-                                            <td>
-                                                <span class="badge" :class="log.permission_level === 'full' ? 'badge-admin-advanced' : 'badge-resident-advanced'">
-                                                    {{ log.permission_level }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- System Settings View -->
-                    <div v-if="currentView === 'system_settings'">
-                        <div class="section-header mb-6">
-                            <div>
-                                <h2 class="section-title">System Settings</h2>
-                                <p class="text-muted">Configure system-wide settings and preferences</p>
-                            </div>
-                            <button class="btn btn-primary" @click="showSystemSettingsModal" 
-                                    v-if="hasPermission('system', 'update')">
-                                <i class="fas fa-edit"></i> Edit Settings
-                            </button>
-                        </div>
-
-                        <!-- Settings Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-hospital"></i>
-                                        Hospital Information
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="form-label">Hospital Name</label>
-                                        <div class="form-control">{{ systemSettings.hospital_name }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Department Name</label>
-                                        <div class="form-control">{{ systemSettings.department_name }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-shield-alt"></i>
-                                        Security Settings
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.enable_audit_logging" disabled>
-                                        <span class="form-check-label">Enable Audit Logging</span>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.require_mfa" disabled>
-                                        <span class="form-check-label">Require MFA Authentication</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-users-cog"></i>
-                                        System Configuration
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="form-label">Maximum Residents per Unit</label>
-                                        <div class="form-control">{{ systemSettings.max_residents_per_unit }}</div>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.maintenance_mode" disabled>
-                                        <span class="form-check-label">Maintenance Mode</span>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3980,6 +3870,232 @@
                                                 <span class="text-xs" :class="`text-${unit.status}`">{{ unit.status }}</span>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audit Logs View -->
+                    <div v-if="currentView === 'audit_logs'">
+                        <div class="section-header mb-6">
+                            <div>
+                                <h2 class="section-title">Audit Logs</h2>
+                                <p class="text-muted">Track all system activities and permission changes</p>
+                            </div>
+                            <button class="btn btn-primary" @click="exportAuditLogs" v-if="hasPermission('audit', 'export')">
+                                <i class="fas fa-download"></i> Export Logs
+                            </button>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="filter-bar mb-6">
+                            <div class="filter-group">
+                                <div class="filter-label">Action Type</div>
+                                <select class="form-select form-select-sm" v-model="auditFilter.action">
+                                    <option value="">All Actions</option>
+                                    <option value="create">Create</option>
+                                    <option value="update">Update</option>
+                                    <option value="delete">Delete</option>
+                                    <option value="login">Login</option>
+                                    <option value="logout">Logout</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <div class="filter-label">Date Range</div>
+                                <select class="form-select form-select-sm" v-model="auditFilter.dateRange">
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="year">This Year</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-sm btn-secondary" @click="resetAuditFilters">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                                <button class="btn btn-sm btn-primary" @click="applyAuditFilters">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Audit Table -->
+                        <div class="card">
+                            <div v-if="loading" class="loading-overlay">
+                                <div class="loading-spinner"></div>
+                            </div>
+                            <div v-else-if="auditLogs.length === 0" class="empty-state p-6">
+                                <i class="fas fa-history empty-state-icon"></i>
+                                <div class="empty-state-title">No Audit Logs</div>
+                                <div class="empty-state-description">
+                                    No system activities have been recorded yet.
+                                </div>
+                            </div>
+                            <div v-else class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>User</th>
+                                            <th>Action</th>
+                                            <th>Resource</th>
+                                            <th>Details</th>
+                                            <th>Permission Level</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="log in auditLogs" :key="log.id">
+                                            <td>{{ formatDateTime(log.timestamp) }}</td>
+                                            <td>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="user-avatar">{{ getInitials(log.user_name) }}</div>
+                                                    <div>
+                                                        <div class="font-medium">{{ log.user_name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ getUserRoleDisplay(log.user_role) }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="flex items-center gap-2">
+                                                    <i :class="getAuditIcon(log.action)" class="text-blue-500"></i>
+                                                    <span>{{ log.action }}</span>
+                                                </div>
+                                            </td>
+                                            <td>{{ log.resource }}</td>
+                                            <td class="max-w-xs truncate">{{ log.details }}</td>
+                                            <td>
+                                                <span class="badge" :class="log.permission_level === 'full' ? 'badge-admin-advanced' : 'badge-resident-advanced'">
+                                                    {{ log.permission_level }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Settings View -->
+                    <div v-if="currentView === 'system_settings'">
+                        <div class="section-header mb-6">
+                            <div>
+                                <h2 class="section-title">System Settings</h2>
+                                <p class="text-muted">Configure system-wide settings and preferences</p>
+                            </div>
+                            <button class="btn btn-primary" @click="showSystemSettingsModal" 
+                                    v-if="hasPermission('system', 'update')">
+                                <i class="fas fa-edit"></i> Edit Settings
+                            </button>
+                        </div>
+
+                        <!-- Settings Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-hospital"></i>
+                                        Hospital Information
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="form-label">Hospital Name</label>
+                                        <div class="form-control">{{ systemSettings.hospital_name }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Department Name</label>
+                                        <div class="form-control">{{ systemSettings.department_name }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Contact Email</label>
+                                        <div class="form-control">{{ systemSettings.contact_email }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Contact Phone</label>
+                                        <div class="form-control">{{ systemSettings.contact_phone }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Security Settings
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.enable_audit_logging" disabled>
+                                        <span class="form-check-label">Enable Audit Logging</span>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.require_mfa" disabled>
+                                        <span class="form-check-label">Require MFA Authentication</span>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.enable_email_notifications" disabled>
+                                        <span class="form-check-label">Enable Email Notifications</span>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.auto_logout_enabled" disabled>
+                                        <span class="form-check-label">Auto-logout after inactivity</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-users-cog"></i>
+                                        System Configuration
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="form-label">Maximum Residents per Unit</label>
+                                        <div class="form-control">{{ systemSettings.max_residents_per_unit }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Default Rotation Duration (weeks)</label>
+                                        <div class="form-control">{{ systemSettings.default_rotation_duration }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Max Leave Days per Year</label>
+                                        <div class="form-control">{{ systemSettings.max_leave_days_per_year }}</div>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.maintenance_mode" disabled>
+                                        <span class="form-check-label">Maintenance Mode</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Schedule Settings
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="form-label">Default On-call Duration (hours)</label>
+                                        <div class="form-control">{{ systemSettings.default_oncall_duration }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Min Staff per Shift</label>
+                                        <div class="form-control">{{ systemSettings.min_staff_per_shift }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Max Consecutive On-call Days</label>
+                                        <div class="form-control">{{ systemSettings.max_consecutive_oncall_days }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Leave Approval Required Days</label>
+                                        <div class="form-control">{{ systemSettings.leave_approval_required_days }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -4425,6 +4541,207 @@
                         <span v-if="saving" class="loading"></span>
                         <span v-else>{{ onCallModal.mode === 'add' ? 'Add Schedule' : 'Save Changes' }}</span>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Leave Request Modal -->
+        <div v-if="leaveRequestModal.show" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-calendar-check"></i>
+                        {{ leaveRequestModal.mode === 'add' ? 'Request Leave' : 'Review Leave Request' }}
+                    </div>
+                    <button class="modal-close" @click="leaveRequestModal.show = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Request Information
+                        </div>
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm font-medium">Request Submitted by: {{ leaveRequestModal.request?.staff_name || 'Unknown' }}</div>
+                            <div class="text-sm text-gray-600">Submitted on: {{ formatDateTime(leaveRequestModal.request?.created_at) }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            Leave Details
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" v-model="leaveRequestModal.form.start_date" 
+                                       :disabled="leaveRequestModal.mode === 'review'">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">End Date *</label>
+                                <input type="date" class="form-control" v-model="leaveRequestModal.form.end_date"
+                                       :disabled="leaveRequestModal.mode === 'review'">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Leave Type</label>
+                                <select class="form-select" v-model="leaveRequestModal.form.leave_type"
+                                        :disabled="leaveRequestModal.mode === 'review'">
+                                    <option value="vacation">Vacation</option>
+                                    <option value="sick_leave">Sick Leave</option>
+                                    <option value="conference">Conference</option>
+                                    <option value="personal">Personal</option>
+                                    <option value="maternity_paternity">Maternity/Paternity</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" v-model="leaveRequestModal.form.status"
+                                        :disabled="!hasPermission('leave_requests', 'update')">
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Reason</label>
+                            <textarea class="form-control" v-model="leaveRequestModal.form.reason" rows="3"
+                                    :disabled="leaveRequestModal.mode === 'review'"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-edit"></i>
+                            Approver Notes
+                        </div>
+                        <div class="form-group">
+                            <textarea class="form-control" v-model="leaveRequestModal.form.approver_notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="leaveRequestModal.show = false">Cancel</button>
+                    <div v-if="leaveRequestModal.mode === 'review'" class="flex gap-2">
+                        <button class="btn btn-success" @click="approveLeaveRequest(leaveRequestModal.request)"
+                                v-if="hasPermission('leave_requests', 'approve') && leaveRequestModal.form.status === 'pending'">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveRequestModal.request)"
+                                v-if="hasPermission('leave_requests', 'reject') && leaveRequestModal.form.status === 'pending'">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                    <button v-else class="btn btn-primary" @click="saveLeaveRequest" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>Submit Request</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leave Request Details Modal (Read-only view) -->
+        <div v-if="leaveDetailsModal.show" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-calendar-check"></i>
+                        Leave Request Details
+                    </div>
+                    <button class="modal-close" @click="leaveDetailsModal.show = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="leave-details-view">
+                        <div class="leave-info-grid">
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Staff Member</div>
+                                <div class="leave-info-value">{{ getPhysicianName(leaveDetailsModal.request.staff_member_id) }}</div>
+                            </div>
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Leave Type</div>
+                                <div class="leave-info-value">{{ leaveDetailsModal.request.leave_type }}</div>
+                            </div>
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Duration</div>
+                                <div class="leave-info-value">{{ leaveDetailsModal.request.total_days }} days</div>
+                            </div>
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Status</div>
+                                <div class="leave-info-value">
+                                    <span class="badge" :class="leaveDetailsModal.request.status === 'approved' ? 'status-available' : 
+                                                               leaveDetailsModal.request.status === 'pending' ? 'status-busy' : 'status-critical'">
+                                        {{ leaveDetailsModal.request.status?.toUpperCase() || 'PENDING' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="leave-info-label">Dates</div>
+                            <div class="leave-info-value">
+                                {{ formatDate(leaveDetailsModal.request.leave_start_date) }} to {{ formatDate(leaveDetailsModal.request.leave_end_date) }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="leave-info-label">Reason</div>
+                            <div class="form-control" style="min-height: 80px;">
+                                {{ leaveDetailsModal.request.reason || 'No reason provided.' }}
+                            </div>
+                        </div>
+                        
+                        <div v-if="leaveDetailsModal.request.approver_notes" class="mb-4">
+                            <div class="leave-info-label">Approver Notes</div>
+                            <div class="form-control" style="min-height: 60px;">
+                                {{ leaveDetailsModal.request.approver_notes }}
+                            </div>
+                        </div>
+                        
+                        <div class="leave-timeline">
+                            <div class="timeline-status" :class="leaveDetailsModal.request.created_at ? 'completed' : ''">
+                                <div class="timeline-dot-small"></div>
+                                <div class="timeline-text">Request Submitted</div>
+                                <div class="timeline-date">{{ formatDateTime(leaveDetailsModal.request.created_at) }}</div>
+                            </div>
+                            
+                            <div class="timeline-status" :class="leaveDetailsModal.request.reviewed_at ? 'completed' : 
+                                                                leaveDetailsModal.request.status === 'pending' ? 'current' : ''">
+                                <div class="timeline-dot-small"></div>
+                                <div class="timeline-text">Under Review</div>
+                                <div class="timeline-date" v-if="leaveDetailsModal.request.reviewed_at">
+                                    {{ formatDateTime(leaveDetailsModal.request.reviewed_at) }}
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-status" :class="leaveDetailsModal.request.status === 'approved' ? 'completed' : 
+                                                                leaveDetailsModal.request.status === 'rejected' ? 'completed' : ''">
+                                <div class="timeline-dot-small"></div>
+                                <div class="timeline-text">{{ leaveDetailsModal.request.status === 'approved' ? 'Approved' : 
+                                                              leaveDetailsModal.request.status === 'rejected' ? 'Rejected' : 'Decision' }}</div>
+                                <div class="timeline-date" v-if="leaveDetailsModal.request.decision_date">
+                                    {{ formatDateTime(leaveDetailsModal.request.decision_date) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="leaveDetailsModal.show = false">Close</button>
+                    <div v-if="hasPermission('leave_requests', 'approve') && leaveDetailsModal.request.status === 'pending'">
+                        <button class="btn btn-success" @click="approveLeaveRequest(leaveDetailsModal.request)">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveDetailsModal.request)">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4948,207 +5265,6 @@
             </div>
         </div>
 
-        <!-- Leave Request Details Modal -->
-        <div v-if="leaveDetailsModal.show" class="modal-overlay">
-            <div class="modal-container">
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <i class="fas fa-calendar-check"></i>
-                        Leave Request Details
-                    </div>
-                    <button class="modal-close" @click="leaveDetailsModal.show = false">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="leave-details-view">
-                        <div class="leave-info-grid">
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Staff Member</div>
-                                <div class="leave-info-value">{{ getPhysicianName(leaveDetailsModal.request.staff_member_id) }}</div>
-                            </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Leave Type</div>
-                                <div class="leave-info-value">{{ leaveDetailsModal.request.leave_type }}</div>
-                            </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Duration</div>
-                                <div class="leave-info-value">{{ leaveDetailsModal.request.total_days }} days</div>
-                            </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Status</div>
-                                <div class="leave-info-value">
-                                    <span class="badge" :class="leaveDetailsModal.request.status === 'approved' ? 'status-available' : 
-                                                               leaveDetailsModal.request.status === 'pending' ? 'status-busy' : 'status-critical'">
-                                        {{ leaveDetailsModal.request.status?.toUpperCase() || 'PENDING' }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <div class="leave-info-label">Dates</div>
-                            <div class="leave-info-value">
-                                {{ formatDate(leaveDetailsModal.request.leave_start_date) }} to {{ formatDate(leaveDetailsModal.request.leave_end_date) }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <div class="leave-info-label">Reason</div>
-                            <div class="form-control" style="min-height: 80px;">
-                                {{ leaveDetailsModal.request.reason || 'No reason provided.' }}
-                            </div>
-                        </div>
-                        
-                        <div v-if="leaveDetailsModal.request.approver_notes" class="mb-4">
-                            <div class="leave-info-label">Approver Notes</div>
-                            <div class="form-control" style="min-height: 60px;">
-                                {{ leaveDetailsModal.request.approver_notes }}
-                            </div>
-                        </div>
-                        
-                        <div class="leave-timeline">
-                            <div class="timeline-status" :class="leaveDetailsModal.request.created_at ? 'completed' : ''">
-                                <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">Request Submitted</div>
-                                <div class="timeline-date">{{ formatDateTime(leaveDetailsModal.request.created_at) }}</div>
-                            </div>
-                            
-                            <div class="timeline-status" :class="leaveDetailsModal.request.reviewed_at ? 'completed' : 
-                                                                leaveDetailsModal.request.status === 'pending' ? 'current' : ''">
-                                <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">Under Review</div>
-                                <div class="timeline-date" v-if="leaveDetailsModal.request.reviewed_at">
-                                    {{ formatDateTime(leaveDetailsModal.request.reviewed_at) }}
-                                </div>
-                            </div>
-                            
-                            <div class="timeline-status" :class="leaveDetailsModal.request.status === 'approved' ? 'completed' : 
-                                                                leaveDetailsModal.request.status === 'rejected' ? 'completed' : ''">
-                                <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">{{ leaveDetailsModal.request.status === 'approved' ? 'Approved' : 
-                                                              leaveDetailsModal.request.status === 'rejected' ? 'Rejected' : 'Decision' }}</div>
-                                <div class="timeline-date" v-if="leaveDetailsModal.request.decision_date">
-                                    {{ formatDateTime(leaveDetailsModal.request.decision_date) }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="leaveDetailsModal.show = false">Close</button>
-                    <div v-if="hasPermission('leave_requests', 'approve') && leaveDetailsModal.request.status === 'pending'">
-                        <button class="btn btn-success" @click="approveLeaveRequest(leaveDetailsModal.request)">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveDetailsModal.request)">
-                            <i class="fas fa-times"></i> Reject
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add/Edit Leave Request Modal -->
-        <div v-if="leaveRequestModal.show" class="modal-overlay">
-            <div class="modal-container">
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <i class="fas fa-calendar-check"></i>
-                        {{ leaveRequestModal.mode === 'add' ? 'Request Leave' : 'Review Leave Request' }}
-                    </div>
-                    <button class="modal-close" @click="leaveRequestModal.show = false">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-info-circle"></i>
-                            Request Information
-                        </div>
-                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-                            <div class="text-sm font-medium">Request Submitted by: {{ leaveRequestModal.request?.staff_name || 'Unknown' }}</div>
-                            <div class="text-sm text-gray-600">Submitted on: {{ formatDateTime(leaveRequestModal.request?.created_at) }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-calendar-alt"></i>
-                            Leave Details
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Start Date *</label>
-                                <input type="date" class="form-control" v-model="leaveRequestModal.form.start_date" 
-                                       :disabled="leaveRequestModal.mode === 'review'">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">End Date *</label>
-                                <input type="date" class="form-control" v-model="leaveRequestModal.form.end_date"
-                                       :disabled="leaveRequestModal.mode === 'review'">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Leave Type</label>
-                                <select class="form-select" v-model="leaveRequestModal.form.leave_type"
-                                        :disabled="leaveRequestModal.mode === 'review'">
-                                    <option value="vacation">Vacation</option>
-                                    <option value="sick_leave">Sick Leave</option>
-                                    <option value="conference">Conference</option>
-                                    <option value="personal">Personal</option>
-                                    <option value="maternity_paternity">Maternity/Paternity</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" v-model="leaveRequestModal.form.status"
-                                        :disabled="!hasPermission('leave_requests', 'update')">
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Reason</label>
-                            <textarea class="form-control" v-model="leaveRequestModal.form.reason" rows="3"
-                                    :disabled="leaveRequestModal.mode === 'review'"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-edit"></i>
-                            Approver Notes
-                        </div>
-                        <div class="form-group">
-                            <textarea class="form-control" v-model="leaveRequestModal.form.approver_notes" rows="3"></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="leaveRequestModal.show = false">Cancel</button>
-                    <div v-if="leaveRequestModal.mode === 'review'" class="flex gap-2">
-                        <button class="btn btn-success" @click="approveLeaveRequest(leaveRequestModal.request)"
-                                v-if="hasPermission('leave_requests', 'approve') && leaveRequestModal.form.status === 'pending'">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveRequestModal.request)"
-                                v-if="hasPermission('leave_requests', 'reject') && leaveRequestModal.form.status === 'pending'">
-                            <i class="fas fa-times"></i> Reject
-                        </button>
-                    </div>
-                    <button v-else class="btn btn-primary" @click="saveLeaveRequest" :disabled="saving">
-                        <span v-if="saving" class="loading"></span>
-                        <span v-else>Submit Request</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- System Settings Modal -->
         <div v-if="systemSettingsModal.show" class="modal-overlay">
             <div class="modal-container">
@@ -5178,6 +5294,10 @@
                             <div class="form-group">
                                 <label class="form-label">Max Residents per Unit</label>
                                 <input type="number" class="form-control" v-model="systemSettingsModal.form.max_residents_per_unit" min="1" max="50">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default Rotation Duration (weeks)</label>
+                                <input type="number" class="form-control" v-model="systemSettingsModal.form.default_rotation_duration" min="1" max="52">
                             </div>
                         </div>
                     </div>
@@ -5265,6 +5385,18 @@
                                 <span class="form-check-label">Enable Email Notifications</span>
                             </label>
                         </div>
+                        <div class="form-group">
+                            <label class="form-check">
+                                <input type="checkbox" class="form-check-input" v-model="userProfileModal.form.leave_request_notifications">
+                                <span class="form-check-label">Leave Request Notifications</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-check">
+                                <input type="checkbox" class="form-check-input" v-model="userProfileModal.form.announcement_notifications">
+                                <span class="form-check-label">Announcement Notifications</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -5301,6 +5433,8 @@
                                 <option value="medical_staff">Medical Staff</option>
                                 <option value="training_units">Training Units</option>
                                 <option value="resident_rotations">Resident Rotations</option>
+                                <option value="oncall_schedule">On-call Schedule</option>
+                                <option value="leave_requests">Leave Requests</option>
                                 <option value="audit_logs">Audit Logs</option>
                             </select>
                         </div>
@@ -5319,6 +5453,13 @@
                             <input type="file" class="form-control" @change="handleFileSelect" accept=".csv,.json,.xlsx">
                             <small class="text-gray-600">Supported formats: CSV, JSON, Excel</small>
                         </div>
+
+                        <div v-if="importExportModal.mode === 'import'" class="form-group">
+                            <label class="form-check">
+                                <input type="checkbox" class="form-check-input" v-model="importExportModal.overwriteExisting">
+                                <span class="form-check-label">Overwrite existing records</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -5336,2931 +5477,6 @@
         </div>
     </div>
 
-    <script>
-        // ============ VUE APP INITIALIZATION ============
-        const { createApp } = Vue;
-
-        createApp({
-            data() {
-                return {
-                    // ============ AUTHENTICATION ============
-                    currentUser: null,
-                    loginForm: {
-                        email: 'admin@neumocare.org',
-                        password: 'password123',
-                        user_role: 'system_admin',
-                        require_mfa: false,
-                        mfa_code: ''
-                    },
-                    loading: false,
-                    
-                    // ============ UI STATE ============
-                    currentView: 'daily_operations',
-                    sidebarCollapsed: false,
-                    mobileMenuOpen: false,
-                    statsSidebarOpen: false,
-                    userMenuOpen: false,
-                    showPermissionManager: false,
-                    saving: false,
-                    savingPermissions: false,
-                    
-                    // ============ SEARCH & FILTERS ============
-                    searchQuery: '',
-                    searchScope: 'all',
-                    searchFilter: 'all',
-                    showRecentSearches: false,
-                    recentSearches: [
-                        { query: 'Dr. Smith', time: '10 min ago' },
-                        { query: 'ICU Rotation', time: '1 hour ago' },
-                        { query: 'Pulmonology', time: '2 hours ago' }
-                    ],
-                    
-                    // ============ STAFF MANAGEMENT ============
-                    staffSearch: '',
-                    staffFilter: {
-                        staff_type: '',
-                        employment_status: ''
-                    },
-                    
-                    // ============ NOTIFICATIONS ============
-                    toasts: [],
-                    unreadNotifications: 3,
-                    
-                    // ============ DATA STORES ============
-                    medicalStaff: [],
-                    onCallSchedule: [],
-                    leaveRequests: [],
-                    trainingUnits: [],
-                    residentRotations: [],
-                    auditLogs: [],
-                    announcements: [],
-                    quickUpdates: [],
-                    
-                    // ============ STATS & METRICS ============
-                    stats: {
-                        totalStaff: 142,
-                        activeResidents: 58,
-                        attendings: 24,
-                        coverageAlerts: 6
-                    },
-                    
-                    liveStats: {
-                        occupancy: 85,
-                        occupancyTrend: 2.5,
-                        onDutyStaff: 42,
-                        staffTrend: 3,
-                        pendingRequests: 18,
-                        erCapacity: { current: 12, max: 15, status: 'low' },
-                        icuCapacity: { current: 8, max: 10, status: 'medium' },
-                        wardCapacity: { current: 45, max: 50, status: 'low' },
-                        todayAdmissions: 7,
-                        avgStay: 4.2
-                    },
-                    
-                    currentCapacity: {
-                        er: { current: 12, max: 15, status: 'low' },
-                        icu: { current: 8, max: 10, status: 'medium' },
-                        ward: { current: 45, max: 50, status: 'low' },
-                        stepdown: { current: 6, max: 8, status: 'low' }
-                    },
-                    
-                    capacityOverview: [
-                        { name: 'ER', current: 12, max: 15, percentage: 80, status: 'low' },
-                        { name: 'ICU', current: 8, max: 10, percentage: 80, status: 'medium' },
-                        { name: 'Ward', current: 45, max: 50, percentage: 90, status: 'high' },
-                        { name: 'Step-down', current: 6, max: 8, percentage: 75, status: 'low' }
-                    ],
-                    
-                    emergencyAlerts: [
-                        { id: 1, message: 'ICU bed occupancy at 95%', priority: 'high' },
-                        { id: 2, message: 'Bronchoscopy suite maintenance scheduled', priority: 'medium' },
-                        { id: 3, message: 'ER wait time exceeding 2 hours', priority: 'high' }
-                    ],
-                    
-                    coverageAlerts: [
-                        { id: 1, unit_name: 'Pulmonology ICU', unit_id: 1, current: 2, capacity: 4, priority: 'high' },
-                        { id: 2, unit_name: 'Respiratory Therapy', unit_id: 2, current: 3, capacity: 6, priority: 'medium' },
-                        { id: 3, unit_name: 'Sleep Medicine', unit_id: 3, current: 1, capacity: 3, priority: 'high' }
-                    ],
-                    
-                    todaysOnCall: [
-                        { id: 1, primary_physician_id: 1, start_time: '08:00', end_time: '20:00' },
-                        { id: 2, primary_physician_id: 2, start_time: '20:00', end_time: '08:00' }
-                    ],
-                    
-                    nextSevenDays: [],
-                    
-                    recentAnnouncements: [
-                        { id: 1, announcement_title: 'New Asthma Guidelines', announcement_content: 'Please review the updated asthma management guidelines...', priority_level: 'high', publish_start_date: new Date().toISOString() },
-                        { id: 2, announcement_title: 'Department Meeting', announcement_content: 'Monthly department meeting scheduled for Friday...', priority_level: 'medium', publish_start_date: new Date().toISOString() }
-                    ],
-                    
-                    // ============ UI INTERACTION STATE ============
-                    draggingCard: null,
-                    pinnedCards: {
-                        totalStaff: false,
-                        activeResidents: true,
-                        attendings: false,
-                        coverageAlerts: true
-                    },
-                    
-                    collapsedCards: {
-                        emergencyAlerts: false,
-                        todaysOnCall: false,
-                        coverageAlerts: false,
-                        sevenDaySchedule: false
-                    },
-                    
-                    lastUpdated: {
-                        todaysOnCall: Date.now() - 300000, // 5 minutes ago
-                        coverageAlerts: Date.now() - 600000, // 10 minutes ago
-                        sevenDaySchedule: Date.now() - 900000 // 15 minutes ago
-                    },
-                    
-                    // ============ MODAL STATES ============
-                    medicalStaffModal: {
-                        show: false,
-                        mode: 'add',
-                        form: {
-                            full_name: '',
-                            staff_type: 'medical_resident',
-                            staff_id: '',
-                            employment_status: 'active',
-                            professional_email: '',
-                            primary_clinic: '',
-                            resident_category: 'department_internal',
-                            training_year: new Date().getFullYear(),
-                            can_supervise_residents: false
-                        }
-                    },
-                    
-                    staffDetailsModal: {
-                        show: false,
-                        staff: {},
-                        activeTab: 'details',
-                        stats: {},
-                        activity: [],
-                        rotations: [],
-                        documents: []
-                    },
-                    
-                    onCallModal: {
-                        show: false,
-                        mode: 'add',
-                        form: {
-                            duty_date: '',
-                            shift_type: 'primary_call',
-                            start_time: '08:00',
-                            end_time: '20:00',
-                            primary_physician_id: '',
-                            backup_physician_id: '',
-                            coverage_notes: ''
-                        }
-                    },
-                    
-                    trainingUnitModal: {
-                        show: false,
-                        mode: 'add',
-                        form: {
-                            unit_name: '',
-                            unit_code: '',
-                            department_name: 'Pulmonology',
-                            specialty: '',
-                            maximum_residents: 6,
-                            current_residents: 0,
-                            unit_status: 'active',
-                            unit_description: ''
-                        }
-                    },
-                    
-                    rotationModal: {
-                        show: false,
-                        mode: 'add',
-                        form: {
-                            rotation_id: '',
-                            resident_id: '',
-                            training_unit_id: '',
-                            supervising_attending_id: '',
-                            rotation_start_date: '',
-                            rotation_end_date: '',
-                            rotation_category: 'clinical_rotation',
-                            rotation_status: 'scheduled',
-                            clinical_notes: '',
-                            supervisor_evaluation: ''
-                        }
-                    },
-                    
-                    quickPlacementModal: {
-                        show: false,
-                        form: {
-                            resident_id: '',
-                            unit_id: '',
-                            duration: '4'
-                        }
-                    },
-                    
-                    communicationsModal: {
-                        show: false,
-                        activeTab: 'announcement',
-                        form: {
-                            announcement_title: '',
-                            announcement_content: '',
-                            publish_start_date: new Date().toISOString().split('T')[0],
-                            publish_end_date: '',
-                            priority_level: 'medium',
-                            target_audience: 'all'
-                        },
-                        capacity: {
-                            er: { current: 12, max: 15, notes: '' },
-                            icu: { current: 8, max: 10, notes: '' },
-                            ward: { current: 45, max: 50, notes: '' },
-                            stepdown: { current: 6, max: 8, notes: '' },
-                            clinic: { current: 25, max: 40, notes: '' },
-                            bronch: { current: 4, max: 6, notes: '' },
-                            overall_notes: ''
-                        },
-                        quickUpdate: {
-                            message: '',
-                            priority: 'info',
-                            expires: '24',
-                            tags: ''
-                        }
-                    },
-                    
-                    leaveDetailsModal: {
-                        show: false,
-                        request: {}
-                    },
-                    
-                    leaveRequestModal: {
-                        show: false,
-                        mode: 'add',
-                        request: null,
-                        form: {
-                            start_date: '',
-                            end_date: '',
-                            leave_type: 'vacation',
-                            status: 'pending',
-                            reason: '',
-                            approver_notes: ''
-                        }
-                    },
-                    
-                    systemSettingsModal: {
-                        show: false,
-                        form: {
-                            hospital_name: 'NeumoCare General Hospital',
-                            department_name: 'Pulmonology Department',
-                            max_residents_per_unit: 6,
-                            enable_audit_logging: true,
-                            require_mfa: false,
-                            maintenance_mode: false
-                        }
-                    },
-                    
-                    userProfileModal: {
-                        show: false,
-                        form: {
-                            full_name: '',
-                            email: '',
-                            phone: '',
-                            department: '',
-                            notifications_enabled: true
-                        }
-                    },
-                    
-                    importExportModal: {
-                        show: false,
-                        mode: 'import',
-                        selectedTable: 'medical_staff',
-                        exportFormat: 'csv',
-                        selectedFile: null
-                    },
-                    
-                    // ============ SYSTEM SETTINGS ============
-                    systemSettings: {
-                        hospital_name: 'NeumoCare General Hospital',
-                        department_name: 'Pulmonology Department',
-                        max_residents_per_unit: 6,
-                        enable_audit_logging: true,
-                        require_mfa: false,
-                        maintenance_mode: false
-                    },
-                    
-                    // ============ PERMISSION SYSTEM ============
-                    permissionResources: {
-                        medical_staff: {
-                            name: 'Medical Staff',
-                            description: 'Manage medical staff records and profiles',
-                            actions: ['read', 'create', 'update', 'delete', 'import', 'export', 'notify', 'report']
-                        },
-                        oncall_schedule: {
-                            name: 'On-call Schedule',
-                            description: 'Manage physician on-call duties',
-                            actions: ['read', 'create', 'update', 'delete', 'override']
-                        },
-                        leave_requests: {
-                            name: 'Leave Requests',
-                            description: 'Manage staff leave requests',
-                            actions: ['read', 'create', 'update', 'approve', 'reject']
-                        },
-                        resident_rotations: {
-                            name: 'Resident Rotations',
-                            description: 'Manage resident training rotations',
-                            actions: ['read', 'create', 'update', 'delete', 'extend']
-                        },
-                        training_units: {
-                            name: 'Training Units',
-                            description: 'Manage training units and capacity',
-                            actions: ['read', 'create', 'update', 'delete']
-                        },
-                        placements: {
-                            name: 'Placements',
-                            description: 'Manage resident unit placements',
-                            actions: ['read', 'create', 'update', 'delete']
-                        },
-                        communications: {
-                            name: 'Communications',
-                            description: 'Manage department communications',
-                            actions: ['read', 'create', 'update', 'delete']
-                        },
-                        audit: {
-                            name: 'Audit Logs',
-                            description: 'View system audit logs',
-                            actions: ['read', 'export']
-                        },
-                        system: {
-                            name: 'System Settings',
-                            description: 'Manage system configuration',
-                            actions: ['read', 'update', 'admin']
-                        }
-                    },
-                    
-                    // ============ DEMO DATA ============
-                    availablePhysicians: [
-                        { id: 1, full_name: 'Dr. Sarah Johnson', staff_type: 'attending_physician' },
-                        { id: 2, full_name: 'Dr. Michael Chen', staff_type: 'attending_physician' },
-                        { id: 3, full_name: 'Dr. Robert Miller', staff_type: 'medical_resident' }
-                    ],
-                    
-                    availableAttendings: [
-                        { id: 1, full_name: 'Dr. Sarah Johnson' },
-                        { id: 2, full_name: 'Dr. Michael Chen' }
-                    ],
-                    
-                    availableResidents: [
-                        { id: 3, full_name: 'Dr. Robert Miller', staff_id: 'RES001' },
-                        { id: 4, full_name: 'Dr. Emily Wilson', staff_id: 'RES002' },
-                        { id: 5, full_name: 'Dr. James Brown', staff_id: 'RES003' }
-                    ],
-                    
-                    activeTrainingUnits: [
-                        { id: 1, unit_name: 'Pulmonology ICU', current_residents: 2, maximum_residents: 4 },
-                        { id: 2, unit_name: 'Respiratory Therapy', current_residents: 3, maximum_residents: 6 },
-                        { id: 3, unit_name: 'Sleep Medicine', current_residents: 1, maximum_residents: 3 }
-                    ]
-                };
-            },
-            
-            computed: {
-                // ============ FILTERED DATA ============
-                filteredMedicalStaff() {
-                    let filtered = this.medicalStaff;
-                    
-                    if (this.staffSearch) {
-                        const search = this.staffSearch.toLowerCase();
-                        filtered = filtered.filter(staff => 
-                            staff.full_name.toLowerCase().includes(search) ||
-                            staff.staff_id?.toLowerCase().includes(search) ||
-                            staff.professional_email?.toLowerCase().includes(search)
-                        );
-                    }
-                    
-                    if (this.staffFilter.staff_type) {
-                        filtered = filtered.filter(staff => staff.staff_type === this.staffFilter.staff_type);
-                    }
-                    
-                    if (this.staffFilter.employment_status) {
-                        filtered = filtered.filter(staff => staff.employment_status === this.staffFilter.employment_status);
-                    }
-                    
-                    return filtered;
-                },
-                
-                filteredRotations() {
-                    return this.residentRotations;
-                },
-                
-                // ============ AVAILABLE DATA ============
-                availablePhysicians() {
-                    return this.medicalStaff.filter(staff => 
-                        staff.employment_status === 'active' && 
-                        (staff.staff_type === 'attending_physician' || staff.staff_type === 'medical_resident')
-                    );
-                },
-                
-                availableAttendings() {
-                    return this.medicalStaff.filter(staff => 
-                        staff.employment_status === 'active' && 
-                        staff.staff_type === 'attending_physician'
-                    );
-                },
-                
-                availableResidents() {
-                    return this.medicalStaff.filter(staff => 
-                        staff.employment_status === 'active' && 
-                        staff.staff_type === 'medical_resident'
-                    );
-                },
-                
-                activeTrainingUnits() {
-                    return this.trainingUnits.filter(unit => unit.unit_status === 'active');
-                }
-            },
-            
-            mounted() {
-                this.initializeDemoData();
-                this.generateNextSevenDays();
-                this.updateLiveStats();
-                
-                // Auto-update live stats every 30 seconds
-                setInterval(() => {
-                    this.updateLiveStats();
-                }, 30000);
-            },
-            
-            methods: {
-                // ============ INITIALIZATION ============
-                initializeDemoData() {
-                    // Medical Staff
-                    this.medicalStaff = [
-                        { id: 1, full_name: 'Dr. Sarah Johnson', staff_type: 'attending_physician', staff_id: 'ATT001', employment_status: 'active', professional_email: 's.johnson@neumocare.org', primary_clinic: 'Pulmonology ICU', last_activity: Date.now() - 3600000 },
-                        { id: 2, full_name: 'Dr. Michael Chen', staff_type: 'attending_physician', staff_id: 'ATT002', employment_status: 'active', professional_email: 'm.chen@neumocare.org', primary_clinic: 'Respiratory Therapy', last_activity: Date.now() - 7200000 },
-                        { id: 3, full_name: 'Dr. Robert Miller', staff_type: 'medical_resident', staff_id: 'RES001', employment_status: 'active', professional_email: 'r.miller@neumocare.org', primary_clinic: 'Pulmonology ICU', last_activity: Date.now() - 1800000 },
-                        { id: 4, full_name: 'Dr. Emily Wilson', staff_type: 'medical_resident', staff_id: 'RES002', employment_status: 'active', professional_email: 'e.wilson@neumocare.org', primary_clinic: 'Sleep Medicine', last_activity: Date.now() - 5400000 },
-                        { id: 5, full_name: 'Dr. James Brown', staff_type: 'medical_resident', staff_id: 'RES003', employment_status: 'on_leave', professional_email: 'j.brown@neumocare.org', primary_clinic: 'Respiratory Therapy', last_activity: Date.now() - 86400000 }
-                    ];
-                    
-                    // On-call Schedule
-                    this.onCallSchedule = [
-                        { id: 1, duty_date: new Date().toISOString().split('T')[0], primary_physician_id: 1, backup_physician_id: 2, start_time: '08:00', end_time: '20:00', coverage_notes: 'Primary coverage' },
-                        { id: 2, duty_date: this.addDays(new Date(), 1).toISOString().split('T')[0], primary_physician_id: 2, backup_physician_id: null, start_time: '20:00', end_time: '08:00', coverage_notes: 'Night shift' }
-                    ];
-                    
-                    // Leave Requests
-                    this.leaveRequests = [
-                        { id: 1, staff_member_id: 3, leave_type: 'vacation', leave_start_date: this.addDays(new Date(), 7).toISOString().split('T')[0], leave_end_date: this.addDays(new Date(), 14).toISOString().split('T')[0], total_days: 7, status: 'pending', reason: 'Family vacation', created_at: new Date(Date.now() - 86400000).toISOString() },
-                        { id: 2, staff_member_id: 4, leave_type: 'conference', leave_start_date: this.addDays(new Date(), 3).toISOString().split('T')[0], leave_end_date: this.addDays(new Date(), 5).toISOString().split('T')[0], total_days: 3, status: 'approved', reason: 'Medical conference', created_at: new Date(Date.now() - 172800000).toISOString() }
-                    ];
-                    
-                    // Training Units
-                    this.trainingUnits = [
-                        { id: 1, unit_name: 'Pulmonology ICU', unit_code: 'PICU', department_name: 'Pulmonology', specialty: 'Critical Care', maximum_residents: 4, current_residents: 2, unit_status: 'active', unit_description: 'Specialized ICU for pulmonary critical care patients' },
-                        { id: 2, unit_name: 'Respiratory Therapy', unit_code: 'RT', department_name: 'Pulmonology', specialty: 'Therapy', maximum_residents: 6, current_residents: 3, unit_status: 'active', unit_description: 'Respiratory therapy and rehabilitation unit' },
-                        { id: 3, unit_name: 'Sleep Medicine', unit_code: 'SLEEP', department_name: 'Pulmonology', specialty: 'Sleep Disorders', maximum_residents: 3, current_residents: 1, unit_status: 'active', unit_description: 'Sleep disorder diagnosis and treatment center' }
-                    ];
-                    
-                    // Resident Rotations
-                    this.residentRotations = [
-                        { id: 1, rotation_id: 'ROT001', resident_id: 3, training_unit_id: 1, supervising_attending_id: 1, rotation_start_date: this.addDays(new Date(), -30).toISOString().split('T')[0], rotation_end_date: this.addDays(new Date(), 30).toISOString().split('T')[0], rotation_category: 'clinical_rotation', rotation_status: 'active' },
-                        { id: 2, rotation_id: 'ROT002', resident_id: 4, training_unit_id: 3, supervising_attending_id: 2, rotation_start_date: this.addDays(new Date(), -15).toISOString().split('T')[0], rotation_end_date: this.addDays(new Date(), 45).toISOString().split('T')[0], rotation_category: 'clinical_rotation', rotation_status: 'active' }
-                    ];
-                    
-                    // Audit Logs
-                    this.auditLogs = [
-                        { id: 1, timestamp: new Date(Date.now() - 3600000).toISOString(), user_name: 'Dr. Sarah Johnson', user_role: 'attending_physician', action: 'create', resource: 'medical_staff', details: 'Added new resident Dr. Robert Miller', permission_level: 'full' },
-                        { id: 2, timestamp: new Date(Date.now() - 7200000).toISOString(), user_name: 'System Admin', user_role: 'system_admin', action: 'update', resource: 'system_settings', details: 'Updated department capacity settings', permission_level: 'admin' }
-                    ];
-                    
-                    // Quick Updates
-                    this.quickUpdates = [
-                        { id: 1, author: 'Dr. Chen', timestamp: Date.now() - 1800000, message: 'CT scanner maintenance completed ahead of schedule', tags: ['equipment', 'maintenance'] },
-                        { id: 2, author: 'Nursing Staff', timestamp: Date.now() - 3600000, message: 'New asthma medication protocols available in shared drive', tags: ['guidelines', 'medication'] }
-                    ];
-                },
-                
-                generateNextSevenDays() {
-                    const days = [];
-                    for (let i = 0; i < 7; i++) {
-                        const date = this.addDays(new Date(), i);
-                        const schedule = this.onCallSchedule.find(s => 
-                            s.duty_date === date.toISOString().split('T')[0]
-                        );
-                        days.push({
-                            date: date.toISOString().split('T')[0],
-                            schedule: schedule
-                        });
-                    }
-                    this.nextSevenDays = days;
-                },
-                
-                updateLiveStats() {
-                    // Simulate live data updates
-                    this.liveStats.occupancy = Math.floor(Math.random() * 20) + 75;
-                    this.liveStats.onDutyStaff = Math.floor(Math.random() * 10) + 35;
-                    this.liveStats.todayAdmissions = Math.floor(Math.random() * 5) + 5;
-                    this.liveStats.erCapacity.current = Math.floor(Math.random() * 4) + 10;
-                    this.liveStats.icuCapacity.current = Math.floor(Math.random() * 3) + 6;
-                    this.liveStats.wardCapacity.current = Math.floor(Math.random() * 10) + 40;
-                    
-                    // Update status based on capacity
-                    this.liveStats.erCapacity.status = this.getCapacityStatus(this.liveStats.erCapacity);
-                    this.liveStats.icuCapacity.status = this.getCapacityStatus(this.liveStats.icuCapacity);
-                    this.liveStats.wardCapacity.status = this.getCapacityStatus(this.liveStats.wardCapacity);
-                },
-                
-                // ============ AUTHENTICATION ============
-                handleAdvancedLogin() {
-                    this.loading = true;
-                    
-                    // Simulate API call
-                    setTimeout(() => {
-                        this.currentUser = {
-                            id: 1,
-                            full_name: 'Dr. System Administrator',
-                            email: this.loginForm.email,
-                            user_role: this.loginForm.user_role
-                        };
-                        
-                        this.showToast('success', 'Login Successful', 'Welcome to NeumoCare Hospital Management System');
-                        this.loading = false;
-                    }, 1000);
-                },
-                
-                handleLogout() {
-                    this.currentUser = null;
-                    this.showToast('info', 'Logged Out', 'You have been successfully logged out');
-                },
-                
-                // ============ UI HELPERS ============
-                switchView(view) {
-                    this.currentView = view;
-                    this.mobileMenuOpen = false;
-                },
-                
-                getCurrentTitle() {
-                    const titles = {
-                        daily_operations: 'Dashboard Overview',
-                        medical_staff: 'Medical Staff',
-                        resident_rotations: 'Resident Rotations',
-                        oncall_schedule: 'On-call Schedule',
-                        leave_requests: 'Leave Requests',
-                        training_units: 'Training Units',
-                        communications: 'Communications',
-                        audit_logs: 'Audit Logs',
-                        system_settings: 'System Settings'
-                    };
-                    return titles[this.currentView] || 'Dashboard';
-                },
-                
-                getCurrentSubtitle() {
-                    const subtitles = {
-                        daily_operations: 'Real-time department overview and alerts',
-                        medical_staff: 'Manage medical professionals and their profiles',
-                        resident_rotations: 'Track and manage resident training rotations',
-                        oncall_schedule: 'Schedule and monitor on-call physician duties',
-                        leave_requests: 'Review and approve staff leave requests',
-                        training_units: 'Manage training units and resident capacity',
-                        communications: 'Department announcements and updates',
-                        audit_logs: 'System activity and permission changes',
-                        system_settings: 'Configure system preferences and security'
-                    };
-                    return subtitles[this.currentView] || 'NeumoCare Hospital Management';
-                },
-                
-                getSearchPlaceholder() {
-                    const placeholders = {
-                        daily_operations: 'Search staff, units, or schedules...',
-                        medical_staff: 'Search by name, ID, or email...',
-                        resident_rotations: 'Search rotations or residents...',
-                        oncall_schedule: 'Search physicians or dates...',
-                        leave_requests: 'Search staff or leave types...',
-                        training_units: 'Search units or specialties...',
-                        communications: 'Search announcements or updates...',
-                        audit_logs: 'Search users or actions...',
-                        system_settings: 'Search settings...'
-                    };
-                    return placeholders[this.currentView] || 'Search...';
-                },
-                
-                toggleStatsSidebar() {
-                    this.statsSidebarOpen = !this.statsSidebarOpen;
-                },
-                
-                toggleUserMenu() {
-                    this.userMenuOpen = !this.userMenuOpen;
-                },
-                
-                togglePermissionManager() {
-                    this.showPermissionManager = !this.showPermissionManager;
-                },
-                
-                toggleSearchScope() {
-                    const scopes = ['all', 'staff', 'units', 'rotations'];
-                    const currentIndex = scopes.indexOf(this.searchScope);
-                    this.searchScope = scopes[(currentIndex + 1) % scopes.length];
-                },
-                
-                setSearchFilter(filter) {
-                    this.searchFilter = filter;
-                },
-                
-                selectRecentSearch(search) {
-                    this.searchQuery = search.query;
-                    this.handleAdvancedSearch();
-                },
-                
-                clearRecentSearches() {
-                    this.recentSearches = [];
-                    this.showToast('info', 'Search History Cleared', 'Your recent searches have been cleared');
-                },
-                
-                handleAdvancedSearch() {
-                    if (!this.searchQuery.trim()) return;
-                    
-                    // Add to recent searches
-                    this.recentSearches.unshift({
-                        query: this.searchQuery,
-                        time: 'Just now'
-                    });
-                    
-                    // Keep only last 5 searches
-                    if (this.recentSearches.length > 5) {
-                        this.recentSearches.pop();
-                    }
-                    
-                    this.showToast('info', 'Search Results', `Searching for "${this.searchQuery}" in ${this.searchScope}`);
-                },
-                
-                // ============ INTERACTIVE WIDGETS ============
-                startDrag(event, cardId) {
-                    this.draggingCard = cardId;
-                    event.dataTransfer.setData('text/plain', cardId);
-                },
-                
-                endDrag() {
-                    this.draggingCard = null;
-                },
-                
-                handleDrop(event, unit) {
-                    event.preventDefault();
-                    if (this.draggingCard) {
-                        this.showToast('info', 'Card Moved', `Card placed in ${unit.unit_name}`);
-                    }
-                },
-                
-                togglePinCard(cardId) {
-                    this.pinnedCards[cardId] = !this.pinnedCards[cardId];
-                    const action = this.pinnedCards[cardId] ? 'pinned' : 'unpinned';
-                    this.showToast('info', 'Card Updated', `Card ${action}`);
-                },
-                
-                toggleCollapseCard(cardId) {
-                    this.collapsedCards[cardId] = !this.collapsedCards[cardId];
-                },
-                
-                // ============ STAFF MANAGEMENT ============
-                showAddMedicalStaffModal() {
-                    this.medicalStaffModal.mode = 'add';
-                    this.medicalStaffModal.form = {
-                        full_name: '',
-                        staff_type: 'medical_resident',
-                        staff_id: '',
-                        employment_status: 'active',
-                        professional_email: '',
-                        primary_clinic: '',
-                        resident_category: 'department_internal',
-                        training_year: new Date().getFullYear(),
-                        can_supervise_residents: false
-                    };
-                    this.medicalStaffModal.show = true;
-                },
-                
-                editMedicalStaff(staff) {
-                    this.medicalStaffModal.mode = 'edit';
-                    this.medicalStaffModal.form = { ...staff };
-                    this.medicalStaffModal.show = true;
-                },
-                
-                viewStaffDetails(staff) {
-                    this.staffDetailsModal.staff = staff;
-                    this.staffDetailsModal.stats = {
-                        completedRotations: Math.floor(Math.random() * 10),
-                        oncallShifts: Math.floor(Math.random() * 20),
-                        leaveDays: Math.floor(Math.random() * 15),
-                        supervisionCount: Math.floor(Math.random() * 5)
-                    };
-                    
-                    // Generate sample activity
-                    this.staffDetailsModal.activity = [
-                        { id: 1, description: 'Completed ICU rotation', timestamp: new Date(Date.now() - 86400000).toISOString() },
-                        { id: 2, description: 'Attended pulmonary conference', timestamp: new Date(Date.now() - 172800000).toISOString() },
-                        { id: 3, description: 'Submitted research paper', timestamp: new Date(Date.now() - 259200000).toISOString() }
-                    ];
-                    
-                    // Generate sample rotations
-                    this.staffDetailsModal.rotations = this.residentRotations.filter(r => r.resident_id === staff.id);
-                    
-                    // Generate sample documents
-                    this.staffDetailsModal.documents = [
-                        { id: 1, name: 'Medical License', type: 'license', description: 'Active medical license', upload_date: new Date(Date.now() - 86400000).toISOString() },
-                        { id: 2, name: 'CV/Resume', type: 'document', description: 'Updated curriculum vitae', upload_date: new Date(Date.now() - 172800000).toISOString() }
-                    ];
-                    
-                    this.staffDetailsModal.show = true;
-                },
-                
-                saveMedicalStaff() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        if (this.medicalStaffModal.mode === 'add') {
-                            const newStaff = {
-                                id: this.medicalStaff.length + 1,
-                                ...this.medicalStaffModal.form,
-                                last_activity: Date.now()
-                            };
-                            this.medicalStaff.push(newStaff);
-                            this.showToast('success', 'Staff Added', `${newStaff.full_name} has been added to the system`);
-                        } else {
-                            const index = this.medicalStaff.findIndex(s => s.id === this.medicalStaffModal.form.id);
-                            if (index !== -1) {
-                                this.medicalStaff[index] = { ...this.medicalStaffModal.form };
-                                this.showToast('success', 'Staff Updated', `${this.medicalStaffModal.form.full_name} has been updated`);
-                            }
-                        }
-                        
-                        this.saving = false;
-                        this.medicalStaffModal.show = false;
-                    }, 500);
-                },
-                
-                deleteMedicalStaff(staff) {
-                    if (confirm(`Are you sure you want to delete ${staff.full_name}?`)) {
-                        this.medicalStaff = this.medicalStaff.filter(s => s.id !== staff.id);
-                        this.showToast('success', 'Staff Deleted', `${staff.full_name} has been removed from the system`);
-                    }
-                },
-                
-                resetStaffFilters() {
-                    this.staffSearch = '';
-                    this.staffFilter = {
-                        staff_type: '',
-                        employment_status: ''
-                    };
-                },
-                
-                applyStaffFilters() {
-                    this.showToast('info', 'Filters Applied', 'Staff filters have been updated');
-                },
-                
-                // ============ ON-CALL SCHEDULE ============
-                showAddOnCallModal() {
-                    this.onCallModal.mode = 'add';
-                    this.onCallModal.form = {
-                        duty_date: new Date().toISOString().split('T')[0],
-                        shift_type: 'primary_call',
-                        start_time: '08:00',
-                        end_time: '20:00',
-                        primary_physician_id: '',
-                        backup_physician_id: '',
-                        coverage_notes: ''
-                    };
-                    this.onCallModal.show = true;
-                },
-                
-                editOnCallSchedule(day) {
-                    this.onCallModal.mode = 'edit';
-                    if (day.schedule) {
-                        this.onCallModal.form = { ...day.schedule };
-                    } else {
-                        this.onCallModal.form = {
-                            duty_date: day.date,
-                            shift_type: 'primary_call',
-                            start_time: '08:00',
-                            end_time: '20:00',
-                            primary_physician_id: '',
-                            backup_physician_id: '',
-                            coverage_notes: ''
-                        };
-                    }
-                    this.onCallModal.show = true;
-                },
-                
-                saveOnCallSchedule() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        if (this.onCallModal.mode === 'add') {
-                            const newSchedule = {
-                                id: this.onCallSchedule.length + 1,
-                                ...this.onCallModal.form
-                            };
-                            this.onCallSchedule.push(newSchedule);
-                            this.showToast('success', 'Schedule Added', 'New on-call schedule has been created');
-                        } else {
-                            const index = this.onCallSchedule.findIndex(s => s.id === this.onCallModal.form.id);
-                            if (index !== -1) {
-                                this.onCallSchedule[index] = { ...this.onCallModal.form };
-                                this.showToast('success', 'Schedule Updated', 'On-call schedule has been updated');
-                            }
-                        }
-                        
-                        this.saving = false;
-                        this.onCallModal.show = false;
-                        this.generateNextSevenDays();
-                    }, 500);
-                },
-                
-                deleteOnCallSchedule(schedule) {
-                    if (confirm('Are you sure you want to delete this on-call schedule?')) {
-                        this.onCallSchedule = this.onCallSchedule.filter(s => s.id !== schedule.id);
-                        this.showToast('success', 'Schedule Deleted', 'On-call schedule has been removed');
-                        this.generateNextSevenDays();
-                    }
-                },
-                
-                overrideOnCall(day) {
-                    if (confirm('Override this on-call schedule with emergency coverage?')) {
-                        this.showToast('warning', 'Schedule Overridden', 'Emergency coverage has been assigned');
-                    }
-                },
-                
-                // ============ TRAINING UNITS ============
-                showAddTrainingUnitModal() {
-                    this.trainingUnitModal.mode = 'add';
-                    this.trainingUnitModal.form = {
-                        unit_name: '',
-                        unit_code: '',
-                        department_name: 'Pulmonology',
-                        specialty: '',
-                        maximum_residents: 6,
-                        current_residents: 0,
-                        unit_status: 'active',
-                        unit_description: ''
-                    };
-                    this.trainingUnitModal.show = true;
-                },
-                
-                editTrainingUnit(unit) {
-                    this.trainingUnitModal.mode = 'edit';
-                    this.trainingUnitModal.form = { ...unit };
-                    this.trainingUnitModal.show = true;
-                },
-                
-                saveTrainingUnit() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        if (this.trainingUnitModal.mode === 'add') {
-                            const newUnit = {
-                                id: this.trainingUnits.length + 1,
-                                ...this.trainingUnitModal.form
-                            };
-                            this.trainingUnits.push(newUnit);
-                            this.showToast('success', 'Unit Added', `${newUnit.unit_name} has been added`);
-                        } else {
-                            const index = this.trainingUnits.findIndex(u => u.id === this.trainingUnitModal.form.id);
-                            if (index !== -1) {
-                                this.trainingUnits[index] = { ...this.trainingUnitModal.form };
-                                this.showToast('success', 'Unit Updated', `${this.trainingUnitModal.form.unit_name} has been updated`);
-                            }
-                        }
-                        
-                        this.saving = false;
-                        this.trainingUnitModal.show = false;
-                    }, 500);
-                },
-                
-                getAssignedResidents(unitId) {
-                    return this.medicalStaff.filter(staff => 
-                        staff.staff_type === 'medical_resident' && 
-                        staff.primary_clinic === this.trainingUnits.find(u => u.id === unitId)?.unit_name
-                    );
-                },
-                
-                assignResidentsToUnit(unit) {
-                    this.showToast('info', 'Assign Residents', `Opening resident assignment for ${unit.unit_name}`);
-                },
-                
-                removePlacement(residentId, unitId) {
-                    if (confirm('Remove this resident from the unit?')) {
-                        this.showToast('success', 'Resident Removed', 'Resident has been removed from the unit');
-                    }
-                },
-                
-                // ============ ROTATIONS ============
-                showAddRotationModal() {
-                    this.rotationModal.mode = 'add';
-                    this.rotationModal.form = {
-                        rotation_id: `ROT${String(this.residentRotations.length + 1).padStart(3, '0')}`,
-                        resident_id: '',
-                        training_unit_id: '',
-                        supervising_attending_id: '',
-                        rotation_start_date: new Date().toISOString().split('T')[0],
-                        rotation_end_date: this.addDays(new Date(), 30).toISOString().split('T')[0],
-                        rotation_category: 'clinical_rotation',
-                        rotation_status: 'scheduled',
-                        clinical_notes: '',
-                        supervisor_evaluation: ''
-                    };
-                    this.rotationModal.show = true;
-                },
-                
-                editRotation(rotation) {
-                    this.rotationModal.mode = 'edit';
-                    this.rotationModal.form = { ...rotation };
-                    this.rotationModal.show = true;
-                },
-                
-                saveRotation() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        if (this.rotationModal.mode === 'add') {
-                            const newRotation = {
-                                id: this.residentRotations.length + 1,
-                                ...this.rotationModal.form
-                            };
-                            this.residentRotations.push(newRotation);
-                            this.showToast('success', 'Rotation Created', `Rotation ${newRotation.rotation_id} has been created`);
-                        } else {
-                            const index = this.residentRotations.findIndex(r => r.id === this.rotationModal.form.id);
-                            if (index !== -1) {
-                                this.residentRotations[index] = { ...this.rotationModal.form };
-                                this.showToast('success', 'Rotation Updated', `Rotation ${this.rotationModal.form.rotation_id} has been updated`);
-                            }
-                        }
-                        
-                        this.saving = false;
-                        this.rotationModal.show = false;
-                    }, 500);
-                },
-                
-                extendRotation(rotation) {
-                    const newEndDate = this.addDays(new Date(rotation.rotation_end_date), 30).toISOString().split('T')[0];
-                    if (confirm(`Extend rotation until ${newEndDate}?`)) {
-                        rotation.rotation_end_date = newEndDate;
-                        this.showToast('success', 'Rotation Extended', 'Rotation has been extended by 30 days');
-                    }
-                },
-                
-                deleteRotation(rotation) {
-                    if (confirm(`Delete rotation ${rotation.rotation_id}?`)) {
-                        this.residentRotations = this.residentRotations.filter(r => r.id !== rotation.id);
-                        this.showToast('success', 'Rotation Deleted', 'Rotation has been removed');
-                    }
-                },
-                
-                // ============ QUICK PLACEMENT ============
-                showQuickPlacementModal() {
-                    this.quickPlacementModal.show = true;
-                },
-                
-                saveQuickPlacement() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        const resident = this.medicalStaff.find(s => s.id === this.quickPlacementModal.form.resident_id);
-                        const unit = this.trainingUnits.find(u => u.id === this.quickPlacementModal.form.unit_id);
-                        
-                        if (resident && unit) {
-                            this.showToast('success', 'Placement Complete', `${resident.full_name} assigned to ${unit.unit_name} for ${this.quickPlacementModal.form.duration} weeks`);
-                        }
-                        
-                        this.saving = false;
-                        this.quickPlacementModal.show = false;
-                    }, 500);
-                },
-                
-                quickAssignToUnit(alert) {
-                    this.quickPlacementModal.form.unit_id = alert.unit_id;
-                    this.quickPlacementModal.show = true;
-                },
-                
-                // ============ COMMUNICATIONS ============
-                showCommunicationsModal() {
-                    this.communicationsModal.show = true;
-                },
-                
-                saveCommunication() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        if (this.communicationsModal.activeTab === 'announcement') {
-                            const newAnnouncement = {
-                                id: this.announcements.length + 1,
-                                ...this.communicationsModal.form,
-                                publish_start_date: new Date(this.communicationsModal.form.publish_start_date).toISOString()
-                            };
-                            this.announcements.unshift(newAnnouncement);
-                            this.recentAnnouncements.unshift(newAnnouncement);
-                            this.showToast('success', 'Announcement Published', 'New announcement has been published');
-                        } else if (this.communicationsModal.activeTab === 'capacity') {
-                            this.currentCapacity = { ...this.communicationsModal.capacity };
-                            this.showToast('success', 'Capacity Updated', 'Department capacity has been updated');
-                        } else if (this.communicationsModal.activeTab === 'quick') {
-                            const newUpdate = {
-                                id: this.quickUpdates.length + 1,
-                                author: this.currentUser.full_name,
-                                timestamp: Date.now(),
-                                message: this.communicationsModal.quickUpdate.message,
-                                tags: this.communicationsModal.quickUpdate.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-                            };
-                            this.quickUpdates.unshift(newUpdate);
-                            this.showToast('success', 'Update Posted', 'Quick update has been posted');
-                        }
-                        
-                        this.saving = false;
-                        this.communicationsModal.show = false;
-                    }, 500);
-                },
-                
-                getCommunicationIcon(tab) {
-                    const icons = {
-                        announcement: 'fa-bullhorn',
-                        capacity: 'fa-bed',
-                        quick: 'fa-comment-medical'
-                    };
-                    return icons[tab] || 'fa-paper-plane';
-                },
-                
-                getCommunicationButtonText(tab) {
-                    const texts = {
-                        announcement: 'Publish Announcement',
-                        capacity: 'Update Capacity',
-                        quick: 'Post Update'
-                    };
-                    return texts[tab] || 'Save';
-                },
-                
-                // ============ LEAVE REQUESTS ============
-                showAddLeaveRequestModal() {
-                    this.leaveRequestModal.mode = 'add';
-                    this.leaveRequestModal.request = null;
-                    this.leaveRequestModal.form = {
-                        start_date: new Date().toISOString().split('T')[0],
-                        end_date: this.addDays(new Date(), 7).toISOString().split('T')[0],
-                        leave_type: 'vacation',
-                        status: 'pending',
-                        reason: '',
-                        approver_notes: ''
-                    };
-                    this.leaveRequestModal.show = true;
-                },
-                
-                viewLeaveRequestDetails(request) {
-                    this.leaveDetailsModal.request = request;
-                    this.leaveDetailsModal.show = true;
-                },
-                
-                saveLeaveRequest() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        const newRequest = {
-                            id: this.leaveRequests.length + 1,
-                            staff_member_id: this.currentUser.id,
-                            ...this.leaveRequestModal.form,
-                            total_days: this.calculateDaysDifference(this.leaveRequestModal.form.start_date, this.leaveRequestModal.form.end_date),
-                            created_at: new Date().toISOString()
-                        };
-                        
-                        this.leaveRequests.push(newRequest);
-                        this.showToast('success', 'Leave Request Submitted', 'Your leave request has been submitted for approval');
-                        
-                        this.saving = false;
-                        this.leaveRequestModal.show = false;
-                    }, 500);
-                },
-                
-                approveLeaveRequest(request) {
-                    request.status = 'approved';
-                    request.decision_date = new Date().toISOString();
-                    this.showToast('success', 'Leave Approved', 'Leave request has been approved');
-                    this.leaveDetailsModal.show = false;
-                },
-                
-                rejectLeaveRequest(request) {
-                    request.status = 'rejected';
-                    request.decision_date = new Date().toISOString();
-                    this.showToast('warning', 'Leave Rejected', 'Leave request has been rejected');
-                    this.leaveDetailsModal.show = false;
-                },
-                
-                // ============ SYSTEM SETTINGS ============
-                showSystemSettingsModal() {
-                    this.systemSettingsModal.form = { ...this.systemSettings };
-                    this.systemSettingsModal.show = true;
-                },
-                
-                saveSystemSettings() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        this.systemSettings = { ...this.systemSettingsModal.form };
-                        this.showToast('success', 'Settings Saved', 'System settings have been updated');
-                        
-                        this.saving = false;
-                        this.systemSettingsModal.show = false;
-                    }, 500);
-                },
-                
-                // ============ USER PROFILE ============
-                showUserProfile() {
-                    this.userProfileModal.form = {
-                        full_name: this.currentUser.full_name,
-                        email: this.currentUser.email,
-                        phone: '',
-                        department: 'Pulmonology Department',
-                        notifications_enabled: true
-                    };
-                    this.userProfileModal.show = true;
-                    this.userMenuOpen = false;
-                },
-                
-                saveUserProfile() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        this.currentUser.full_name = this.userProfileModal.form.full_name;
-                        this.showToast('success', 'Profile Updated', 'Your profile has been updated');
-                        
-                        this.saving = false;
-                        this.userProfileModal.show = false;
-                    }, 500);
-                },
-                
-                // ============ IMPORT/EXPORT ============
-                showImportModal(table) {
-                    this.importExportModal.mode = 'import';
-                    this.importExportModal.selectedTable = table;
-                    this.importExportModal.show = true;
-                },
-                
-                handleFileSelect(event) {
-                    this.importExportModal.selectedFile = event.target.files[0];
-                },
-                
-                importData() {
-                    if (!this.importExportModal.selectedFile) {
-                        this.showToast('error', 'No File Selected', 'Please select a file to import');
-                        return;
-                    }
-                    
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        this.showToast('success', 'Import Complete', `Data imported from ${this.importExportModal.selectedFile.name}`);
-                        this.saving = false;
-                        this.importExportModal.show = false;
-                    }, 1000);
-                },
-                
-                exportData() {
-                    this.saving = true;
-                    
-                    setTimeout(() => {
-                        this.showToast('success', 'Export Complete', `Data exported in ${this.importExportModal.exportFormat.toUpperCase()} format`);
-                        this.saving = false;
-                        this.importExportModal.show = false;
-                    }, 1000);
-                },
-                
-                exportStaffList() {
-                    this.showToast('info', 'Export Started', 'Medical staff list export in progress...');
-                },
-                
-                exportAuditLogs() {
-                    this.showToast('info', 'Export Started', 'Audit logs export in progress...');
-                },
-                
-                // ============ ALERTS & NOTIFICATIONS ============
-                dismissAllAlerts() {
-                    this.emergencyAlerts = [];
-                    this.showToast('info', 'Alerts Dismissed', 'All emergency alerts have been dismissed');
-                },
-                
-                dismissCoverageAlert(alertId) {
-                    this.coverageAlerts = this.coverageAlerts.filter(alert => alert.id !== alertId);
-                    this.showToast('info', 'Alert Dismissed', 'Coverage alert has been dismissed');
-                },
-                
-                markAllNotificationsAsRead() {
-                    this.unreadNotifications = 0;
-                    this.showToast('info', 'Notifications Cleared', 'All notifications marked as read');
-                },
-                
-                sendBulkNotifications() {
-                    this.showToast('info', 'Notifications Sent', 'Bulk notifications sent to all staff');
-                },
-                
-                showStaffReport() {
-                    this.showToast('info', 'Report Generated', 'Staff report has been generated and is ready for download');
-                },
-                
-                // ============ PERMISSION SYSTEM ============
-                hasPermission(resource, action) {
-                    // Simplified permission check based on user role
-                    const userRole = this.currentUser?.user_role;
-                    
-                    if (!userRole) return false;
-                    
-                    // System admin has all permissions
-                    if (userRole === 'system_admin') return true;
-                    
-                    // Department head has most permissions
-                    if (userRole === 'department_head') {
-                        return !['system', 'audit'].includes(resource) || action === 'read';
-                    }
-                    
-                    // Resident manager has limited permissions
-                    if (userRole === 'resident_manager') {
-                        const allowedResources = ['medical_staff', 'resident_rotations', 'training_units', 'placements'];
-                        return allowedResources.includes(resource                            && ['read', 'create', 'update'].includes(action);
-                    }
-                    
-                    // Attending physician has viewing permissions
-                    if (userRole === 'attending_physician') {
-                        return ['read'].includes(action);
-                    }
-                    
-                    // Viewing doctor has minimal permissions
-                    if (userRole === 'viewing_doctor') {
-                        return resource === 'medical_staff' && action === 'read';
-                    }
-                    
-                    return false;
-                },
-                
-                hasAnyPermission(resources) {
-                    return resources.some(resource => this.hasPermission(resource, 'read'));
-                },
-                
-                getResourcePermissionLevel(resourceKey) {
-                    const resource = this.permissionResources[resourceKey];
-                    if (!resource) return 'none';
-                    
-                    // Check all actions for this resource
-                    const hasFull = resource.actions.every(action => this.hasPermission(resourceKey, action));
-                    if (hasFull) return 'full';
-                    
-                    const hasWrite = ['create', 'update', 'delete'].some(action => this.hasPermission(resourceKey, action));
-                    if (hasWrite) return 'write';
-                    
-                    const hasRead = this.hasPermission(resourceKey, 'read');
-                    if (hasRead) return 'read';
-                    
-                    return 'none';
-                },
-                
-                getPermissionDescription(resource, action) {
-                    const descriptions = {
-                        read: 'View data',
-                        create: 'Add new records',
-                        update: 'Modify existing records',
-                        delete: 'Remove records',
-                        import: 'Import data from files',
-                        export: 'Export data to files',
-                        notify: 'Send notifications',
-                        report: 'Generate reports',
-                        override: 'Override schedules',
-                        approve: 'Approve requests',
-                        reject: 'Reject requests',
-                        extend: 'Extend durations',
-                        admin: 'Full system access'
-                    };
-                    return descriptions[action] || action;
-                },
-                
-                togglePermission(role, resource, action) {
-                    // In a real app, this would make an API call to update permissions
-                    this.showToast('permission', 'Permission Changed', 
-                        `${role} ${this.hasPermission(resource, action) ? 'removed' : 'granted'} ${action} permission for ${resource}`);
-                },
-                
-                savePermissionChanges() {
-                    this.savingPermissions = true;
-                    
-                    setTimeout(() => {
-                        this.showToast('success', 'Permissions Saved', 'Permission changes have been saved');
-                        this.savingPermissions = false;
-                        this.showPermissionManager = false;
-                    }, 1000);
-                },
-                
-                // ============ FORMATTING HELPERS ============
-                formatDate(dateString) {
-                    if (!dateString) return 'N/A';
-                    const date = new Date(dateString);
-                    return date.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
-                    });
-                },
-                
-                formatDateShort(dateString) {
-                    if (!dateString) return '';
-                    const date = new Date(dateString);
-                    return date.toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
-                    });
-                },
-                
-                formatDateTime(dateString) {
-                    if (!dateString) return 'N/A';
-                    const date = new Date(dateString);
-                    return date.toLocaleString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                },
-                
-                formatTimeAgo(timestamp) {
-                    if (!timestamp) return 'Never';
-                    
-                    const now = Date.now();
-                    const diff = now - timestamp;
-                    const seconds = Math.floor(diff / 1000);
-                    const minutes = Math.floor(seconds / 60);
-                    const hours = Math.floor(minutes / 60);
-                    
-                    if (seconds < 60) return 'just now';
-                    if (minutes < 60) return `${minutes}m ago`;
-                    if (hours < 24) return `${hours}h ago`;
-                    
-                    const days = Math.floor(hours / 24);
-                    if (days < 30) return `${days}d ago`;
-                    
-                    return this.formatDate(new Date(timestamp));
-                },
-                
-                formatTimeRange(start, end) {
-                    return `${this.formatTime(start)} - ${this.formatTime(end)}`;
-                },
-                
-                formatTime(timeString) {
-                    if (!timeString) return '';
-                    const [hours, minutes] = timeString.split(':');
-                    const hour = parseInt(hours);
-                    const ampm = hour >= 12 ? 'PM' : 'AM';
-                    const displayHour = hour % 12 || 12;
-                    return `${displayHour}:${minutes} ${ampm}`;
-                },
-                
-                getInitials(name) {
-                    if (!name) return '??';
-                    return name
-                        .split(' ')
-                        .map(part => part[0])
-                        .join('')
-                        .toUpperCase()
-                        .slice(0, 2);
-                },
-                
-                getUserRoleDisplay(role) {
-                    const roles = {
-                        system_admin: 'System Administrator',
-                        department_head: 'Head of Department',
-                        resident_manager: 'Resident Manager',
-                        attending_physician: 'Attending Physician',
-                        viewing_doctor: 'Viewing Doctor'
-                    };
-                    return roles[role] || role;
-                },
-                
-                formatStaffType(type) {
-                    const types = {
-                        medical_resident: 'Medical Resident',
-                        attending_physician: 'Attending Physician',
-                        fellow: 'Fellow',
-                        nurse_practitioner: 'Nurse Practitioner'
-                    };
-                    return types[type] || type;
-                },
-                
-                formatEmploymentStatus(status) {
-                    const statuses = {
-                        active: 'Active',
-                        on_leave: 'On Leave',
-                        inactive: 'Inactive'
-                    };
-                    return statuses[status] || status;
-                },
-                
-                formatRotationCategory(category) {
-                    const categories = {
-                        clinical_rotation: 'Clinical',
-                        elective_rotation: 'Elective',
-                        research_rotation: 'Research',
-                        vacation_rotation: 'Vacation'
-                    };
-                    return categories[category] || category;
-                },
-                
-                formatActionName(action) {
-                    const actions = {
-                        read: 'View',
-                        create: 'Create',
-                        update: 'Update',
-                        delete: 'Delete',
-                        import: 'Import',
-                        export: 'Export',
-                        notify: 'Notify',
-                        report: 'Report',
-                        override: 'Override',
-                        approve: 'Approve',
-                        reject: 'Reject',
-                        extend: 'Extend',
-                        admin: 'Admin'
-                    };
-                    return actions[action] || action;
-                },
-                
-                truncateText(text, maxLength) {
-                    if (!text) return '';
-                    if (text.length <= maxLength) return text;
-                    return text.substring(0, maxLength) + '...';
-                },
-                
-                // ============ STYLING HELPERS ============
-                getStaffTypeClass(type) {
-                    const classes = {
-                        medical_resident: 'badge-resident-advanced',
-                        attending_physician: 'badge-attending-advanced',
-                        fellow: 'badge-info',
-                        nurse_practitioner: 'badge-primary'
-                    };
-                    return classes[type] || 'badge-info';
-                },
-                
-                getRotationCategoryClass(category) {
-                    const classes = {
-                        clinical_rotation: 'badge-success',
-                        elective_rotation: 'badge-primary',
-                        research_rotation: 'badge-info',
-                        vacation_rotation: 'badge-warning'
-                    };
-                    return classes[category] || 'badge-info';
-                },
-                
-                getPriorityColor(priority) {
-                    const colors = {
-                        low: 'info',
-                        medium: 'warning',
-                        high: 'danger',
-                        urgent: 'danger'
-                    };
-                    return colors[priority] || 'info';
-                },
-                
-                getDayStatus(day) {
-                    if (!day.schedule) return 'bg-gray-100';
-                    return 'bg-blue-50 border border-blue-200';
-                },
-                
-                getAuditIcon(action) {
-                    const icons = {
-                        create: 'fa-plus-circle',
-                        update: 'fa-edit',
-                        delete: 'fa-trash',
-                        read: 'fa-eye',
-                        login: 'fa-sign-in-alt',
-                        logout: 'fa-sign-out-alt'
-                    };
-                    return icons[action] || 'fa-history';
-                },
-                
-                getDocumentIcon(type) {
-                    const icons = {
-                        license: 'fa-file-certificate',
-                        certificate: 'fa-award',
-                        document: 'fa-file-alt',
-                        medical: 'fa-file-medical'
-                    };
-                    return icons[type] || 'fa-file';
-                },
-                
-                getCapacityStatus(capacity) {
-                    if (!capacity || !capacity.max) return 'unknown';
-                    const percentage = (capacity.current / capacity.max) * 100;
-                    
-                    if (percentage < 70) return 'low';
-                    if (percentage < 85) return 'medium';
-                    return 'high';
-                },
-                
-                // ============ DATA HELPERS ============
-                addDays(date, days) {
-                    const result = new Date(date);
-                    result.setDate(result.getDate() + days);
-                    return result;
-                },
-                
-                calculateDaysDifference(start, end) {
-                    const startDate = new Date(start);
-                    const endDate = new Date(end);
-                    const diffTime = Math.abs(endDate - startDate);
-                    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                },
-                
-                getPhysicianName(physicianId) {
-                    if (!physicianId) return 'Unassigned';
-                    const physician = this.medicalStaff.find(s => s.id === physicianId);
-                    return physician ? physician.full_name : `Physician ${physicianId}`;
-                },
-                
-                getResidentName(residentId) {
-                    return this.getPhysicianName(residentId);
-                },
-                
-                getAttendingName(attendingId) {
-                    return this.getPhysicianName(attendingId);
-                },
-                
-                getTrainingUnitName(unitId) {
-                    if (!unitId) return 'Unassigned';
-                    const unit = this.trainingUnits.find(u => u.id === unitId);
-                    return unit ? unit.unit_name : `Unit ${unitId}`;
-                },
-                
-                viewUnitDetails(unitId) {
-                    const unit = this.trainingUnits.find(u => u.id === unitId);
-                    if (unit) {
-                        this.trainingUnitModal.mode = 'edit';
-                        this.trainingUnitModal.form = { ...unit };
-                        this.trainingUnitModal.show = true;
-                    }
-                },
-                
-                viewScheduleDetails(date) {
-                    this.showToast('info', 'Schedule Details', `Viewing schedule for ${this.formatDate(date)}`);
-                },
-                
-                loadStaffDailyActivities(staffId) {
-                    this.showToast('info', 'Activity Loaded', 'Daily activities loaded successfully');
-                },
-                
-                updateCapacity() {
-                    // Update all capacities based on current values
-                    this.liveStats.erCapacity.current = this.currentCapacity.er.current;
-                    this.liveStats.erCapacity.max = this.currentCapacity.er.max;
-                    this.liveStats.erCapacity.status = this.getCapacityStatus(this.currentCapacity.er);
-                    
-                    this.liveStats.icuCapacity.current = this.currentCapacity.icu.current;
-                    this.liveStats.icuCapacity.max = this.currentCapacity.icu.max;
-                    this.liveStats.icuCapacity.status = this.getCapacityStatus(this.currentCapacity.icu);
-                    
-                    this.liveStats.wardCapacity.current = this.currentCapacity.ward.current;
-                    this.liveStats.wardCapacity.max = this.currentCapacity.ward.max;
-                    this.liveStats.wardCapacity.status = this.getCapacityStatus(this.currentCapacity.ward);
-                    
-                    // Update capacity overview
-                    this.capacityOverview = [
-                        { 
-                            name: 'ER', 
-                            current: this.currentCapacity.er.current, 
-                            max: this.currentCapacity.er.max, 
-                            percentage: Math.round((this.currentCapacity.er.current / this.currentCapacity.er.max) * 100),
-                            status: this.getCapacityStatus(this.currentCapacity.er)
-                        },
-                        { 
-                            name: 'ICU', 
-                            current: this.currentCapacity.icu.current, 
-                            max: this.currentCapacity.icu.max, 
-                            percentage: Math.round((this.currentCapacity.icu.current / this.currentCapacity.icu.max) * 100),
-                            status: this.getCapacityStatus(this.currentCapacity.icu)
-                        },
-                        { 
-                            name: 'Ward', 
-                            current: this.currentCapacity.ward.current, 
-                            max: this.currentCapacity.ward.max, 
-                            percentage: Math.round((this.currentCapacity.ward.current / this.currentCapacity.ward.max) * 100),
-                            status: this.getCapacityStatus(this.currentCapacity.ward)
-                        },
-                        { 
-                            name: 'Step-down', 
-                            current: this.currentCapacity.stepdown.current, 
-                            max: this.currentCapacity.stepdown.max, 
-                            percentage: Math.round((this.currentCapacity.stepdown.current / this.currentCapacity.stepdown.max) * 100),
-                            status: this.getCapacityStatus(this.currentCapacity.stepdown)
-                        }
-                    ];
-                    
-                    this.showToast('success', 'Capacity Updated', 'Department capacity has been updated');
-                },
-                
-                // ============ TOAST SYSTEM ============
-                showToast(type, title, message) {
-                    const icons = {
-                        success: 'fa-check-circle',
-                        error: 'fa-exclamation-circle',
-                        warning: 'fa-exclamation-triangle',
-                        info: 'fa-info-circle',
-                        permission: 'fa-user-shield'
-                    };
-                    
-                    const toast = {
-                        id: Date.now(),
-                        type,
-                        icon: icons[type] || 'fa-info-circle',
-                        title,
-                        message
-                    };
-                    
-                    this.toasts.push(toast);
-                    
-                    // Auto remove after 5 seconds
-                    setTimeout(() => {
-                        this.removeToast(toast.id);
-                    }, 5000);
-                },
-                
-                removeToast(id) {
-                    this.toasts = this.toasts.filter(toast => toast.id !== id);
-                }
-            }
-        }).mount('#app');
-    </script>
-
-    <!-- ============ app.js - DATABASE & BACKEND INTEGRATION ============ -->
-    <script>
-        // Supabase Configuration
-        const SUPABASE_URL = 'https://your-project.supabase.co';
-        const SUPABASE_ANON_KEY = 'your-anon-key';
-        
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        class DatabaseService {
-            constructor() {
-                this.app = null;
-            }
-            
-            // Link Vue app with database service
-            linkVueApp(vueApp) {
-                this.app = vueApp;
-                this.initializeRealData();
-            }
-            
-            async initializeRealData() {
-                try {
-                    // Load medical staff
-                    await this.loadMedicalStaff();
-                    
-                    // Load on-call schedules
-                    await this.loadOnCallSchedules();
-                    
-                    // Load training units
-                    await this.loadTrainingUnits();
-                    
-                    // Load resident rotations
-                    await this.loadResidentRotations();
-                    
-                    // Load leave requests
-                    await this.loadLeaveRequests();
-                    
-                    // Load audit logs
-                    await this.loadAuditLogs();
-                    
-                    // Load announcements
-                    await this.loadAnnouncements();
-                    
-                    console.log('All data loaded successfully');
-                } catch (error) {
-                    console.error('Error initializing data:', error);
-                    this.app.showToast('error', 'Data Load Error', 'Failed to load initial data from database');
-                }
-            }
-            
-            // ============ MEDICAL STAFF ============
-            async loadMedicalStaff() {
-                try {
-                    const { data, error } = await supabase
-                        .from('medical_staff')
-                        .select('*')
-                        .order('full_name', { ascending: true });
-                    
-                    if (error) throw error;
-                    
-                    this.app.medicalStaff = data.map(staff => ({
-                        ...staff,
-                        last_activity: new Date(staff.updated_at || staff.created_at).getTime()
-                    }));
-                    
-                    // Update stats
-                    this.app.stats.totalStaff = this.app.medicalStaff.length;
-                    this.app.stats.activeResidents = this.app.medicalStaff.filter(s => 
-                        s.staff_type === 'medical_resident' && s.employment_status === 'active'
-                    ).length;
-                    this.app.stats.attendings = this.app.medicalStaff.filter(s => 
-                        s.staff_type === 'attending_physician' && s.employment_status === 'active'
-                    ).length;
-                    
-                } catch (error) {
-                    console.error('Error loading medical staff:', error);
-                    throw error;
-                }
-            }
-            
-            async saveMedicalStaff(staffData) {
-                try {
-                    let data, error;
-                    
-                    if (staffData.id) {
-                        // Update existing staff
-                        const { data: updated, error: updateError } = await supabase
-                            .from('medical_staff')
-                            .update({
-                                ...staffData,
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', staffData.id)
-                            .select()
-                            .single();
-                        
-                        data = updated;
-                        error = updateError;
-                    } else {
-                        // Create new staff
-                        const { data: created, error: createError } = await supabase
-                            .from('medical_staff')
-                            .insert([
-                                {
-                                    ...staffData,
-                                    created_at: new Date().toISOString(),
-                                    updated_at: new Date().toISOString()
-                                }
-                            ])
-                            .select()
-                            .single();
-                        
-                        data = created;
-                        error = createError;
-                    }
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadMedicalStaff();
-                    
-                    return data;
-                } catch (error) {
-                    console.error('Error saving medical staff:', error);
-                    throw error;
-                }
-            }
-            
-            async deleteMedicalStaff(staffId) {
-                try {
-                    const { error } = await supabase
-                        .from('medical_staff')
-                        .delete()
-                        .eq('id', staffId);
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadMedicalStaff();
-                    
-                } catch (error) {
-                    console.error('Error deleting medical staff:', error);
-                    throw error;
-                }
-            }
-            
-            // ============ ON-CALL SCHEDULES ============
-            async loadOnCallSchedules() {
-                try {
-                    const { data, error } = await supabase
-                        .from('oncall_schedule')
-                        .select('*')
-                        .order('duty_date', { ascending: true });
-                    
-                    if (error) throw error;
-                    
-                    this.app.onCallSchedule = data;
-                    this.app.generateNextSevenDays();
-                    
-                } catch (error) {
-                    console.error('Error loading on-call schedules:', error);
-                    throw error;
-                }
-            }
-            
-            async saveOnCallSchedule(scheduleData) {
-                try {
-                    let data, error;
-                    
-                    if (scheduleData.id) {
-                        // Update existing schedule
-                        const { data: updated, error: updateError } = await supabase
-                            .from('oncall_schedule')
-                            .update({
-                                ...scheduleData,
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', scheduleData.id)
-                            .select()
-                            .single();
-                        
-                        data = updated;
-                        error = updateError;
-                    } else {
-                        // Create new schedule
-                        const { data: created, error: createError } = await supabase
-                            .from('oncall_schedule')
-                            .insert([
-                                {
-                                    ...scheduleData,
-                                    created_at: new Date().toISOString(),
-                                    updated_at: new Date().toISOString()
-                                }
-                            ])
-                            .select()
-                            .single();
-                        
-                        data = created;
-                        error = createError;
-                    }
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadOnCallSchedules();
-                    
-                    return data;
-                } catch (error) {
-                    console.error('Error saving on-call schedule:', error);
-                    throw error;
-                }
-            }
-            
-            async deleteOnCallSchedule(scheduleId) {
-                try {
-                    const { error } = await supabase
-                        .from('oncall_schedule')
-                        .delete()
-                        .eq('id', scheduleId);
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadOnCallSchedules();
-                    
-                } catch (error) {
-                    console.error('Error deleting on-call schedule:', error);
-                    throw error;
-                }
-            }
-            
-            // ============ TRAINING UNITS ============
-            async loadTrainingUnits() {
-                try {
-                    const { data, error } = await supabase
-                        .from('training_units')
-                        .select('*')
-                        .order('unit_name', { ascending: true });
-                    
-                    if (error) throw error;
-                    
-                    this.app.trainingUnits = data;
-                    
-                } catch (error) {
-                    console.error('Error loading training units:', error);
-                    throw error;
-                }
-            }
-            
-            async saveTrainingUnit(unitData) {
-                try {
-                    let data, error;
-                    
-                    if (unitData.id) {
-                        // Update existing unit
-                        const { data: updated, error: updateError } = await supabase
-                            .from('training_units')
-                            .update({
-                                ...unitData,
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', unitData.id)
-                            .select()
-                            .single();
-                        
-                        data = updated;
-                        error = updateError;
-                    } else {
-                        // Create new unit
-                        const { data: created, error: createError } = await supabase
-                            .from('training_units')
-                            .insert([
-                                {
-                                    ...unitData,
-                                    created_at: new Date().toISOString(),
-                                    updated_at: new Date().toISOString()
-                                }
-                            ])
-                            .select()
-                            .single();
-                        
-                        data = created;
-                        error = createError;
-                    }
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadTrainingUnits();
-                    
-                    return data;
-                } catch (error) {
-                    console.error('Error saving training unit:', error);
-                    throw error;
-                }
-            }
-            
-            // ============ RESIDENT ROTATIONS ============
-            async loadResidentRotations() {
-                try {
-                    const { data, error } = await supabase
-                        .from('resident_rotations')
-                        .select('*')
-                        .order('rotation_start_date', { ascending: true });
-                    
-                    if (error) throw error;
-                    
-                    this.app.residentRotations = data;
-                    
-                } catch (error) {
-                    console.error('Error loading resident rotations:', error);
-                    throw error;
-                }
-            }
-            
-            async saveResidentRotation(rotationData) {
-                try {
-                    let data, error;
-                    
-                    if (rotationData.id) {
-                        // Update existing rotation
-                        const { data: updated, error: updateError } = await supabase
-                            .from('resident_rotations')
-                            .update({
-                                ...rotationData,
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', rotationData.id)
-                            .select()
-                            .single();
-                        
-                        data = updated;
-                        error = updateError;
-                    } else {
-                        // Create new rotation
-                        const { data: created, error: createError } = await supabase
-                            .from('resident_rotations')
-                            .insert([
-                                {
-                                    ...rotationData,
-                                    created_at: new Date().toISOString(),
-                                    updated_at: new Date().toISOString()
-                                }
-                            ])
-                            .select()
-                            .single();
-                        
-                        data = created;
-                        error = createError;
-                    }
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadResidentRotations();
-                    
-                    return data;
-                } catch (error) {
-                    console.error('Error saving resident rotation:', error);
-                    throw error;
-                }
-            }
-            
-            async deleteResidentRotation(rotationId) {
-                try {
-                    const { error } = await supabase
-                        .from('resident_rotations')
-                        .delete()
-                        .eq('id', rotationId);
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadResidentRotations();
-                    
-                } catch (error) {
-                    console.error('Error deleting resident rotation:', error);
-                    throw error;
-                }
-            }
-            
-            // ============ LEAVE REQUESTS ============
-            async loadLeaveRequests() {
-                try {
-                    const { data, error } = await supabase
-                        .from('leave_requests')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-                    
-                    if (error) throw error;
-                    
-                    this.app.leaveRequests = data;
-                    
-                } catch (error) {
-                    console.error('Error loading leave requests:', error);
-                    throw error;
-                }
-            }
-            
-            async saveLeaveRequest(leaveData) {
-                try {
-                    let data, error;
-                    
-                    if (leaveData.id) {
-                        // Update existing leave request
-                        const { data: updated, error: updateError } = await supabase
-                            .from('leave_requests')
-                            .update({
-                                ...leaveData,
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', leaveData.id)
-                            .select()
-                            .single();
-                        
-                        data = updated;
-                        error = updateError;
-                    } else {
-                        // Create new leave request
-                        const { data: created, error: createError } = await supabase
-                            .from('leave_requests')
-                            .insert([
-                                {
-                                    ...leaveData,
-                                    created_at: new Date().toISOString(),
-                                    updated_at: new Date().toISOString()
-                                }
-                            ])
-                            .select()
-                            .single();
-                        
-                        data = created;
-                        error = createError;
-                    }
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the data
-                    await this.loadLeaveRequests();
-                    
-                    return data;
-                } catch (error) {
-                    console.error('Error saving leave request:', error);
-                    throw error;
-                }
-            }
-            
-            // ============ AUDIT LOGS ============
-            async loadAuditLogs() {
-                try {
-                    const { data, error } = await supabase
-                        .from('audit_logs')
-                        .select('*')
-                        .order('timestamp', { ascending: false })
-                        .limit(100);
-                    
-                    if (error) throw error;
-                    
-                    this.app.auditLogs = data;
-                    
-                } catch (error) {
-                    console.error('Error loading audit logs:', error);
-                    throw error;
-                }
-            }
-            
-            async logAuditEvent(userId, action, resource, details) {
-                try {
-                    const { error } = await supabase
-                        .from('audit_logs')
-                        .insert([
-                            {
-                                user_id: userId,
-                                user_name: this.app.currentUser?.full_name || 'Unknown',
-                                user_role: this.app.currentUser?.user_role || 'unknown',
-                                action,
-                                resource,
-                                details,
-                                timestamp: new Date().toISOString(),
-                                permission_level: this.app.getResourcePermissionLevel(resource)
-                            }
-                        ]);
-                    
-                    if (error) throw error;
-                    
-                    // Refresh audit logs
-                    await this.loadAuditLogs();
-                    
-                } catch (error) {
-                    console.error('Error logging audit event:', error);
-                }
-            }
-            
-            // ============ ANNOUNCEMENTS ============
-            async loadAnnouncements() {
-                try {
-                    const { data, error } = await supabase
-                        .from('announcements')
-                        .select('*')
-                        .order('publish_start_date', { ascending: false })
-                        .limit(10);
-                    
-                    if (error) throw error;
-                    
-                    this.app.announcements = data;
-                    this.app.recentAnnouncements = data.slice(0, 5);
-                    
-                } catch (error) {
-                    console.error('Error loading announcements:', error);
-                    throw error;
-                }
-            }
-            
-            async saveAnnouncement(announcementData) {
-                try {
-                    const { data, error } = await supabase
-                        .from('announcements')
-                        .insert([
-                            {
-                                ...announcementData,
-                                created_at: new Date().toISOString(),
-                                updated_at: new Date().toISOString()
-                            }
-                        ])
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    // Refresh announcements
-                    await this.loadAnnouncements();
-                    
-                    return data;
-                } catch (error) {
-                    console.error('Error saving announcement:', error);
-                    throw error;
-                }
-            }
-            
-            // ============ REAL-TIME SUBSCRIPTIONS ============
-            setupRealtimeSubscriptions() {
-                // Medical Staff updates
-                supabase
-                    .channel('medical-staff-changes')
-                    .on('postgres_changes', 
-                        { event: '*', schema: 'public', table: 'medical_staff' }, 
-                        async (payload) => {
-                            console.log('Medical staff change received:', payload);
-                            await this.loadMedicalStaff();
-                        }
-                    )
-                    .subscribe();
-                
-                // On-call schedule updates
-                supabase
-                    .channel('oncall-schedule-changes')
-                    .on('postgres_changes', 
-                        { event: '*', schema: 'public', table: 'oncall_schedule' }, 
-                        async (payload) => {
-                            console.log('On-call schedule change received:', payload);
-                            await this.loadOnCallSchedules();
-                        }
-                    )
-                    .subscribe();
-                
-                // Leave request updates
-                supabase
-                    .channel('leave-requests-changes')
-                    .on('postgres_changes', 
-                        { event: '*', schema: 'public', table: 'leave_requests' }, 
-                        async (payload) => {
-                            console.log('Leave request change received:', payload);
-                            await this.loadLeaveRequests();
-                        }
-                    )
-                    .subscribe();
-                
-                console.log('Realtime subscriptions established');
-            }
-            
-            // ============ AUTHENTICATION ============
-            async authenticateUser(email, password, userRole) {
-                try {
-                    // In a real app, you would use Supabase Auth
-                    // For demo purposes, we'll simulate authentication
-                    
-                    // Check if user exists in medical_staff table
-                    const { data: staff, error } = await supabase
-                        .from('medical_staff')
-                        .select('*')
-                        .eq('professional_email', email)
-                        .single();
-                    
-                    if (error || !staff) {
-                        // For demo, allow admin login
-                        if (email === 'admin@neumocare.org' && password === 'password123') {
-                            return {
-                                id: 0,
-                                full_name: 'System Administrator',
-                                email: email,
-                                user_role: userRole
-                            };
-                        }
-                        throw new Error('Invalid credentials');
-                    }
-                    
-                    // Verify password (in real app, use Supabase Auth)
-                    if (password !== 'password123') { // Demo password
-                        throw new Error('Invalid credentials');
-                    }
-                    
-                    return {
-                        id: staff.id,
-                        full_name: staff.full_name,
-                        email: staff.professional_email,
-                        user_role: this.determineUserRole(staff)
-                    };
-                    
-                } catch (error) {
-                    console.error('Authentication error:', error);
-                    throw error;
-                }
-            }
-            
-            determineUserRole(staff) {
-                // Determine user role based on staff type and permissions
-                if (staff.staff_type === 'attending_physician' && staff.can_supervise_residents) {
-                    return 'department_head';
-                } else if (staff.staff_type === 'attending_physician') {
-                    return 'attending_physician';
-                } else if (staff.staff_type === 'medical_resident') {
-                    return 'viewing_doctor';
-                }
-                return 'viewing_doctor';
-            }
-            
-            // ============ DATA EXPORT ============
-            async exportData(table, format) {
-                try {
-                    const { data, error } = await supabase
-                        .from(table)
-                        .select('*');
-                    
-                    if (error) throw error;
-                    
-                    if (format === 'csv') {
-                        return this.convertToCSV(data);
-                    } else if (format === 'json') {
-                        return JSON.stringify(data, null, 2);
-                    } else {
-                        return data;
-                    }
-                    
-                } catch (error) {
-                    console.error('Error exporting data:', error);
-                    throw error;
-                }
-            }
-            
-            convertToCSV(data) {
-                if (!data.length) return '';
-                
-                const headers = Object.keys(data[0]);
-                const csvRows = [
-                    headers.join(','),
-                    ...data.map(row => 
-                        headers.map(header => 
-                            JSON.stringify(row[header] || '')
-                        ).join(',')
-                    )
-                ];
-                
-                return csvRows.join('\n');
-            }
-            
-            // ============ STATISTICS ============
-            async getLiveStats() {
-                try {
-                    // Get current occupancy stats
-                    const { data: occupancy, error: occupancyError } = await supabase
-                        .from('hospital_capacity')
-                        .select('*')
-                        .order('timestamp', { ascending: false })
-                        .limit(1)
-                        .single();
-                    
-                    if (!occupancyError && occupancy) {
-                        this.app.liveStats = {
-                            occupancy: occupancy.occupancy_rate || 85,
-                            occupancyTrend: occupancy.trend || 2.5,
-                            onDutyStaff: await this.getOnDutyStaffCount(),
-                            staffTrend: 3,
-                            pendingRequests: await this.getPendingRequestsCount(),
-                            erCapacity: {
-                                current: occupancy.er_current || 12,
-                                max: occupancy.er_max || 15,
-                                status: this.app.getCapacityStatus({ 
-                                    current: occupancy.er_current, 
-                                    max: occupancy.er_max 
-                                })
-                            },
-                            icuCapacity: {
-                                current: occupancy.icu_current || 8,
-                                max: occupancy.icu_max || 10,
-                                status: this.app.getCapacityStatus({ 
-                                    current: occupancy.icu_current, 
-                                    max: occupancy.icu_max 
-                                })
-                            },
-                            wardCapacity: {
-                                current: occupancy.ward_current || 45,
-                                max: occupancy.ward_max || 50,
-                                status: this.app.getCapacityStatus({ 
-                                    current: occupancy.ward_current, 
-                                    max: occupancy.ward_max 
-                                })
-                            },
-                            todayAdmissions: await this.getTodayAdmissions(),
-                            avgStay: occupancy.avg_stay || 4.2
-                        };
-                    }
-                    
-                } catch (error) {
-                    console.error('Error getting live stats:', error);
-                }
-            }
-            
-            async getOnDutyStaffCount() {
-                try {
-                    const { count, error } = await supabase
-                        .from('medical_staff')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('employment_status', 'active')
-                        .eq('is_on_duty', true);
-                    
-                    if (error) throw error;
-                    
-                    return count || 42;
-                } catch (error) {
-                    console.error('Error getting on-duty staff count:', error);
-                    return 42;
-                }
-            }
-            
-            async getPendingRequestsCount() {
-                try {
-                    const { count, error } = await supabase
-                        .from('leave_requests')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('status', 'pending');
-                    
-                    if (error) throw error;
-                    
-                    return count || 18;
-                } catch (error) {
-                    console.error('Error getting pending requests count:', error);
-                    return 18;
-                }
-            }
-            
-            async getTodayAdmissions() {
-                try {
-                    const today = new Date().toISOString().split('T')[0];
-                    const { count, error } = await supabase
-                        .from('patient_admissions')
-                        .select('*', { count: 'exact', head: true })
-                        .gte('admission_date', today)
-                        .lte('admission_date', today);
-                    
-                    if (error) throw error;
-                    
-                    return count || 7;
-                } catch (error) {
-                    console.error('Error getting today admissions:', error);
-                    return 7;
-                }
-            }
-            
-            // ============ COVERAGE ALERTS ============
-            async checkCoverageAlerts() {
-                try {
-                    const { data: units, error } = await supabase
-                        .from('training_units')
-                        .select('*')
-                        .eq('unit_status', 'active');
-                    
-                    if (error) throw error;
-                    
-                    const alerts = [];
-                    
-                    for (const unit of units) {
-                        // Get current resident count for this unit
-                        const { count, error: countError } = await supabase
-                            .from('resident_placements')
-                            .select('*', { count: 'exact', head: true })
-                            .eq('unit_id', unit.id)
-                            .eq('placement_status', 'active');
-                        
-                        if (!countError) {
-                            const current = count || 0;
-                            const capacity = unit.maximum_residents;
-                            const occupancyRate = (current / capacity) * 100;
-                            
-                            if (occupancyRate < 50) {
-                                alerts.push({
-                                    id: unit.id,
-                                    unit_name: unit.unit_name,
-                                    unit_id: unit.id,
-                                    current: current,
-                                    capacity: capacity,
-                                    priority: occupancyRate < 30 ? 'high' : 'medium'
-                                });
-                            }
-                        }
-                    }
-                    
-                    this.app.coverageAlerts = alerts;
-                    this.app.stats.coverageAlerts = alerts.length;
-                    
-                } catch (error) {
-                    console.error('Error checking coverage alerts:', error);
-                }
-            }
-            
-            // ============ INTEGRATION METHODS ============
-            // These methods replace the demo methods in Vue app with real database calls
-            
-            integrateWithVueApp() {
-                // Override Vue methods with database calls
-                const originalMethods = {
-                    handleAdvancedLogin: this.app.handleAdvancedLogin,
-                    saveMedicalStaff: this.app.saveMedicalStaff,
-                    deleteMedicalStaff: this.app.deleteMedicalStaff,
-                    saveOnCallSchedule: this.app.saveOnCallSchedule,
-                    deleteOnCallSchedule: this.app.deleteOnCallSchedule,
-                    saveTrainingUnit: this.app.saveTrainingUnit,
-                    saveResidentRotation: this.app.saveResidentRotation,
-                    deleteResidentRotation: this.app.deleteResidentRotation,
-                    saveLeaveRequest: this.app.saveLeaveRequest,
-                    approveLeaveRequest: this.app.approveLeaveRequest,
-                    rejectLeaveRequest: this.app.rejectLeaveRequest,
-                    saveCommunication: this.app.saveCommunication,
-                    exportData: this.app.exportData
-                };
-                
-                // Authentication
-                this.app.handleAdvancedLogin = async () => {
-                    this.app.loading = true;
-                    
-                    try {
-                        const user = await this.authenticateUser(
-                            this.app.loginForm.email,
-                            this.app.loginForm.password,
-                            this.app.loginForm.user_role
-                        );
-                        
-                        this.app.currentUser = user;
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            user.id,
-                            'login',
-                            'system',
-                            `User logged in as ${user.user_role}`
-                        );
-                        
-                        // Load real data
-                        await this.initializeRealData();
-                        
-                        // Setup realtime subscriptions
-                        this.setupRealtimeSubscriptions();
-                        
-                        this.app.showToast('success', 'Login Successful', 'Welcome to NeumoCare Hospital Management System');
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Login Failed', error.message || 'Invalid credentials');
-                    } finally {
-                        this.app.loading = false;
-                    }
-                };
-                
-                // Medical Staff
-                this.app.saveMedicalStaff = async () => {
-                    this.app.saving = true;
-                    
-                    try {
-                        await this.saveMedicalStaff(this.app.medicalStaffModal.form);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            this.app.medicalStaffModal.mode === 'add' ? 'create' : 'update',
-                            'medical_staff',
-                            `${this.app.medicalStaffModal.mode === 'add' ? 'Added' : 'Updated'} staff: ${this.app.medicalStaffModal.form.full_name}`
-                        );
-                        
-                        this.app.showToast(
-                            'success',
-                            this.app.medicalStaffModal.mode === 'add' ? 'Staff Added' : 'Staff Updated',
-                            `${this.app.medicalStaffModal.form.full_name} has been ${this.app.medicalStaffModal.mode === 'add' ? 'added to' : 'updated in'} the system`
-                        );
-                        
-                        this.app.medicalStaffModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Save Failed', error.message || 'Failed to save medical staff');
-                    } finally {
-                        this.app.saving = false;
-                    }
-                };
-                
-                this.app.deleteMedicalStaff = async (staff) => {
-                    if (confirm(`Are you sure you want to delete ${staff.full_name}?`)) {
-                        try {
-                            await this.deleteMedicalStaff(staff.id);
-                            
-                            // Log audit event
-                            await this.logAuditEvent(
-                                this.app.currentUser.id,
-                                'delete',
-                                'medical_staff',
-                                `Deleted staff: ${staff.full_name}`
-                            );
-                            
-                            this.app.showToast('success', 'Staff Deleted', `${staff.full_name} has been removed from the system`);
-                            
-                        } catch (error) {
-                            this.app.showToast('error', 'Delete Failed', error.message || 'Failed to delete medical staff');
-                        }
-                    }
-                };
-                
-                // On-call Schedule
-                this.app.saveOnCallSchedule = async () => {
-                    this.app.saving = true;
-                    
-                    try {
-                        await this.saveOnCallSchedule(this.app.onCallModal.form);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            this.app.onCallModal.mode === 'add' ? 'create' : 'update',
-                            'oncall_schedule',
-                            `${this.app.onCallModal.mode === 'add' ? 'Added' : 'Updated'} on-call schedule`
-                        );
-                        
-                        this.app.showToast(
-                            'success',
-                            this.app.onCallModal.mode === 'add' ? 'Schedule Added' : 'Schedule Updated',
-                            `On-call schedule has been ${this.app.onCallModal.mode === 'add' ? 'created' : 'updated'}`
-                        );
-                        
-                        this.app.onCallModal.show = false;
-                        this.app.generateNextSevenDays();
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Save Failed', error.message || 'Failed to save on-call schedule');
-                    } finally {
-                        this.app.saving = false;
-                    }
-                };
-                
-                this.app.deleteOnCallSchedule = async (schedule) => {
-                    if (confirm('Are you sure you want to delete this on-call schedule?')) {
-                        try {
-                            await this.deleteOnCallSchedule(schedule.id);
-                            
-                            // Log audit event
-                            await this.logAuditEvent(
-                                this.app.currentUser.id,
-                                'delete',
-                                'oncall_schedule',
-                                `Deleted on-call schedule for ${schedule.duty_date}`
-                            );
-                            
-                            this.app.showToast('success', 'Schedule Deleted', 'On-call schedule has been removed');
-                            this.app.generateNextSevenDays();
-                            
-                        } catch (error) {
-                            this.app.showToast('error', 'Delete Failed', error.message || 'Failed to delete on-call schedule');
-                        }
-                    }
-                };
-                
-                // Training Units
-                this.app.saveTrainingUnit = async () => {
-                    this.app.saving = true;
-                    
-                    try {
-                        await this.saveTrainingUnit(this.app.trainingUnitModal.form);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            this.app.trainingUnitModal.mode === 'add' ? 'create' : 'update',
-                            'training_units',
-                            `${this.app.trainingUnitModal.mode === 'add' ? 'Added' : 'Updated'} training unit: ${this.app.trainingUnitModal.form.unit_name}`
-                        );
-                        
-                        this.app.showToast(
-                            'success',
-                            this.app.trainingUnitModal.mode === 'add' ? 'Unit Added' : 'Unit Updated',
-                            `${this.app.trainingUnitModal.form.unit_name} has been ${this.app.trainingUnitModal.mode === 'add' ? 'added' : 'updated'}`
-                        );
-                        
-                        this.app.trainingUnitModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Save Failed', error.message || 'Failed to save training unit');
-                    } finally {
-                        this.app.saving = false;
-                    }
-                };
-                
-                // Resident Rotations
-                this.app.saveResidentRotation = async () => {
-                    this.app.saving = true;
-                    
-                    try {
-                        await this.saveResidentRotation(this.app.rotationModal.form);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            this.app.rotationModal.mode === 'add' ? 'create' : 'update',
-                            'resident_rotations',
-                            `${this.app.rotationModal.mode === 'add' ? 'Created' : 'Updated'} rotation: ${this.app.rotationModal.form.rotation_id}`
-                        );
-                        
-                        this.app.showToast(
-                            'success',
-                            this.app.rotationModal.mode === 'add' ? 'Rotation Created' : 'Rotation Updated',
-                            `Rotation ${this.app.rotationModal.form.rotation_id} has been ${this.app.rotationModal.mode === 'add' ? 'created' : 'updated'}`
-                        );
-                        
-                        this.app.rotationModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Save Failed', error.message || 'Failed to save resident rotation');
-                    } finally {
-                        this.app.saving = false;
-                    }
-                };
-                
-                this.app.deleteResidentRotation = async (rotation) => {
-                    if (confirm(`Delete rotation ${rotation.rotation_id}?`)) {
-                        try {
-                            await this.deleteResidentRotation(rotation.id);
-                            
-                            // Log audit event
-                            await this.logAuditEvent(
-                                this.app.currentUser.id,
-                                'delete',
-                                'resident_rotations',
-                                `Deleted rotation: ${rotation.rotation_id}`
-                            );
-                            
-                            this.app.showToast('success', 'Rotation Deleted', 'Rotation has been removed');
-                            
-                        } catch (error) {
-                            this.app.showToast('error', 'Delete Failed', error.message || 'Failed to delete resident rotation');
-                        }
-                    }
-                };
-                
-                // Leave Requests
-                this.app.saveLeaveRequest = async () => {
-                    this.app.saving = true;
-                    
-                    try {
-                        const leaveData = {
-                            ...this.app.leaveRequestModal.form,
-                            staff_member_id: this.app.currentUser.id,
-                            total_days: this.app.calculateDaysDifference(
-                                this.app.leaveRequestModal.form.start_date,
-                                this.app.leaveRequestModal.form.end_date
-                            )
-                        };
-                        
-                        await this.saveLeaveRequest(leaveData);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            'create',
-                            'leave_requests',
-                            `Submitted leave request for ${leaveData.total_days} days`
-                        );
-                        
-                        this.app.showToast('success', 'Leave Request Submitted', 'Your leave request has been submitted for approval');
-                        this.app.leaveRequestModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Submit Failed', error.message || 'Failed to submit leave request');
-                    } finally {
-                        this.app.saving = false;
-                    }
-                };
-                
-                this.app.approveLeaveRequest = async (request) => {
-                    try {
-                        request.status = 'approved';
-                        request.decision_date = new Date().toISOString();
-                        
-                        await this.saveLeaveRequest(request);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            'approve',
-                            'leave_requests',
-                            `Approved leave request ID: ${request.id}`
-                        );
-                        
-                        this.app.showToast('success', 'Leave Approved', 'Leave request has been approved');
-                        this.app.leaveDetailsModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Approval Failed', error.message || 'Failed to approve leave request');
-                    }
-                };
-                
-                this.app.rejectLeaveRequest = async (request) => {
-                    try {
-                        request.status = 'rejected';
-                        request.decision_date = new Date().toISOString();
-                        
-                        await this.saveLeaveRequest(request);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            'reject',
-                            'leave_requests',
-                            `Rejected leave request ID: ${request.id}`
-                        );
-                        
-                        this.app.showToast('warning', 'Leave Rejected', 'Leave request has been rejected');
-                        this.app.leaveDetailsModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Rejection Failed', error.message || 'Failed to reject leave request');
-                    }
-                };
-                
-                // Communications
-                this.app.saveCommunication = async () => {
-                    this.app.saving = true;
-                    
-                    try {
-                        if (this.app.communicationsModal.activeTab === 'announcement') {
-                            await this.saveAnnouncement(this.app.communicationsModal.form);
-                            
-                            // Log audit event
-                            await this.logAuditEvent(
-                                this.app.currentUser.id,
-                                'create',
-                                'communications',
-                                `Published announcement: ${this.app.communicationsModal.form.announcement_title}`
-                            );
-                            
-                            this.app.showToast('success', 'Announcement Published', 'New announcement has been published');
-                            
-                        } else if (this.app.communicationsModal.activeTab === 'capacity') {
-                            // Save capacity data to database
-                            // This would typically go to a hospital_capacity table
-                            
-                            // Log audit event
-                            await this.logAuditEvent(
-                                this.app.currentUser.id,
-                                'update',
-                                'communications',
-                                'Updated department capacity planning'
-                            );
-                            
-                            this.app.showToast('success', 'Capacity Updated', 'Department capacity has been updated');
-                            
-                        } else if (this.app.communicationsModal.activeTab === 'quick') {
-                            // Save quick update to database
-                            // This would typically go to a quick_updates table
-                            
-                            // Log audit event
-                            await this.logAuditEvent(
-                                this.app.currentUser.id,
-                                'create',
-                                'communications',
-                                'Posted quick update'
-                            );
-                            
-                            this.app.showToast('success', 'Update Posted', 'Quick update has been posted');
-                        }
-                        
-                        this.app.communicationsModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Save Failed', error.message || 'Failed to save communication');
-                    } finally {
-                        this.app.saving = false;
-                    }
-                };
-                
-                // Export Data
-                this.app.exportData = async () => {
-                    this.app.saving = true;
-                    
-                    try {
-                        const data = await this.exportData(
-                            this.app.importExportModal.selectedTable,
-                            this.app.importExportModal.exportFormat
-                        );
-                        
-                        // Create download link
-                        const blob = new Blob([data], { type: 'text/plain' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${this.app.importExportModal.selectedTable}_export.${this.app.importExportModal.exportFormat === 'json' ? 'json' : 'csv'}`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
-                        
-                        // Log audit event
-                        await this.logAuditEvent(
-                            this.app.currentUser.id,
-                            'export',
-                            this.app.importExportModal.selectedTable,
-                            `Exported data in ${this.app.importExportModal.exportFormat.toUpperCase()} format`
-                        );
-                        
-                        this.app.showToast('success', 'Export Complete', `Data exported successfully`);
-                        this.app.importExportModal.show = false;
-                        
-                    } catch (error) {
-                        this.app.showToast('error', 'Export Failed', error.message || 'Failed to export data');
-                    } finally {
-                        this.app.saving = false;
-                    }
-                };
-                
-                // Update the updateLiveStats method to use real data
-                const originalUpdateLiveStats = this.app.updateLiveStats;
-                this.app.updateLiveStats = async () => {
-                    await this.getLiveStats();
-                    await this.checkCoverageAlerts();
-                };
-                
-                console.log('Vue app integrated with database service');
-            }
-        }
-        
-        // Initialize and link the database service when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            const dbService = new DatabaseService();
-            
-            // Get the Vue app instance (we need to wait for it to be mounted)
-            setTimeout(() => {
-                const vueApp = document.querySelector('#app').__vue_app__?.config.globalProperties.$root;
-                if (vueApp) {
-                    dbService.linkVueApp(vueApp);
-                    dbService.integrateWithVueApp();
-                    
-                    // Start periodic updates
-                    setInterval(() => {
-                        dbService.getLiveStats();
-                        dbService.checkCoverageAlerts();
-                    }, 30000); // Every 30 seconds
-                } else {
-                    console.warn('Vue app not found, running in demo mode');
-                }
-            }, 1000);
-        });
-    </script>
+    <script src="app.js"></script>
 </body>
-</html>
+                                    </html>
