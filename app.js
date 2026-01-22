@@ -1189,6 +1189,20 @@ const emergencyContacts = ref([]);
             };
             return subtitles[currentView.value] || 'Advanced DRBA Hospital Management System';
         };
+        const toggleAnnouncementsPanel = () => {
+    announcementsPanel.value.open = !announcementsPanel.value.open;
+    if (announcementsPanel.value.open) {
+        loadAnnouncements();
+    }
+};
+
+const toggleMobileMenu = () => {
+    mobileMenuOpen.value = !mobileMenuOpen.value;
+};
+
+const closeMobileMenu = () => {
+    mobileMenuOpen.value = false;
+};
 
         const getSearchPlaceholder = () => {
             const placeholders = {
