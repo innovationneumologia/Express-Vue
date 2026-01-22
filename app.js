@@ -230,15 +230,6 @@ const app = createApp({
         const systemSettings = ref({});
         const userNotifications = ref([]);
         const emergencyContacts = ref([]);
-        // ============ ADVANCED STATE MANAGEMENT ============
-const currentUser = ref(null);
-const loginForm = ref({
-    email: '',
-    password: '',
-    user_role: 'resident_manager',
-    require_mfa: false,
-    mfa_code: ''
-});
 
 const loading = ref(false);
 const saving = ref(false);
