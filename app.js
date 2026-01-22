@@ -1154,10 +1154,6 @@ const app = createApp({
     }
 };
 
-const toggleMobileMenu = () => {
-    mobileMenuOpen.value = !mobileMenuOpen.value;
-};
-
 const closeMobileMenu = () => {
     mobileMenuOpen.value = false;
 };
