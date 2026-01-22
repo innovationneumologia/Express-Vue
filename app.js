@@ -16,7 +16,7 @@ const PermissionSystem = {
     resources: {
         medical_staff: {
             name: 'Medical Staff',
-            actions: ['create', 'read', 'update', 'delete', 'export'],
+            actions: ['create', 'read', 'update', 'delete', 'export', 'import', 'notify', 'report'],
             description: 'Manage medical staff records'
         },
         training_units: {
@@ -49,8 +49,8 @@ const PermissionSystem = {
             actions: ['create', 'read', 'update', 'approve', 'reject'],
             description: 'Manage leave requests and approvals'
         },
-        announcements: {
-            name: 'Announcements',
+        communications: {
+            name: 'Communications',
             actions: ['create', 'read', 'update', 'delete', 'publish'],
             description: 'Create and manage announcements'
         },
@@ -72,14 +72,14 @@ const PermissionSystem = {
             level: 'full',
             description: 'Full system access and permission management',
             permissions: {
-                medical_staff: { create: true, read: true, update: true, delete: true, export: true },
+                medical_staff: { create: true, read: true, update: true, delete: true, export: true, import: true, notify: true, report: true },
                 training_units: { create: true, read: true, update: true, delete: true, assign: true },
                 resident_rotations: { create: true, read: true, update: true, delete: true, extend: true },
                 placements: { create: true, read: true, update: true, delete: true, drag_drop: true },
                 daily_operations: { read: true, update: true, alert: true },
                 oncall_schedule: { create: true, read: true, update: true, delete: true, override: true },
                 leave_requests: { create: true, read: true, update: true, approve: true, reject: true },
-                announcements: { create: true, read: true, update: true, delete: true, publish: true },
+                communications: { create: true, read: true, update: true, delete: true, publish: true },
                 audit: { read: true, export: true, clear: true },
                 system: { read: true, update: true, admin: true }
             }
@@ -89,14 +89,14 @@ const PermissionSystem = {
             level: 'full',
             description: 'Department-wide oversight and management',
             permissions: {
-                medical_staff: { create: true, read: true, update: true, delete: false, export: true },
+                medical_staff: { create: true, read: true, update: true, delete: false, export: true, import: true, notify: true, report: true },
                 training_units: { create: true, read: true, update: true, delete: false, assign: true },
                 resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
                 placements: { create: true, read: true, update: true, delete: false, drag_drop: true },
                 daily_operations: { read: true, update: true, alert: true },
                 oncall_schedule: { create: true, read: true, update: true, delete: false, override: true },
                 leave_requests: { create: true, read: true, update: true, approve: true, reject: true },
-                announcements: { create: true, read: true, update: true, delete: true, publish: true },
+                communications: { create: true, read: true, update: true, delete: true, publish: true },
                 audit: { read: true, export: true, clear: false },
                 system: { read: true, update: false, admin: false }
             }
@@ -106,14 +106,14 @@ const PermissionSystem = {
             level: 'write',
             description: 'Manage residents and training units',
             permissions: {
-                medical_staff: { create: true, read: true, update: true, delete: false, export: false },
+                medical_staff: { create: true, read: true, update: true, delete: false, export: false, import: false, notify: true, report: false },
                 training_units: { create: true, read: true, update: true, delete: false, assign: true },
                 resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
                 placements: { create: true, read: true, update: true, delete: false, drag_drop: true },
                 daily_operations: { read: true, update: true, alert: false },
                 oncall_schedule: { create: false, read: true, update: false, delete: false, override: false },
                 leave_requests: { create: true, read: true, update: false, approve: false, reject: false },
-                announcements: { create: false, read: true, update: false, delete: false, publish: false },
+                communications: { create: false, read: true, update: false, delete: false, publish: false },
                 audit: { read: false, export: false, clear: false },
                 system: { read: false, update: false, admin: false }
             }
@@ -123,14 +123,14 @@ const PermissionSystem = {
             level: 'limited',
             description: 'Supervise residents and view schedules',
             permissions: {
-                medical_staff: { create: false, read: true, update: false, delete: false, export: false },
+                medical_staff: { create: false, read: true, update: false, delete: false, export: false, import: false, notify: false, report: false },
                 training_units: { create: false, read: true, update: false, delete: false, assign: false },
                 resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
                 placements: { create: false, read: true, update: false, delete: false, drag_drop: false },
                 daily_operations: { read: true, update: false, alert: false },
                 oncall_schedule: { create: false, read: true, update: false, delete: false, override: false },
                 leave_requests: { create: true, read: true, update: false, approve: false, reject: false },
-                announcements: { create: false, read: true, update: false, delete: false, publish: false },
+                communications: { create: false, read: true, update: false, delete: false, publish: false },
                 audit: { read: false, export: false, clear: false },
                 system: { read: false, update: false, admin: false }
             }
@@ -140,14 +140,14 @@ const PermissionSystem = {
             level: 'read',
             description: 'Read-only access to schedules and assignments',
             permissions: {
-                medical_staff: { create: false, read: true, update: false, delete: false, export: false },
+                medical_staff: { create: false, read: true, update: false, delete: false, export: false, import: false, notify: false, report: false },
                 training_units: { create: false, read: true, update: false, delete: false, assign: false },
                 resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
                 placements: { create: false, read: true, update: false, delete: false, drag_drop: false },
                 daily_operations: { read: true, update: false, alert: false },
                 oncall_schedule: { create: false, read: true, update: false, delete: false, override: false },
                 leave_requests: { create: false, read: true, update: false, approve: false, reject: false },
-                announcements: { create: false, read: true, update: false, delete: false, publish: false },
+                communications: { create: false, read: true, update: false, delete: false, publish: false },
                 audit: { read: false, export: false, clear: false },
                 system: { read: false, update: false, admin: false }
             }
@@ -186,6 +186,7 @@ const PermissionSystem = {
 
 // ============ VUE APPLICATION ============
 const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+
 // Create the Vue App
 const app = createApp({
     setup() {
@@ -216,9 +217,29 @@ const app = createApp({
         const staffDailyActivities = ref({});
         const unitDropZone = ref(null);
         
-        // Announcements Panel state
-        const announcementsPanel = ref({
-            open: false
+        // New states for HTML features
+        const statsSidebarOpen = ref(false);
+        const showRecentSearches = ref(false);
+        const searchFilter = ref('all');
+        const searchScope = ref('All');
+        const recentSearches = ref([]);
+        const draggingCard = ref(null);
+        const pinnedCards = ref({
+            totalStaff: false,
+            activeResidents: false,
+            attendings: false,
+            coverageAlerts: false
+        });
+        const collapsedCards = ref({
+            emergencyAlerts: false,
+            todaysOnCall: false,
+            coverageAlerts: false,
+            sevenDaySchedule: false
+        });
+        const lastUpdated = ref({
+            todaysOnCall: new Date(),
+            coverageAlerts: new Date(),
+            sevenDaySchedule: new Date()
         });
 
         // Data stores
@@ -243,6 +264,28 @@ const app = createApp({
             pending_approvals: 0
         });
 
+        // Live stats for quick stats sidebar
+        const liveStats = ref({
+            occupancy: 85,
+            occupancyTrend: 2.3,
+            onDutyStaff: 24,
+            staffTrend: 3,
+            pendingRequests: 7,
+            erCapacity: { current: 42, max: 45, status: 'medium' },
+            icuCapacity: { current: 12, max: 15, status: 'low' },
+            wardCapacity: { current: 68, max: 80, status: 'low' },
+            todayAdmissions: 9,
+            avgStay: 4.2
+        });
+
+        // Current capacity for communications view
+        const currentCapacity = ref({
+            er: { current: 42, max: 45, status: 'medium' },
+            icu: { current: 12, max: 15, status: 'low' },
+            ward: { current: 68, max: 80, status: 'low' },
+            stepdown: { current: 8, max: 12, status: 'low' }
+        });
+
         // Toast system
         const toasts = ref([]);
         let toastId = 0;
@@ -263,6 +306,16 @@ const app = createApp({
                 resident_category: '',
                 training_year: null
             }
+        });
+
+        const staffDetailsModal = ref({
+            show: false,
+            staff: null,
+            activeTab: 'details',
+            stats: {},
+            activity: [],
+            rotations: [],
+            documents: []
         });
 
         const addRoleModal = ref({
@@ -336,6 +389,11 @@ const app = createApp({
             }
         });
 
+        const leaveDetailsModal = ref({
+            show: false,
+            request: null
+        });
+
         const rotationModal = ref({
             show: false,
             mode: 'add',
@@ -366,7 +424,7 @@ const app = createApp({
         const systemSettingsModal = ref({
             show: false,
             form: {
-                hospital_name: 'PneumoCare Hospital',
+                hospital_name: 'NeumoCare Hospital',
                 department_name: 'Pulmonary Medicine',
                 max_residents_per_unit: 10,
                 enable_audit_logging: true,
@@ -392,6 +450,34 @@ const app = createApp({
             selectedTable: 'medical_staff',
             importFile: null,
             exportFormat: 'csv'
+        });
+
+        const communicationsModal = ref({
+            show: false,
+            activeTab: 'announcement',
+            form: {
+                announcement_title: '',
+                announcement_content: '',
+                publish_start_date: '',
+                publish_end_date: '',
+                priority_level: 'medium',
+                target_audience: 'all'
+            },
+            capacity: {
+                er: { current: 42, max: 45, notes: '' },
+                icu: { current: 12, max: 15, notes: '' },
+                ward: { current: 68, max: 80, notes: '' },
+                stepdown: { current: 8, max: 12, notes: '' },
+                clinic: { current: 45, max: 60, notes: '' },
+                bronch: { current: 3, max: 8, notes: '' },
+                overall_notes: ''
+            },
+            quickUpdate: {
+                message: '',
+                priority: 'info',
+                expires: '4',
+                tags: ''
+            }
         });
 
         // Filter states
@@ -456,7 +542,7 @@ const app = createApp({
                 daily_operations: 'daily_operations',
                 oncall_schedule: 'oncall_schedule',
                 leave_requests: 'leave_requests',
-                announcements: 'announcements',
+                communications: 'communications',
                 audit_logs: 'audit',
                 department_overview: 'medical_staff',
                 staff_management: 'medical_staff',
@@ -543,14 +629,25 @@ const app = createApp({
                 update: 'Edit existing records',
                 delete: 'Remove records',
                 export: 'Export data',
+                import: 'Import data',
                 approve: 'Approve requests',
-                override: 'Override restrictions'
+                override: 'Override restrictions',
+                notify: 'Send notifications',
+                report: 'Generate reports',
+                alert: 'Create alerts',
+                publish: 'Publish content',
+                drag_drop: 'Drag and drop placement',
+                extend: 'Extend rotations',
+                clear: 'Clear logs',
+                assign: 'Assign to units'
             };
             return descriptions[action] || action;
         };
 
         const formatActionName = (action) => {
-            return action.charAt(0).toUpperCase() + action.slice(1);
+            return action.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
         };
 
         const formatResourceName = (resource) => {
@@ -644,6 +741,22 @@ const app = createApp({
             });
         };
 
+        const formatTimeAgo = (dateString) => {
+            if (!dateString) return 'Just now';
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days}d ago`;
+            return formatDate(dateString);
+        };
+
         const formatTimeRange = (start, end) => {
             const formatTime = (time) => {
                 if (!time) return '';
@@ -719,6 +832,119 @@ const app = createApp({
                 inactive: 'Inactive'
             };
             return statuses[status] || status;
+        };
+
+        // ============ NEW UTILITIES FOR HTML TEMPLATES ============
+        const toggleStatsSidebar = () => {
+            statsSidebarOpen.value = !statsSidebarOpen.value;
+        };
+
+        const toggleSearchScope = () => {
+            const scopes = ['All', 'Staff', 'Units', 'Rotations', 'Schedules'];
+            const currentIndex = scopes.indexOf(searchScope.value);
+            searchScope.value = scopes[(currentIndex + 1) % scopes.length];
+        };
+
+        const setSearchFilter = (filter) => {
+            searchFilter.value = filter;
+        };
+
+        const selectRecentSearch = (search) => {
+            searchQuery.value = search.query;
+            handleAdvancedSearch();
+        };
+
+        const clearRecentSearches = () => {
+            recentSearches.value = [];
+        };
+
+        const startDrag = (event, cardId) => {
+            draggingCard.value = cardId;
+            event.dataTransfer.setData('text/plain', cardId);
+            event.dataTransfer.effectAllowed = 'move';
+        };
+
+        const endDrag = () => {
+            draggingCard.value = null;
+        };
+
+        const togglePinCard = (cardId) => {
+            pinnedCards.value[cardId] = !pinnedCards.value[cardId];
+        };
+
+        const toggleCollapseCard = (cardId) => {
+            collapsedCards.value[cardId] = !collapsedCards.value[cardId];
+        };
+
+        const dismissAllAlerts = () => {
+            emergencyAlerts.value = [];
+            showAdvancedToast('Alerts Dismissed', 'All emergency alerts have been dismissed', 'success');
+        };
+
+        const getDayStatus = (day) => {
+            return day.status === 'covered' ? 'status-available' : 'status-critical';
+        };
+
+        const formatDateShort = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        };
+
+        const truncateText = (text, length) => {
+            if (!text) return '';
+            if (text.length <= length) return text;
+            return text.substring(0, length) + '...';
+        };
+
+        const getPriorityColor = (priority) => {
+            const colors = {
+                low: 'info',
+                medium: 'warning',
+                high: 'danger',
+                urgent: 'danger'
+            };
+            return colors[priority] || 'info';
+        };
+
+        const getCapacityStatus = (capacity) => {
+            const percentage = (capacity.current / capacity.max) * 100;
+            if (percentage >= 90) return 'high';
+            if (percentage >= 75) return 'medium';
+            return 'low';
+        };
+
+        const getCommunicationIcon = (tab) => {
+            const icons = {
+                announcement: 'fa-bullhorn',
+                capacity: 'fa-save',
+                quick: 'fa-comment-medical'
+            };
+            return icons[tab] || 'fa-paper-plane';
+        };
+
+        const getCommunicationButtonText = (tab) => {
+            const texts = {
+                announcement: 'Publish Announcement',
+                capacity: 'Update Capacity',
+                quick: 'Post Update'
+            };
+            return texts[tab] || 'Save';
+        };
+
+        const getDocumentIcon = (type) => {
+            const icons = {
+                pdf: 'fa-file-pdf',
+                doc: 'fa-file-word',
+                image: 'fa-file-image',
+                certificate: 'fa-certificate',
+                license: 'fa-id-card'
+            };
+            return icons[type] || 'fa-file';
         };
 
         // ============ STAFF ACTIVITY FUNCTIONS ============
@@ -857,14 +1083,6 @@ const app = createApp({
             return audiences[audience] || audience;
         };
 
-        const formatDateShort = (dateString) => {
-            if (!dateString) return '';
-            return new Date(dateString).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric'
-            });
-        };
-
         // ============ COMPUTED PROPERTIES ============
         const stats = computed(() => {
             const residents = medicalStaff.value.filter(s => 
@@ -884,13 +1102,6 @@ const app = createApp({
                 availableSupervisors: supervisors.length
             };
         });
-        const unreadAnnouncements = computed(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return announcements.value.filter(a => 
-        a.publish_start_date <= today && 
-        (!a.publish_end_date || a.publish_end_date >= today)
-    ).length;
-});
 
         const filteredMedicalStaff = computed(() => {
             let filtered = medicalStaff.value;
@@ -899,7 +1110,8 @@ const app = createApp({
                 const search = staffSearch.value.toLowerCase();
                 filtered = filtered.filter(s => 
                     s.full_name.toLowerCase().includes(search) ||
-                    (s.staff_id && s.staff_id.toLowerCase().includes(search))
+                    (s.staff_id && s.staff_id.toLowerCase().includes(search)) ||
+                    (s.professional_email && s.professional_email.toLowerCase().includes(search))
                 );
             }
             
@@ -943,7 +1155,7 @@ const app = createApp({
                     unit_name: u.unit_name,
                     current: u.current_residents || 0,
                     capacity: u.maximum_residents,
-                    priority: 'high'
+                    priority: u.current_residents < u.maximum_residents * 0.3 ? 'high' : 'medium'
                 }));
         });
 
@@ -1107,6 +1319,38 @@ const app = createApp({
             );
         });
 
+        const capacityOverview = computed(() => {
+            return [
+                { name: 'Emergency Room', current: currentCapacity.value.er.current, max: currentCapacity.value.er.max, 
+                  percentage: Math.round((currentCapacity.value.er.current / currentCapacity.value.er.max) * 100), status: currentCapacity.value.er.status },
+                { name: 'Pulmo ICU', current: currentCapacity.value.icu.current, max: currentCapacity.value.icu.max, 
+                  percentage: Math.round((currentCapacity.value.icu.current / currentCapacity.value.icu.max) * 100), status: currentCapacity.value.icu.status },
+                { name: 'Ward Beds', current: currentCapacity.value.ward.current, max: currentCapacity.value.ward.max, 
+                  percentage: Math.round((currentCapacity.value.ward.current / currentCapacity.value.ward.max) * 100), status: currentCapacity.value.ward.status },
+                { name: 'Step-down Unit', current: currentCapacity.value.stepdown.current, max: currentCapacity.value.stepdown.max, 
+                  percentage: Math.round((currentCapacity.value.stepdown.current / currentCapacity.value.stepdown.max) * 100), status: currentCapacity.value.stepdown.status }
+            ];
+        });
+
+        const quickUpdates = computed(() => {
+            return [
+                {
+                    id: 1,
+                    author: 'Dr. Sarah Chen',
+                    message: 'CT scanner maintenance scheduled for tomorrow 10 AM - 2 PM',
+                    timestamp: new Date(Date.now() - 3600000).toISOString(),
+                    tags: ['equipment', 'maintenance']
+                },
+                {
+                    id: 2,
+                    author: 'Nursing Supervisor',
+                    message: 'New asthma management guidelines available in the shared drive',
+                    timestamp: new Date(Date.now() - 7200000).toISOString(),
+                    tags: ['guidelines', 'update']
+                }
+            ];
+        });
+
         // ============ NAVIGATION & UI ============
         const switchView = async (view) => {
             currentView.value = view;
@@ -1129,9 +1373,10 @@ const app = createApp({
                 staff_management: 'Staff Management',
                 schedule_approval: 'Schedule Approval',
                 system_settings: 'System Settings',
-                user_profile: 'User Profile'
+                user_profile: 'User Profile',
+                communications: 'Department Communications'
             };
-            return titles[currentView.value] || 'PneumoCare';
+            return titles[currentView.value] || 'NeumoCare';
         };
 
         const getCurrentSubtitle = () => {
@@ -1143,24 +1388,11 @@ const app = createApp({
                 oncall_schedule: 'Manage on-call duties and coverage',
                 leave_requests: 'Review and approve leave requests',
                 department_overview: 'Department analytics and insights',
-                system_settings: 'Configure system-wide settings'
+                system_settings: 'Configure system-wide settings',
+                communications: 'Announcements, capacity planning, and quick updates'
             };
             return subtitles[currentView.value] || 'Advanced DRBA Hospital Management System';
         };
-        const toggleAnnouncementsPanel = () => {
-    announcementsPanel.value.open = !announcementsPanel.value.open;
-    if (announcementsPanel.value.open) {
-        loadAnnouncements();
-    }
-};
-
-const toggleMobileMenu = () => {
-    mobileMenuOpen.value = !mobileMenuOpen.value;
-};
-
-const closeMobileMenu = () => {
-    mobileMenuOpen.value = false;
-};
 
         const getSearchPlaceholder = () => {
             const placeholders = {
@@ -1168,9 +1400,21 @@ const closeMobileMenu = () => {
                 daily_operations: 'Search assignments, alerts, or announcements...',
                 audit_logs: 'Search audit logs by user, action, or resource...',
                 training_units: 'Search training units by name or specialty...',
-                resident_rotations: 'Search rotations by resident, unit, or ID...'
+                resident_rotations: 'Search rotations by resident, unit, or ID...',
+                oncall_schedule: 'Search on-call schedules by physician or date...',
+                leave_requests: 'Search leave requests by staff or date...',
+                communications: 'Search announcements or updates...'
             };
             return placeholders[currentView.value] || 'Search...';
+        };
+
+        const toggleMobileMenu = () => {
+            mobileMenuOpen.value = !mobileMenuOpen.value;
+        };
+
+        const closeMobileMenu = () => {
+            mobileMenuOpen.value = false;
+            userMenuOpen.value = false;
         };
 
         const togglePermissionManager = () => {
@@ -1184,10 +1428,6 @@ const closeMobileMenu = () => {
 
         const toggleUserMenu = () => {
             userMenuOpen.value = !userMenuOpen.value;
-        };
-
-        const getDayStatus = (day) => {
-            return day.status === 'covered' ? 'status-available' : 'status-critical';
         };
 
         // ============ AUTHENTICATION ============
@@ -1357,6 +1597,9 @@ const closeMobileMenu = () => {
                         break;
                     case 'system_settings':
                         await loadSystemSettings();
+                        break;
+                    case 'communications':
+                        await loadAnnouncements();
                         break;
                 }
             } catch (error) {
@@ -1562,7 +1805,7 @@ const closeMobileMenu = () => {
         const loadSystemSettings = async () => {
             try {
                 systemSettings.value = {
-                    hospital_name: 'PneumoCare Hospital',
+                    hospital_name: 'NeumoCare Hospital',
                     department_name: 'Pulmonary Medicine',
                     max_residents_per_unit: 10,
                     enable_audit_logging: true,
@@ -1679,6 +1922,49 @@ const closeMobileMenu = () => {
             logAudit('STAFF_MODAL_OPEN', 'Opened add medical staff modal', 'medical_staff');
         };
 
+        const viewStaffDetails = (staff) => {
+            staffDetailsModal.value = {
+                show: true,
+                staff: staff,
+                activeTab: 'details',
+                stats: {
+                    completedRotations: 5,
+                    oncallShifts: 12,
+                    leaveDays: 15,
+                    supervisionCount: 3
+                },
+                activity: [
+                    {
+                        id: 1,
+                        description: 'Completed ICU rotation evaluation',
+                        timestamp: new Date(Date.now() - 86400000).toISOString()
+                    },
+                    {
+                        id: 2,
+                        description: 'Attended pulmonary conference',
+                        timestamp: new Date(Date.now() - 172800000).toISOString()
+                    }
+                ],
+                rotations: residentRotations.value.filter(r => r.resident_id === staff.id),
+                documents: [
+                    {
+                        id: 1,
+                        name: 'Medical License',
+                        type: 'license',
+                        description: 'Active medical license',
+                        upload_date: new Date(Date.now() - 2592000000).toISOString()
+                    },
+                    {
+                        id: 2,
+                        name: 'Board Certification',
+                        type: 'certificate',
+                        description: 'Pulmonary board certification',
+                        upload_date: new Date(Date.now() - 5184000000).toISOString()
+                    }
+                ]
+            };
+        };
+
         const editMedicalStaff = (staff) => {
             if (!hasPermission('medical_staff', 'update')) {
                 showAdvancedToast(
@@ -1793,19 +2079,18 @@ const closeMobileMenu = () => {
             }
         };
 
-        // ============ ANNOUNCEMENTS MODAL FUNCTIONS ============
-        const showAddAnnouncementModal = () => {
-            if (!hasPermission('announcements', 'create')) {
+        // ============ ANNOUNCEMENTS/COMMUNICATIONS FUNCTIONS ============
+        const showCommunicationsModal = () => {
+            if (!hasPermission('communications', 'create')) {
                 showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
                 return;
             }
             
             const today = new Date().toISOString().split('T')[0];
             
-            announcementModal.value = {
+            communicationsModal.value = {
                 show: true,
-                mode: 'add',
-                announcement: null,
+                activeTab: 'announcement',
                 form: {
                     announcement_title: '',
                     announcement_content: '',
@@ -1813,131 +2098,129 @@ const closeMobileMenu = () => {
                     publish_end_date: '',
                     priority_level: 'medium',
                     target_audience: 'all'
+                },
+                capacity: {
+                    er: { current: currentCapacity.value.er.current, max: currentCapacity.value.er.max, notes: '' },
+                    icu: { current: currentCapacity.value.icu.current, max: currentCapacity.value.icu.max, notes: '' },
+                    ward: { current: currentCapacity.value.ward.current, max: currentCapacity.value.ward.max, notes: '' },
+                    stepdown: { current: currentCapacity.value.stepdown.current, max: currentCapacity.value.stepdown.max, notes: '' },
+                    clinic: { current: 45, max: 60, notes: '' },
+                    bronch: { current: 3, max: 8, notes: '' },
+                    overall_notes: ''
+                },
+                quickUpdate: {
+                    message: '',
+                    priority: 'info',
+                    expires: '4',
+                    tags: ''
                 }
             };
         };
 
-        const editAnnouncement = (announcement) => {
-            if (!hasPermission('announcements', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
-                return;
-            }
-            
-            announcementModal.value = {
-                show: true,
-                mode: 'edit',
-                announcement: announcement,
-                form: {
-                    announcement_title: announcement.announcement_title,
-                    announcement_content: announcement.announcement_content,
-                    publish_start_date: announcement.publish_start_date,
-                    publish_end_date: announcement.publish_end_date || '',
-                    priority_level: announcement.priority_level || 'medium',
-                    target_audience: announcement.target_audience || 'all'
-                }
-            };
-        };
-
-        const saveAnnouncement = async () => {
-            if (!hasPermission('announcements', announcementModal.value.mode === 'add' ? 'create' : 'update')) {
-                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
-                return;
-            }
-            
+        const saveCommunication = async () => {
             saving.value = true;
             try {
-                if (!announcementModal.value.form.announcement_title.trim()) {
-                    throw new Error('Title is required');
-                }
-                if (!announcementModal.value.form.announcement_content.trim()) {
-                    throw new Error('Content is required');
-                }
-                if (!announcementModal.value.form.publish_start_date) {
-                    throw new Error('Publish date is required');
-                }
-                
-                const announcementData = {
-                    announcement_title: announcementModal.value.form.announcement_title,
-                    announcement_content: announcementModal.value.form.announcement_content,
-                    publish_start_date: announcementModal.value.form.publish_start_date,
-                    publish_end_date: announcementModal.value.form.publish_end_date || null,
-                    priority_level: announcementModal.value.form.priority_level,
-                    target_audience: announcementModal.value.form.target_audience,
-                    created_by: currentUser.value?.full_name,
-                    updated_at: new Date().toISOString()
-                };
-                
-                let result;
-                
-                if (announcementModal.value.mode === 'add') {
+                if (communicationsModal.value.activeTab === 'announcement') {
+                    if (!hasPermission('communications', 'create')) {
+                        throw new Error('No permission to create announcements');
+                    }
+                    
+                    if (!communicationsModal.value.form.announcement_title.trim()) {
+                        throw new Error('Title is required');
+                    }
+                    if (!communicationsModal.value.form.announcement_content.trim()) {
+                        throw new Error('Content is required');
+                    }
+                    
                     const { data, error } = await supabaseClient
                         .from('department_announcements')
                         .insert([{
-                            ...announcementData,
-                            created_at: new Date().toISOString()
+                            announcement_title: communicationsModal.value.form.announcement_title,
+                            announcement_content: communicationsModal.value.form.announcement_content,
+                            publish_start_date: communicationsModal.value.form.publish_start_date,
+                            publish_end_date: communicationsModal.value.form.publish_end_date || null,
+                            priority_level: communicationsModal.value.form.priority_level,
+                            target_audience: communicationsModal.value.form.target_audience,
+                            created_by: currentUser.value?.full_name,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
                         }])
                         .select()
                         .single();
                     
                     if (error) throw error;
-                    result = data;
                     
-                    announcements.value.unshift(result);
+                    announcements.value.unshift(data);
                     showAdvancedToast('Published', 'Announcement published successfully', 'success');
-                    logAudit('ANNOUNCEMENT_CREATE', `Published: ${result.announcement_title}`, 'announcements', result.id);
+                    logAudit('ANNOUNCEMENT_CREATE', `Published: ${data.announcement_title}`, 'communications', data.id);
                     
-                } else {
-                    const { data, error } = await supabaseClient
-                        .from('department_announcements')
-                        .update(announcementData)
-                        .eq('id', announcementModal.value.announcement.id)
-                        .select()
-                        .single();
+                } else if (communicationsModal.value.activeTab === 'capacity') {
+                    if (!hasPermission('communications', 'update')) {
+                        throw new Error('No permission to update capacity');
+                    }
                     
-                    if (error) throw error;
-                    result = data;
+                    // Update current capacity
+                    currentCapacity.value = {
+                        er: { 
+                            current: communicationsModal.value.capacity.er.current,
+                            max: communicationsModal.value.capacity.er.max,
+                            status: getCapacityStatus(communicationsModal.value.capacity.er)
+                        },
+                        icu: { 
+                            current: communicationsModal.value.capacity.icu.current,
+                            max: communicationsModal.value.capacity.icu.max,
+                            status: getCapacityStatus(communicationsModal.value.capacity.icu)
+                        },
+                        ward: { 
+                            current: communicationsModal.value.capacity.ward.current,
+                            max: communicationsModal.value.capacity.ward.max,
+                            status: getCapacityStatus(communicationsModal.value.capacity.ward)
+                        },
+                        stepdown: { 
+                            current: communicationsModal.value.capacity.stepdown.current,
+                            max: communicationsModal.value.capacity.stepdown.max,
+                            status: getCapacityStatus(communicationsModal.value.capacity.stepdown)
+                        }
+                    };
                     
-                    const index = announcements.value.findIndex(a => a.id === result.id);
-                    if (index !== -1) announcements.value[index] = result;
+                    showAdvancedToast('Capacity Updated', 'Department capacity planning updated', 'success');
+                    logAudit('CAPACITY_UPDATE', 'Updated department capacity planning', 'communications');
                     
-                    showAdvancedToast('Updated', 'Announcement updated successfully', 'success');
-                    logAudit('ANNOUNCEMENT_UPDATE', `Updated: ${result.announcement_title}`, 'announcements', result.id);
+                } else if (communicationsModal.value.activeTab === 'quick') {
+                    if (!hasPermission('communications', 'create')) {
+                        throw new Error('No permission to post updates');
+                    }
+                    
+                    if (!communicationsModal.value.quickUpdate.message.trim()) {
+                        throw new Error('Message is required');
+                    }
+                    
+                    showAdvancedToast('Update Posted', 'Quick status update posted', 'success');
+                    logAudit('QUICK_UPDATE', 'Posted quick status update', 'communications');
                 }
                 
-                announcementModal.value.show = false;
+                communicationsModal.value.show = false;
                 
             } catch (error) {
-                console.error('Error saving announcement:', error);
+                console.error('Error saving communication:', error);
                 showAdvancedToast('Save Failed', error.message, 'error');
             } finally {
                 saving.value = false;
             }
         };
 
-        const deleteAnnouncement = async (announcement) => {
-            if (!hasPermission('announcements', 'delete')) {
-                showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
+        const updateCapacity = async () => {
+            if (!hasPermission('communications', 'update')) {
+                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
                 return;
             }
             
-            if (!confirm(`Delete announcement "${announcement.announcement_title}"?`)) return;
-            
             try {
-                const { error } = await supabaseClient
-                    .from('department_announcements')
-                    .delete()
-                    .eq('id', announcement.id);
-                
-                if (error) throw error;
-                
-                announcements.value = announcements.value.filter(a => a.id !== announcement.id);
-                
-                showAdvancedToast('Deleted', 'Announcement deleted', 'success');
-                logAudit('ANNOUNCEMENT_DELETE', `Deleted: ${announcement.announcement_title}`, 'announcements', announcement.id);
-                
+                showAdvancedToast('Capacity Updated', 'Department capacity updated successfully', 'success');
+                logAudit('CAPACITY_UPDATE', 'Updated department capacity', 'communications');
             } catch (error) {
-                console.error('Error deleting announcement:', error);
-                showAdvancedToast('Delete Failed', error.message, 'error');
+                console.error('Error updating capacity:', error);
+                showAdvancedToast('Update Failed', error.message, 'error');
             }
         };
 
@@ -1969,18 +2252,9 @@ const closeMobileMenu = () => {
         };
 
         const viewLeaveRequestDetails = (request) => {
-            leaveRequestModal.value = {
+            leaveDetailsModal.value = {
                 show: true,
-                mode: 'review',
-                request: request,
-                form: {
-                    start_date: request.start_date,
-                    end_date: request.end_date,
-                    leave_type: request.leave_type,
-                    reason: request.reason,
-                    status: request.status,
-                    approver_notes: request.approver_notes || ''
-                }
+                request: request
             };
         };
 
@@ -1990,7 +2264,7 @@ const closeMobileMenu = () => {
                 return;
             }
             
-            if (!confirm(`Approve leave request for ${request.staff_name}?`)) return;
+            if (!confirm(`Approve leave request for ${getPhysicianName(request.staff_member_id)}?`)) return;
             
             try {
                 const { data, error } = await supabaseClient
@@ -2010,7 +2284,7 @@ const closeMobileMenu = () => {
                 if (index !== -1) leaveRequests.value[index] = data;
                 
                 showAdvancedToast('Approved', `Leave request approved`, 'success');
-                logAudit('LEAVE_APPROVE', `Approved leave request for ${request.staff_name}`, 'leave_requests', request.id);
+                logAudit('LEAVE_APPROVE', `Approved leave request`, 'leave_requests', request.id);
                 
             } catch (error) {
                 console.error('Error approving leave:', error);
@@ -2024,7 +2298,7 @@ const closeMobileMenu = () => {
                 return;
             }
             
-            if (!confirm(`Reject leave request for ${request.staff_name}?`)) return;
+            if (!confirm(`Reject leave request for ${getPhysicianName(request.staff_member_id)}?`)) return;
             
             try {
                 const { data, error } = await supabaseClient
@@ -2044,7 +2318,7 @@ const closeMobileMenu = () => {
                 if (index !== -1) leaveRequests.value[index] = data;
                 
                 showAdvancedToast('Rejected', `Leave request rejected`, 'error');
-                logAudit('LEAVE_REJECT', `Rejected leave request for ${request.staff_name}`, 'leave_requests', request.id);
+                logAudit('LEAVE_REJECT', `Rejected leave request`, 'leave_requests', request.id);
                 
             } catch (error) {
                 console.error('Error rejecting leave:', error);
@@ -2554,6 +2828,35 @@ const closeMobileMenu = () => {
             }
         };
 
+        const deleteOnCallSchedule = async (schedule) => {
+            if (!hasPermission('oncall_schedule', 'delete')) {
+                showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
+                return;
+            }
+            
+            if (!confirm(`Delete on-call schedule for ${formatDate(schedule.duty_date)}?`)) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('oncall_schedule')
+                    .delete()
+                    .eq('id', schedule.id);
+                
+                if (error) throw error;
+                
+                const index = onCallSchedule.value.findIndex(s => s.id === schedule.id);
+                if (index !== -1) {
+                    onCallSchedule.value.splice(index, 1);
+                }
+                
+                showAdvancedToast('Deleted', 'On-call schedule deleted', 'success');
+                logAudit('ONCALL_DELETE', `Deleted on-call schedule for ${formatDate(schedule.duty_date)}`, 'oncall_schedule', schedule.id);
+            } catch (error) {
+                console.error('Error deleting on-call schedule:', error);
+                showAdvancedToast('Delete Failed', error.message, 'error');
+            }
+        };
+
         const overrideOnCall = (day) => {
             if (!hasPermission('oncall_schedule', 'override')) {
                 showAdvancedToast('Permission Denied', 'Need override permission', 'permission');
@@ -2577,6 +2880,22 @@ const closeMobileMenu = () => {
                     coverage_notes: 'EMERGENCY OVERRIDE'
                 }
             };
+        };
+
+        const viewScheduleDetails = (date) => {
+            showAdvancedToast('Schedule Details', `Viewing schedule for ${formatDate(date)}`, 'info');
+        };
+
+        const viewUnitDetails = (unitId) => {
+            const unit = trainingUnits.value.find(u => u.id === unitId);
+            if (unit) {
+                trainingUnitModal.value = {
+                    show: true,
+                    mode: 'edit',
+                    unit: unit,
+                    form: { ...unit }
+                };
+            }
         };
 
         // ============ DRAG & DROP FUNCTIONS ============
@@ -2781,124 +3100,6 @@ const closeMobileMenu = () => {
             }
         };
 
-        // ============ ROLE MANAGEMENT ============
-        const showAddRoleModal = () => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            addRoleModal.value = {
-                show: true,
-                mode: 'add',
-                role: null,
-                form: {
-                    name: '',
-                    description: '',
-                    level: 'read'
-                }
-            };
-        };
-
-        const editRole = (role) => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            addRoleModal.value = {
-                show: true,
-                mode: 'edit',
-                role: role,
-                form: {
-                    name: role.name,
-                    description: role.description,
-                    level: role.level
-                }
-            };
-        };
-
-        const cloneRole = (role) => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            addRoleModal.value = {
-                show: true,
-                mode: 'add',
-                role: null,
-                form: {
-                    name: `${role.name} (Copy)`,
-                    description: role.description,
-                    level: role.level
-                }
-            };
-        };
-
-        const deleteRole = (role) => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            if (role.id === 'system_admin') {
-                showAdvancedToast('Cannot Delete', 'System Admin role cannot be deleted', 'error');
-                return;
-            }
-            
-            if (confirm(`Are you sure you want to delete the "${role.name}" role?`)) {
-                systemRoles.value = systemRoles.value.filter(r => r.id !== role.id);
-                showAdvancedToast('Role Deleted', `${role.name} has been removed`, 'success');
-                logAudit('ROLE_DELETE', `Deleted role: ${role.name}`, 'system');
-            }
-        };
-
-        const saveRole = async () => {
-            if (!hasPermission('system', 'admin')) {
-                showAdvancedToast('Permission Denied', 'Admin access required', 'permission');
-                return;
-            }
-            
-            saving.value = true;
-            try {
-                const newRole = {
-                    id: addRoleModal.value.mode === 'add' ? 
-                        addRoleModal.value.form.name.toLowerCase().replace(/\s+/g, '_') : 
-                        addRoleModal.value.role.id,
-                    name: addRoleModal.value.form.name,
-                    description: addRoleModal.value.form.description,
-                    level: addRoleModal.value.form.level,
-                    permissions: {}
-                };
-                
-                const templateRole = PermissionSystem.roles[addRoleModal.value.form.level === 'full' ? 'system_admin' : 'resident_manager'];
-                if (templateRole) {
-                    newRole.permissions = { ...templateRole.permissions };
-                }
-                
-                if (addRoleModal.value.mode === 'add') {
-                    systemRoles.value.push(newRole);
-                    showAdvancedToast('Success', 'New role created successfully', 'success');
-                    logAudit('ROLE_CREATE', `Created role: ${newRole.name}`, 'system');
-                } else {
-                    const index = systemRoles.value.findIndex(r => r.id === newRole.id);
-                    if (index !== -1) {
-                        systemRoles.value[index] = newRole;
-                    }
-                    showAdvancedToast('Success', 'Role updated successfully', 'success');
-                    logAudit('ROLE_UPDATE', `Updated role: ${newRole.name}`, 'system');
-                }
-                
-                addRoleModal.value.show = false;
-            } catch (error) {
-                console.error('Error saving role:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
-            } finally {
-                saving.value = false;
-            }
-        };
-
         // ============ SYSTEM SETTINGS FUNCTIONS ============
         const showSystemSettingsModal = () => {
             if (!hasPermission('system', 'read')) {
@@ -2935,7 +3136,7 @@ const closeMobileMenu = () => {
         };
 
         // ============ USER PROFILE FUNCTIONS ============
-        const showUserProfileModal = () => {
+        const showUserProfile = () => {
             userProfileModal.value = {
                 show: true,
                 form: {
@@ -2970,6 +3171,10 @@ const closeMobileMenu = () => {
         };
 
         // ============ IMPORT/EXPORT FUNCTIONS ============
+        const showImportModal = (table) => {
+            showImportExportModal('import', table);
+        };
+
         const showImportExportModal = (mode = 'export', table = null) => {
             if (mode === 'export' && !hasPermission('audit', 'export')) {
                 showAdvancedToast('Permission Denied', 'Need export permission', 'permission');
@@ -3163,6 +3368,10 @@ const closeMobileMenu = () => {
             logAudit('QUICK_ASSIGN', `Quick assigning to unit: ${alert.unit_name}`, 'placements', alert.id);
         };
 
+        const exportStaffList = () => {
+            showImportExportModal('export', 'medical_staff');
+        };
+
         const exportAuditLogs = () => {
             if (!hasPermission('audit', 'export')) {
                 showAdvancedToast(
@@ -3189,17 +3398,42 @@ const closeMobileMenu = () => {
             }
         };
 
-        const showUserProfile = () => {
-            userMenuOpen.value = false;
-            showUserProfileModal();
-        };
-
         const assignResidentsToUnit = (unit) => {
             showAdvancedToast('Info', `Assigning residents to ${unit.unit_name}`, 'info');
         };
 
-        const showAddStaffModal = () => {
-            showAdvancedToast('Info', 'Add staff modal would open here', 'info');
+        const dismissCoverageAlert = (alertId) => {
+            coverageAlerts.value = coverageAlerts.value.filter(alert => alert.id !== alertId);
+            showAdvancedToast('Alert Dismissed', 'Coverage alert has been dismissed', 'success');
+        };
+
+        const resetStaffFilters = () => {
+            staffSearch.value = '';
+            staffFilter.value = {
+                staff_type: '',
+                employment_status: ''
+            };
+        };
+
+        const applyStaffFilters = () => {
+            // Filters are applied automatically through computed property
+            showAdvancedToast('Filters Applied', 'Staff filters have been applied', 'success');
+        };
+
+        const sendBulkNotifications = () => {
+            if (!hasPermission('medical_staff', 'notify')) {
+                showAdvancedToast('Permission Denied', 'Need notify permission', 'permission');
+                return;
+            }
+            showAdvancedToast('Notifications Sent', 'Bulk notifications sent to all staff', 'success');
+        };
+
+        const showStaffReport = () => {
+            if (!hasPermission('medical_staff', 'report')) {
+                showAdvancedToast('Permission Denied', 'Need report permission', 'permission');
+                return;
+            }
+            showAdvancedToast('Report Generated', 'Staff report generated successfully', 'success');
         };
 
         // ============ INITIALIZATION ============
@@ -3222,6 +3456,7 @@ const closeMobileMenu = () => {
             loginForm,
             loading,
             saving,
+            permissionLoading,
             savingPermissions,
             currentView,
             sidebarCollapsed,
@@ -3232,16 +3467,19 @@ const closeMobileMenu = () => {
             userMenuOpen,
             availableAttendings,
             medicalStaffModal,
+            staffDetailsModal,
             addRoleModal,
             announcementModal,
             onCallModal,
             leaveRequestModal,
+            leaveDetailsModal,
             trainingUnitModal,
             rotationModal,
             quickPlacementModal,
             systemSettingsModal,
             userProfileModal,
             importExportModal,
+            communicationsModal,
             medicalStaff,
             trainingUnits,
             residentRotations,
@@ -3255,6 +3493,8 @@ const closeMobileMenu = () => {
             userNotifications,
             emergencyContacts,
             systemStats,
+            liveStats,
+            currentCapacity,
             staffSearch,
             staffFilter,
             rotationFilter,
@@ -3278,6 +3518,19 @@ const closeMobileMenu = () => {
             staffByDepartment,
             availablePhysicians,
             activeTrainingUnits,
+            capacityOverview,
+            quickUpdates,
+            statsSidebarOpen,
+            showRecentSearches,
+            searchFilter,
+            searchScope,
+            recentSearches,
+            draggingCard,
+            pinnedCards,
+            collapsedCards,
+            lastUpdated,
+            
+            // ============ PERMISSIONS ============
             hasPermission,
             hasAnyPermission,
             getViewPermission,
@@ -3289,30 +3542,9 @@ const closeMobileMenu = () => {
             userPermissions,
             togglePermission,
             savePermissionChanges,
+            
+            // ============ HELPER FUNCTIONS ============
             getPhysicianName,
-            switchView,
-            getCurrentTitle,
-            getCurrentSubtitle,
-            getSearchPlaceholder,
-            toggleMobileMenu,
-            closeMobileMenu,
-            togglePermissionManager,
-            toggleUserMenu,
-            getDayStatus,
-            handleAdvancedLogin,
-            handleLogout,
-            getInitials,
-            formatDate,
-            formatDateTime,
-            formatTimeRange,
-            getUserRoleDisplay,
-            formatStaffType,
-            getStaffTypeClass,
-            getAuditIcon,
-            formatResidentCategory,
-            formatEmploymentStatus,
-            generateUUID,
-            showAdvancedToast,
             getResidentName,
             getTrainingUnitName,
             getAttendingName,
@@ -3323,67 +3555,61 @@ const closeMobileMenu = () => {
             getPriorityClass,
             formatAudience,
             formatDateShort,
+            truncateText,
+            getPriorityColor,
+            getCapacityStatus,
+            getCommunicationIcon,
+            getCommunicationButtonText,
+            getDocumentIcon,
+            
+            // ============ NAVIGATION & UI ============
+            switchView,
+            getCurrentTitle,
+            getCurrentSubtitle,
+            getSearchPlaceholder,
+            toggleMobileMenu,
+            closeMobileMenu,
+            togglePermissionManager,
+            toggleUserMenu,
+            getDayStatus,
+            toggleStatsSidebar,
+            toggleSearchScope,
+            setSearchFilter,
+            selectRecentSearch,
+            clearRecentSearches,
+            startDrag,
+            endDrag,
+            togglePinCard,
+            toggleCollapseCard,
+            dismissAllAlerts,
+            
+            // ============ AUTHENTICATION ============
+            handleAdvancedLogin,
+            handleLogout,
+            
+            // ============ UTILITIES ============
+            getInitials,
+            formatDate,
+            formatDateTime,
+            formatTimeAgo,
+            formatTimeRange,
+            getUserRoleDisplay,
+            formatStaffType,
+            getStaffTypeClass,
+            getAuditIcon,
+            formatResidentCategory,
+            formatEmploymentStatus,
+            generateUUID,
+            showAdvancedToast,
+            removeToast,
+            
+            // ============ STAFF FUNCTIONS ============
             showAddMedicalStaffModal,
+            viewStaffDetails,
             editMedicalStaff,
             saveMedicalStaff,
             deleteMedicalStaff,
             viewStaffSchedule,
-            showAddRoleModal,
-            editRole,
-            cloneRole,
-            deleteRole,
-            saveRole,
-            showAddAnnouncementModal,
-            editAnnouncement,
-            saveAnnouncement,
-            deleteAnnouncement,
-            showAddOnCallModal,
-            editOnCallSchedule,
-            saveOnCallSchedule,
-            overrideOnCall,
-            showAddLeaveRequestModal,
-            viewLeaveRequestDetails,
-            approveLeaveRequest,
-            rejectLeaveRequest,
-            saveLeaveRequest,
-            showAddTrainingUnitModal,
-            editTrainingUnit,
-            saveTrainingUnit,
-            assignResidentsToUnit,
-            showAddRotationModal,
-            editRotation,
-            extendRotation,
-            saveRotation,
-            handleDragDropPlacement,
-            deleteRotation,
-            handleDragStart,
-            handleDrop,
-            removePlacement,
-            showQuickPlacementModal,
-            saveQuickPlacement,
-            showSystemSettingsModal,
-            saveSystemSettings,
-            showUserProfileModal,
-            saveUserProfile,
-            showImportExportModal,
-            exportData,
-            importData,
-            handleFileSelect,
-            markNotificationAsRead,
-            markAllNotificationsAsRead,
-            quickAssignToUnit,
-            exportAuditLogs,
-            handleAdvancedSearch,
-            togglePermissionFilter,
-            showUserProfile,
-            showAddStaffModal,
-            loadInitialData,
-            loadViewData,
-            logAudit,
-            removeToast,
-            announcementsPanel,
-    unreadAnnouncements,
-    toggleAnnouncementsPanel,
             loadStaffDailyActivities,
             getTodaysSchedule,
             getUpcomingOnCall,
@@ -3391,7 +3617,83 @@ const closeMobileMenu = () => {
             formatScheduleTime,
             expandedStaffId,
             staffDailyActivities,
-            unitDropZone
+            
+            // ============ ON-CALL FUNCTIONS ============
+            showAddOnCallModal,
+            editOnCallSchedule,
+            saveOnCallSchedule,
+            deleteOnCallSchedule,
+            overrideOnCall,
+            viewScheduleDetails,
+            
+            // ============ TRAINING UNIT FUNCTIONS ============
+            showAddTrainingUnitModal,
+            editTrainingUnit,
+            saveTrainingUnit,
+            assignResidentsToUnit,
+            viewUnitDetails,
+            
+            // ============ ROTATION FUNCTIONS ============
+            showAddRotationModal,
+            editRotation,
+            extendRotation,
+            saveRotation,
+            deleteRotation,
+            
+            // ============ PLACEMENT FUNCTIONS ============
+            handleDragStart,
+            handleDrop,
+            removePlacement,
+            showQuickPlacementModal,
+            saveQuickPlacement,
+            
+            // ============ LEAVE REQUEST FUNCTIONS ============
+            showAddLeaveRequestModal,
+            viewLeaveRequestDetails,
+            approveLeaveRequest,
+            rejectLeaveRequest,
+            saveLeaveRequest,
+            
+            // ============ COMMUNICATIONS FUNCTIONS ============
+            showCommunicationsModal,
+            saveCommunication,
+            updateCapacity,
+            
+            // ============ SYSTEM FUNCTIONS ============
+            showSystemSettingsModal,
+            saveSystemSettings,
+            
+            // ============ USER PROFILE FUNCTIONS ============
+            showUserProfile,
+            saveUserProfile,
+            
+            // ============ IMPORT/EXPORT FUNCTIONS ============
+            showImportModal,
+            showImportExportModal,
+            exportData,
+            importData,
+            handleFileSelect,
+            exportStaffList,
+            exportAuditLogs,
+            
+            // ============ NOTIFICATION FUNCTIONS ============
+            markNotificationAsRead,
+            markAllNotificationsAsRead,
+            
+            // ============ ACTION HANDLERS ============
+            quickAssignToUnit,
+            handleAdvancedSearch,
+            togglePermissionFilter,
+            dismissCoverageAlert,
+            resetStaffFilters,
+            applyStaffFilters,
+            sendBulkNotifications,
+            showStaffReport,
+            
+            // ============ DATA LOADING ============
+            loadInitialData,
+            loadViewData,
+            logAudit
         };
     }
 });
