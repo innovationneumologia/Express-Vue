@@ -14,8 +14,8 @@
     <!-- Vue.js 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Your backend logic will be in app.js -->
+    <script src="app.js" defer></script>
     
     <style>
         /* ============ BASE STYLES ============ */
@@ -3419,12 +3419,12 @@
                                                         <i class="fas fa-ellipsis-v"></i>
                                                     </button>
                                                     <div class="action-menu">
-                                                        <div class="action-menu-item" @click="editOnCallSchedule(schedule)"
+                                                        <div class="action-menu-item" @click="editOnCallSchedule({date: schedule.duty_date, schedule})"
                                                                 v-if="hasPermission('oncall_schedule', 'update')">
                                                             <i class="fas fa-edit"></i>
                                                             Edit
                                                         </div>
-                                                        <div class="action-menu-item" @click="overrideOnCall(schedule)"
+                                                        <div class="action-menu-item" @click="overrideOnCall({date: schedule.duty_date})"
                                                                 v-if="hasPermission('oncall_schedule', 'override')">
                                                             <i class="fas fa-exclamation-triangle"></i>
                                                             Override
@@ -3537,38 +3537,6 @@
                                     v-if="hasPermission('resident_rotations', 'create')">
                                 <i class="fas fa-plus"></i> Add Rotation
                             </button>
-                        </div>
-
-                        <!-- Filters -->
-                        <div class="filter-bar mb-6">
-                            <div class="filter-group">
-                                <div class="filter-label">Rotation Category</div>
-                                <select class="form-select form-select-sm" v-model="rotationFilter.category">
-                                    <option value="">All Categories</option>
-                                    <option value="clinical_rotation">Clinical Rotation</option>
-                                    <option value="elective_rotation">Elective Rotation</option>
-                                    <option value="research_rotation">Research</option>
-                                    <option value="vacation_rotation">Vacation</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <div class="filter-label">Status</div>
-                                <select class="form-select form-select-sm" v-model="rotationFilter.status">
-                                    <option value="">All Statuses</option>
-                                    <option value="scheduled">Scheduled</option>
-                                    <option value="active">Active</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="filter-actions">
-                                <button class="btn btn-sm btn-secondary" @click="resetRotationFilters">
-                                    <i class="fas fa-redo"></i> Reset
-                                </button>
-                                <button class="btn btn-sm btn-primary" @click="applyRotationFilters">
-                                    <i class="fas fa-filter"></i> Apply
-                                </button>
-                            </div>
                         </div>
 
                         <!-- Rotations Table -->
@@ -3703,6 +3671,148 @@
                                             v-if="hasPermission('placements', 'create')">
                                         <i class="fas fa-user-plus"></i> Assign
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audit Logs View -->
+                    <div v-if="currentView === 'audit_logs'">
+                        <div class="section-header mb-6">
+                            <div>
+                                <h2 class="section-title">Audit Logs</h2>
+                                <p class="text-muted">Track all system activities and permission changes</p>
+                            </div>
+                            <button class="btn btn-primary" @click="exportAuditLogs" v-if="hasPermission('audit', 'export')">
+                                <i class="fas fa-download"></i> Export Logs
+                            </button>
+                        </div>
+
+                        <!-- Audit Table -->
+                        <div class="card">
+                            <div v-if="loading" class="loading-overlay">
+                                <div class="loading-spinner"></div>
+                            </div>
+                            <div v-else-if="auditLogs.length === 0" class="empty-state p-6">
+                                <i class="fas fa-history empty-state-icon"></i>
+                                <div class="empty-state-title">No Audit Logs</div>
+                                <div class="empty-state-description">
+                                    No system activities have been recorded yet.
+                                </div>
+                            </div>
+                            <div v-else class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>User</th>
+                                            <th>Action</th>
+                                            <th>Resource</th>
+                                            <th>Details</th>
+                                            <th>Permission Level</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="log in auditLogs" :key="log.id">
+                                            <td>{{ formatDateTime(log.timestamp) }}</td>
+                                            <td>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="user-avatar">{{ getInitials(log.user_name) }}</div>
+                                                    <div>
+                                                        <div class="font-medium">{{ log.user_name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ getUserRoleDisplay(log.user_role) }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="flex items-center gap-2">
+                                                    <i :class="getAuditIcon(log.action)" class="text-blue-500"></i>
+                                                    <span>{{ log.action }}</span>
+                                                </div>
+                                            </td>
+                                            <td>{{ log.resource }}</td>
+                                            <td class="max-w-xs truncate">{{ log.details }}</td>
+                                            <td>
+                                                <span class="badge" :class="log.permission_level === 'full' ? 'badge-admin-advanced' : 'badge-resident-advanced'">
+                                                    {{ log.permission_level }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Settings View -->
+                    <div v-if="currentView === 'system_settings'">
+                        <div class="section-header mb-6">
+                            <div>
+                                <h2 class="section-title">System Settings</h2>
+                                <p class="text-muted">Configure system-wide settings and preferences</p>
+                            </div>
+                            <button class="btn btn-primary" @click="showSystemSettingsModal" 
+                                    v-if="hasPermission('system', 'update')">
+                                <i class="fas fa-edit"></i> Edit Settings
+                            </button>
+                        </div>
+
+                        <!-- Settings Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-hospital"></i>
+                                        Hospital Information
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="form-label">Hospital Name</label>
+                                        <div class="form-control">{{ systemSettings.hospital_name }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Department Name</label>
+                                        <div class="form-control">{{ systemSettings.department_name }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Security Settings
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.enable_audit_logging" disabled>
+                                        <span class="form-check-label">Enable Audit Logging</span>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.require_mfa" disabled>
+                                        <span class="form-check-label">Require MFA Authentication</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-users-cog"></i>
+                                        System Configuration
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="form-label">Maximum Residents per Unit</label>
+                                        <div class="form-control">{{ systemSettings.max_residents_per_unit }}</div>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.maintenance_mode" disabled>
+                                        <span class="form-check-label">Maintenance Mode</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3876,232 +3986,6 @@
                         </div>
                     </div>
 
-                    <!-- Audit Logs View -->
-                    <div v-if="currentView === 'audit_logs'">
-                        <div class="section-header mb-6">
-                            <div>
-                                <h2 class="section-title">Audit Logs</h2>
-                                <p class="text-muted">Track all system activities and permission changes</p>
-                            </div>
-                            <button class="btn btn-primary" @click="exportAuditLogs" v-if="hasPermission('audit', 'export')">
-                                <i class="fas fa-download"></i> Export Logs
-                            </button>
-                        </div>
-
-                        <!-- Filters -->
-                        <div class="filter-bar mb-6">
-                            <div class="filter-group">
-                                <div class="filter-label">Action Type</div>
-                                <select class="form-select form-select-sm" v-model="auditFilter.action">
-                                    <option value="">All Actions</option>
-                                    <option value="create">Create</option>
-                                    <option value="update">Update</option>
-                                    <option value="delete">Delete</option>
-                                    <option value="login">Login</option>
-                                    <option value="logout">Logout</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <div class="filter-label">Date Range</div>
-                                <select class="form-select form-select-sm" v-model="auditFilter.dateRange">
-                                    <option value="today">Today</option>
-                                    <option value="week">This Week</option>
-                                    <option value="month">This Month</option>
-                                    <option value="year">This Year</option>
-                                    <option value="all">All Time</option>
-                                </select>
-                            </div>
-                            <div class="filter-actions">
-                                <button class="btn btn-sm btn-secondary" @click="resetAuditFilters">
-                                    <i class="fas fa-redo"></i> Reset
-                                </button>
-                                <button class="btn btn-sm btn-primary" @click="applyAuditFilters">
-                                    <i class="fas fa-filter"></i> Apply
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Audit Table -->
-                        <div class="card">
-                            <div v-if="loading" class="loading-overlay">
-                                <div class="loading-spinner"></div>
-                            </div>
-                            <div v-else-if="auditLogs.length === 0" class="empty-state p-6">
-                                <i class="fas fa-history empty-state-icon"></i>
-                                <div class="empty-state-title">No Audit Logs</div>
-                                <div class="empty-state-description">
-                                    No system activities have been recorded yet.
-                                </div>
-                            </div>
-                            <div v-else class="table-responsive">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>User</th>
-                                            <th>Action</th>
-                                            <th>Resource</th>
-                                            <th>Details</th>
-                                            <th>Permission Level</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="log in auditLogs" :key="log.id">
-                                            <td>{{ formatDateTime(log.timestamp) }}</td>
-                                            <td>
-                                                <div class="flex items-center gap-2">
-                                                    <div class="user-avatar">{{ getInitials(log.user_name) }}</div>
-                                                    <div>
-                                                        <div class="font-medium">{{ log.user_name }}</div>
-                                                        <div class="text-sm text-gray-500">{{ getUserRoleDisplay(log.user_role) }}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="flex items-center gap-2">
-                                                    <i :class="getAuditIcon(log.action)" class="text-blue-500"></i>
-                                                    <span>{{ log.action }}</span>
-                                                </div>
-                                            </td>
-                                            <td>{{ log.resource }}</td>
-                                            <td class="max-w-xs truncate">{{ log.details }}</td>
-                                            <td>
-                                                <span class="badge" :class="log.permission_level === 'full' ? 'badge-admin-advanced' : 'badge-resident-advanced'">
-                                                    {{ log.permission_level }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- System Settings View -->
-                    <div v-if="currentView === 'system_settings'">
-                        <div class="section-header mb-6">
-                            <div>
-                                <h2 class="section-title">System Settings</h2>
-                                <p class="text-muted">Configure system-wide settings and preferences</p>
-                            </div>
-                            <button class="btn btn-primary" @click="showSystemSettingsModal" 
-                                    v-if="hasPermission('system', 'update')">
-                                <i class="fas fa-edit"></i> Edit Settings
-                            </button>
-                        </div>
-
-                        <!-- Settings Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-hospital"></i>
-                                        Hospital Information
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="form-label">Hospital Name</label>
-                                        <div class="form-control">{{ systemSettings.hospital_name }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Department Name</label>
-                                        <div class="form-control">{{ systemSettings.department_name }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Contact Email</label>
-                                        <div class="form-control">{{ systemSettings.contact_email }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Contact Phone</label>
-                                        <div class="form-control">{{ systemSettings.contact_phone }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-shield-alt"></i>
-                                        Security Settings
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.enable_audit_logging" disabled>
-                                        <span class="form-check-label">Enable Audit Logging</span>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.require_mfa" disabled>
-                                        <span class="form-check-label">Require MFA Authentication</span>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.enable_email_notifications" disabled>
-                                        <span class="form-check-label">Enable Email Notifications</span>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.auto_logout_enabled" disabled>
-                                        <span class="form-check-label">Auto-logout after inactivity</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-users-cog"></i>
-                                        System Configuration
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="form-label">Maximum Residents per Unit</label>
-                                        <div class="form-control">{{ systemSettings.max_residents_per_unit }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Default Rotation Duration (weeks)</label>
-                                        <div class="form-control">{{ systemSettings.default_rotation_duration }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Max Leave Days per Year</label>
-                                        <div class="form-control">{{ systemSettings.max_leave_days_per_year }}</div>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" :checked="systemSettings.maintenance_mode" disabled>
-                                        <span class="form-check-label">Maintenance Mode</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-calendar-alt"></i>
-                                        Schedule Settings
-                                    </div>
-                                </div>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="form-label">Default On-call Duration (hours)</label>
-                                        <div class="form-control">{{ systemSettings.default_oncall_duration }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Min Staff per Shift</label>
-                                        <div class="form-control">{{ systemSettings.min_staff_per_shift }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Max Consecutive On-call Days</label>
-                                        <div class="form-control">{{ systemSettings.max_consecutive_oncall_days }}</div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Leave Approval Required Days</label>
-                                        <div class="form-control">{{ systemSettings.leave_approval_required_days }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Permission Manager Side Panel -->
                     <div class="permission-manager" :class="{ open: showPermissionManager }">
                         <div class="permission-header">
@@ -4162,8 +4046,7 @@
         <!-- ============ MODALS ============ -->
         
         <!-- Staff Details Modal -->
-        <div v-if="announcementModal.show" class="modal-overlay">
-
+        <div v-if="staffDetailsModal.show" class="modal-overlay staff-details-modal">
             <div class="modal-container">
                 <div class="modal-header">
                     <div class="modal-title">
@@ -4542,207 +4425,6 @@
                         <span v-if="saving" class="loading"></span>
                         <span v-else>{{ onCallModal.mode === 'add' ? 'Add Schedule' : 'Save Changes' }}</span>
                     </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add/Edit Leave Request Modal -->
-        <div v-if="leaveRequestModal.show" class="modal-overlay">
-            <div class="modal-container">
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <i class="fas fa-calendar-check"></i>
-                        {{ leaveRequestModal.mode === 'add' ? 'Request Leave' : 'Review Leave Request' }}
-                    </div>
-                    <button class="modal-close" @click="leaveRequestModal.show = false">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-info-circle"></i>
-                            Request Information
-                        </div>
-                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-                            <div class="text-sm font-medium">Request Submitted by: {{ leaveRequestModal.request?.staff_name || 'Unknown' }}</div>
-                            <div class="text-sm text-gray-600">Submitted on: {{ formatDateTime(leaveRequestModal.request?.created_at) }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-calendar-alt"></i>
-                            Leave Details
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Start Date *</label>
-                                <input type="date" class="form-control" v-model="leaveRequestModal.form.start_date" 
-                                       :disabled="leaveRequestModal.mode === 'review'">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">End Date *</label>
-                                <input type="date" class="form-control" v-model="leaveRequestModal.form.end_date"
-                                       :disabled="leaveRequestModal.mode === 'review'">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Leave Type</label>
-                                <select class="form-select" v-model="leaveRequestModal.form.leave_type"
-                                        :disabled="leaveRequestModal.mode === 'review'">
-                                    <option value="vacation">Vacation</option>
-                                    <option value="sick_leave">Sick Leave</option>
-                                    <option value="conference">Conference</option>
-                                    <option value="personal">Personal</option>
-                                    <option value="maternity_paternity">Maternity/Paternity</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" v-model="leaveRequestModal.form.status"
-                                        :disabled="!hasPermission('leave_requests', 'update')">
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Reason</label>
-                            <textarea class="form-control" v-model="leaveRequestModal.form.reason" rows="3"
-                                    :disabled="leaveRequestModal.mode === 'review'"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-edit"></i>
-                            Approver Notes
-                        </div>
-                        <div class="form-group">
-                            <textarea class="form-control" v-model="leaveRequestModal.form.approver_notes" rows="3"></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="leaveRequestModal.show = false">Cancel</button>
-                    <div v-if="leaveRequestModal.mode === 'review'" class="flex gap-2">
-                        <button class="btn btn-success" @click="approveLeaveRequest(leaveRequestModal.request)"
-                                v-if="hasPermission('leave_requests', 'approve') && leaveRequestModal.form.status === 'pending'">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveRequestModal.request)"
-                                v-if="hasPermission('leave_requests', 'reject') && leaveRequestModal.form.status === 'pending'">
-                            <i class="fas fa-times"></i> Reject
-                        </button>
-                    </div>
-                    <button v-else class="btn btn-primary" @click="saveLeaveRequest" :disabled="saving">
-                        <span v-if="saving" class="loading"></span>
-                        <span v-else>Submit Request</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Leave Request Details Modal (Read-only view) -->
-        <div v-if="leaveDetailsModal.show" class="modal-overlay">
-            <div class="modal-container">
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <i class="fas fa-calendar-check"></i>
-                        Leave Request Details
-                    </div>
-                    <button class="modal-close" @click="leaveDetailsModal.show = false">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="leave-details-view">
-                        <div class="leave-info-grid">
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Staff Member</div>
-                                <div class="leave-info-value">{{ getPhysicianName(leaveDetailsModal.request.staff_member_id) }}</div>
-                            </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Leave Type</div>
-                                <div class="leave-info-value">{{ leaveDetailsModal.request.leave_type }}</div>
-                            </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Duration</div>
-                                <div class="leave-info-value">{{ leaveDetailsModal.request.total_days }} days</div>
-                            </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Status</div>
-                                <div class="leave-info-value">
-                                    <span class="badge" :class="leaveDetailsModal.request.status === 'approved' ? 'status-available' : 
-                                                               leaveDetailsModal.request.status === 'pending' ? 'status-busy' : 'status-critical'">
-                                        {{ leaveDetailsModal.request.status?.toUpperCase() || 'PENDING' }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <div class="leave-info-label">Dates</div>
-                            <div class="leave-info-value">
-                                {{ formatDate(leaveDetailsModal.request.leave_start_date) }} to {{ formatDate(leaveDetailsModal.request.leave_end_date) }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <div class="leave-info-label">Reason</div>
-                            <div class="form-control" style="min-height: 80px;">
-                                {{ leaveDetailsModal.request.reason || 'No reason provided.' }}
-                            </div>
-                        </div>
-                        
-                        <div v-if="leaveDetailsModal.request.approver_notes" class="mb-4">
-                            <div class="leave-info-label">Approver Notes</div>
-                            <div class="form-control" style="min-height: 60px;">
-                                {{ leaveDetailsModal.request.approver_notes }}
-                            </div>
-                        </div>
-                        
-                        <div class="leave-timeline">
-                            <div class="timeline-status" :class="leaveDetailsModal.request.created_at ? 'completed' : ''">
-                                <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">Request Submitted</div>
-                                <div class="timeline-date">{{ formatDateTime(leaveDetailsModal.request.created_at) }}</div>
-                            </div>
-                            
-                            <div class="timeline-status" :class="leaveDetailsModal.request.reviewed_at ? 'completed' : 
-                                                                leaveDetailsModal.request.status === 'pending' ? 'current' : ''">
-                                <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">Under Review</div>
-                                <div class="timeline-date" v-if="leaveDetailsModal.request.reviewed_at">
-                                    {{ formatDateTime(leaveDetailsModal.request.reviewed_at) }}
-                                </div>
-                            </div>
-                            
-                            <div class="timeline-status" :class="leaveDetailsModal.request.status === 'approved' ? 'completed' : 
-                                                                leaveDetailsModal.request.status === 'rejected' ? 'completed' : ''">
-                                <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">{{ leaveDetailsModal.request.status === 'approved' ? 'Approved' : 
-                                                              leaveDetailsModal.request.status === 'rejected' ? 'Rejected' : 'Decision' }}</div>
-                                <div class="timeline-date" v-if="leaveDetailsModal.request.decision_date">
-                                    {{ formatDateTime(leaveDetailsModal.request.decision_date) }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="leaveDetailsModal.show = false">Close</button>
-                    <div v-if="hasPermission('leave_requests', 'approve') && leaveDetailsModal.request.status === 'pending'">
-                        <button class="btn btn-success" @click="approveLeaveRequest(leaveDetailsModal.request)">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveDetailsModal.request)">
-                            <i class="fas fa-times"></i> Reject
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -5266,6 +4948,207 @@
             </div>
         </div>
 
+        <!-- Leave Request Details Modal -->
+        <div v-if="leaveDetailsModal.show" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-calendar-check"></i>
+                        Leave Request Details
+                    </div>
+                    <button class="modal-close" @click="leaveDetailsModal.show = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="leave-details-view">
+                        <div class="leave-info-grid">
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Staff Member</div>
+                                <div class="leave-info-value">{{ getPhysicianName(leaveDetailsModal.request.staff_member_id) }}</div>
+                            </div>
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Leave Type</div>
+                                <div class="leave-info-value">{{ leaveDetailsModal.request.leave_type }}</div>
+                            </div>
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Duration</div>
+                                <div class="leave-info-value">{{ leaveDetailsModal.request.total_days }} days</div>
+                            </div>
+                            <div class="leave-info-item">
+                                <div class="leave-info-label">Status</div>
+                                <div class="leave-info-value">
+                                    <span class="badge" :class="leaveDetailsModal.request.status === 'approved' ? 'status-available' : 
+                                                               leaveDetailsModal.request.status === 'pending' ? 'status-busy' : 'status-critical'">
+                                        {{ leaveDetailsModal.request.status?.toUpperCase() || 'PENDING' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="leave-info-label">Dates</div>
+                            <div class="leave-info-value">
+                                {{ formatDate(leaveDetailsModal.request.leave_start_date) }} to {{ formatDate(leaveDetailsModal.request.leave_end_date) }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="leave-info-label">Reason</div>
+                            <div class="form-control" style="min-height: 80px;">
+                                {{ leaveDetailsModal.request.reason || 'No reason provided.' }}
+                            </div>
+                        </div>
+                        
+                        <div v-if="leaveDetailsModal.request.approver_notes" class="mb-4">
+                            <div class="leave-info-label">Approver Notes</div>
+                            <div class="form-control" style="min-height: 60px;">
+                                {{ leaveDetailsModal.request.approver_notes }}
+                            </div>
+                        </div>
+                        
+                        <div class="leave-timeline">
+                            <div class="timeline-status" :class="leaveDetailsModal.request.created_at ? 'completed' : ''">
+                                <div class="timeline-dot-small"></div>
+                                <div class="timeline-text">Request Submitted</div>
+                                <div class="timeline-date">{{ formatDateTime(leaveDetailsModal.request.created_at) }}</div>
+                            </div>
+                            
+                            <div class="timeline-status" :class="leaveDetailsModal.request.reviewed_at ? 'completed' : 
+                                                                leaveDetailsModal.request.status === 'pending' ? 'current' : ''">
+                                <div class="timeline-dot-small"></div>
+                                <div class="timeline-text">Under Review</div>
+                                <div class="timeline-date" v-if="leaveDetailsModal.request.reviewed_at">
+                                    {{ formatDateTime(leaveDetailsModal.request.reviewed_at) }}
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-status" :class="leaveDetailsModal.request.status === 'approved' ? 'completed' : 
+                                                                leaveDetailsModal.request.status === 'rejected' ? 'completed' : ''">
+                                <div class="timeline-dot-small"></div>
+                                <div class="timeline-text">{{ leaveDetailsModal.request.status === 'approved' ? 'Approved' : 
+                                                              leaveDetailsModal.request.status === 'rejected' ? 'Rejected' : 'Decision' }}</div>
+                                <div class="timeline-date" v-if="leaveDetailsModal.request.decision_date">
+                                    {{ formatDateTime(leaveDetailsModal.request.decision_date) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="leaveDetailsModal.show = false">Close</button>
+                    <div v-if="hasPermission('leave_requests', 'approve') && leaveDetailsModal.request.status === 'pending'">
+                        <button class="btn btn-success" @click="approveLeaveRequest(leaveDetailsModal.request)">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveDetailsModal.request)">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Leave Request Modal -->
+        <div v-if="leaveRequestModal.show" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-calendar-check"></i>
+                        {{ leaveRequestModal.mode === 'add' ? 'Request Leave' : 'Review Leave Request' }}
+                    </div>
+                    <button class="modal-close" @click="leaveRequestModal.show = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Request Information
+                        </div>
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm font-medium">Request Submitted by: {{ leaveRequestModal.request?.staff_name || 'Unknown' }}</div>
+                            <div class="text-sm text-gray-600">Submitted on: {{ formatDateTime(leaveRequestModal.request?.created_at) }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            Leave Details
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" v-model="leaveRequestModal.form.start_date" 
+                                       :disabled="leaveRequestModal.mode === 'review'">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">End Date *</label>
+                                <input type="date" class="form-control" v-model="leaveRequestModal.form.end_date"
+                                       :disabled="leaveRequestModal.mode === 'review'">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Leave Type</label>
+                                <select class="form-select" v-model="leaveRequestModal.form.leave_type"
+                                        :disabled="leaveRequestModal.mode === 'review'">
+                                    <option value="vacation">Vacation</option>
+                                    <option value="sick_leave">Sick Leave</option>
+                                    <option value="conference">Conference</option>
+                                    <option value="personal">Personal</option>
+                                    <option value="maternity_paternity">Maternity/Paternity</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" v-model="leaveRequestModal.form.status"
+                                        :disabled="!hasPermission('leave_requests', 'update')">
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Reason</label>
+                            <textarea class="form-control" v-model="leaveRequestModal.form.reason" rows="3"
+                                    :disabled="leaveRequestModal.mode === 'review'"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-edit"></i>
+                            Approver Notes
+                        </div>
+                        <div class="form-group">
+                            <textarea class="form-control" v-model="leaveRequestModal.form.approver_notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="leaveRequestModal.show = false">Cancel</button>
+                    <div v-if="leaveRequestModal.mode === 'review'" class="flex gap-2">
+                        <button class="btn btn-success" @click="approveLeaveRequest(leaveRequestModal.request)"
+                                v-if="hasPermission('leave_requests', 'approve') && leaveRequestModal.form.status === 'pending'">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveRequestModal.request)"
+                                v-if="hasPermission('leave_requests', 'reject') && leaveRequestModal.form.status === 'pending'">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                    <button v-else class="btn btn-primary" @click="saveLeaveRequest" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>Submit Request</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- System Settings Modal -->
         <div v-if="systemSettingsModal.show" class="modal-overlay">
             <div class="modal-container">
@@ -5295,10 +5178,6 @@
                             <div class="form-group">
                                 <label class="form-label">Max Residents per Unit</label>
                                 <input type="number" class="form-control" v-model="systemSettingsModal.form.max_residents_per_unit" min="1" max="50">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Default Rotation Duration (weeks)</label>
-                                <input type="number" class="form-control" v-model="systemSettingsModal.form.default_rotation_duration" min="1" max="52">
                             </div>
                         </div>
                     </div>
@@ -5386,18 +5265,6 @@
                                 <span class="form-check-label">Enable Email Notifications</span>
                             </label>
                         </div>
-                        <div class="form-group">
-                            <label class="form-check">
-                                <input type="checkbox" class="form-check-input" v-model="userProfileModal.form.leave_request_notifications">
-                                <span class="form-check-label">Leave Request Notifications</span>
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-check">
-                                <input type="checkbox" class="form-check-input" v-model="userProfileModal.form.announcement_notifications">
-                                <span class="form-check-label">Announcement Notifications</span>
-                            </label>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -5434,8 +5301,6 @@
                                 <option value="medical_staff">Medical Staff</option>
                                 <option value="training_units">Training Units</option>
                                 <option value="resident_rotations">Resident Rotations</option>
-                                <option value="oncall_schedule">On-call Schedule</option>
-                                <option value="leave_requests">Leave Requests</option>
                                 <option value="audit_logs">Audit Logs</option>
                             </select>
                         </div>
@@ -5454,13 +5319,6 @@
                             <input type="file" class="form-control" @change="handleFileSelect" accept=".csv,.json,.xlsx">
                             <small class="text-gray-600">Supported formats: CSV, JSON, Excel</small>
                         </div>
-
-                        <div v-if="importExportModal.mode === 'import'" class="form-group">
-                            <label class="form-check">
-                                <input type="checkbox" class="form-check-input" v-model="importExportModal.overwriteExisting">
-                                <span class="form-check-label">Overwrite existing records</span>
-                            </label>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -5477,7 +5335,34 @@
             </div>
         </div>
     </div>
-
-    <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
