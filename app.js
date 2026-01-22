@@ -3230,7 +3230,6 @@ const closeMobileMenu = () => {
             loginForm,
             loading,
             saving,
-            permissionLoading,
             savingPermissions,
             currentView,
             sidebarCollapsed,
