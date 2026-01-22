@@ -1282,13 +1282,6 @@ const viewScheduleDetails = (date) => {
             showAdvancedToast('Alert Dismissed', 'Coverage alert has been dismissed', 'info');
         };
 
-        const viewUnitDetails = (unitId) => {
-            showAdvancedToast('Info', `Viewing unit details`, 'info');
-        };
-
-        const viewScheduleDetails = (date) => {
-            showAdvancedToast('Info', `Viewing schedule for ${formatDate(date)}`, 'info');
-        };
 
         // ============ AUTHENTICATION ============
         const handleAdvancedLogin = async () => {
