@@ -231,8 +231,6 @@ const app = createApp({
         const userNotifications = ref([]);
         const emergencyContacts = ref([]);
 
-const loading = ref(false);
-const saving = ref(false);
 const permissionLoading = ref(false);
 const savingPermissions = ref(false);
 
@@ -261,7 +259,6 @@ const dailyAssignments = ref([]);
 const leaveRequests = ref([]);
 const onCallSchedule = ref([]);
 // ADD THIS LINE HERE - Announcements data
-const announcements = ref([]);
 const auditLogs = ref([]);
 const systemRoles = ref([]);
 const systemSettings = ref({});
