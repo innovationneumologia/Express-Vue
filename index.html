@@ -3,63 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PneumoCare | Professional Staff Management</title>
+    <title>PneumoCare | Advanced Hospital Management</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <style>
+        /* ===== ENTERPRISE DESIGN SYSTEM ===== */
         :root {
-            /* Professional Color System */
-            --professional-deep: #003366;
-            --professional-primary: #005b8e;
-            --professional-accent: #4A90E2;
-            --professional-light: #E8F4F8;
-            --professional-border: #E2E8F0;
-            --professional-background: #FFFFFF;
-            --professional-surface: #F8FAFC;
+            /* Medical Color System */
+            --deep-blue: #003366;
+            --medical-blue: #005b8e;
+            --teal: #008c8c;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --ruby: #ef4444;
+            --amethyst: #8b5cf6;
+            --sapphire: #06b6d4;
             
-            /* Staff Type Colors */
-            --color-resident: #005b8e;
-            --color-attending: #8b5cf6;
-            --color-fellow: #10b981;
-            --color-nurse: #f59e0b;
-            --color-admin: #64748b;
+            /* Semantic Colors */
+            --primary: var(--medical-blue);
+            --secondary: var(--teal);
+            --success: var(--emerald);
+            --warning: var(--amber);
+            --danger: var(--ruby);
+            --info: var(--sapphire);
             
-            /* Status Colors */
-            --status-active: #10B981;
-            --status-on-leave: #F59E0B;
-            --status-inactive: #94A3B8;
+            /* Surface Colors */
+            --surface-0: #ffffff;
+            --surface-50: #f8fafc;
+            --surface-100: #f1f5f9;
+            --surface-200: #e2e8f0;
+            --surface-300: #cbd5e1;
+            --surface-400: #94a3b8;
+            --surface-500: #64748b;
+            --surface-600: #475569;
+            --surface-700: #334155;
+            --surface-800: #1e293b;
+            --surface-900: #0f172a;
             
-            /* Gray Scale */
-            --gray-50: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-400: #94a3b8;
-            --gray-500: #64748b;
-            --gray-600: #475569;
-            --gray-700: #334155;
-            --gray-800: #1e293b;
+            /* Glassmorphism */
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --glass-blur: blur(10px);
             
-            /* Shadows */
-            --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.05);
-            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-            --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, var(--medical-blue), var(--teal));
+            --gradient-success: linear-gradient(135deg, var(--emerald), #0da67a);
+            --gradient-warning: linear-gradient(135deg, var(--amber), #e5940b);
+            --gradient-danger: linear-gradient(135deg, var(--ruby), #dc2626);
+            --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
             
-            /* Transitions */
-            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-medium: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            /* Typography */
+            --font-heading: 'Inter', sans-serif;
+            --font-body: 'Roboto', sans-serif;
+            
+            /* Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
             
             /* Border Radius */
             --radius-sm: 4px;
             --radius-md: 8px;
             --radius-lg: 12px;
             --radius-xl: 16px;
+            --radius-2xl: 24px;
+            --radius-full: 9999px;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+            
+            /* Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Z-index */
+            --z-dropdown: 1000;
+            --z-sticky: 1020;
+            --z-fixed: 1030;
+            --z-modal-backdrop: 1040;
+            --z-modal: 1050;
+            --z-popover: 1060;
+            --z-tooltip: 1070;
+            --z-toast: 1080;
         }
 
+        /* ===== BASE RESET ===== */
         * {
             margin: 0;
             padding: 0;
@@ -67,916 +109,1155 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--professional-background);
-            color: var(--gray-800);
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, #f6f9fc 0%, #edf2f7 100%);
+            color: var(--surface-800);
             line-height: 1.6;
+            min-height: 100vh;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
         }
 
-        /* ===== APP LAYOUT ===== */
-        .app-container {
-            display: flex;
+        /* ===== ENTERPRISE LOGIN ===== */
+        .login-container {
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--deep-blue) 0%, #004080 50%, var(--medical-blue) 100%);
+            padding: var(--space-xl);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: pulse 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        .login-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-2xl);
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--shadow-2xl);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--space-2xl);
             position: relative;
         }
 
-        /* ===== NAVIGATION SIDEBAR ===== */
-        .nav-sidebar {
-            width: 280px;
-            background: linear-gradient(180deg, var(--professional-deep) 0%, var(--professional-primary) 100%);
-            position: fixed;
-            height: 100vh;
-            z-index: 100;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            transition: width var(--transition-medium);
-        }
-
-        .nav-sidebar.collapsed {
+        .login-logo {
             width: 80px;
-        }
-
-        .nav-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-xl);
             display: flex;
             align-items: center;
-            gap: 1rem;
+            justify-content: center;
+            color: var(--surface-0);
+            font-size: 2rem;
+            margin: 0 auto var(--space-lg);
+            box-shadow: var(--shadow-xl);
+            animation: float 6s ease-in-out infinite;
         }
 
-        .nav-logo {
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .login-title {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--deep-blue);
+            margin-bottom: var(--space-xs);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-subtitle {
+            color: var(--surface-600);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .login-form {
+            display: grid;
+            gap: var(--space-lg);
+        }
+
+        .form-group {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: var(--surface-700);
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            background: var(--surface-0);
+            border: 2px solid var(--surface-200);
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            color: var(--surface-800);
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 91, 142, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-input::placeholder {
+            color: var(--surface-400);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--gradient-primary);
+            color: var(--surface-0);
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .login-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .login-footer {
+            margin-top: var(--space-xl);
+            padding-top: var(--space-lg);
+            border-top: 1px solid var(--surface-200);
+            text-align: center;
+            color: var(--surface-500);
+            font-size: 0.875rem;
+        }
+
+        /* ===== MAIN APPLICATION LAYOUT ===== */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            background: var(--surface-50);
+        }
+
+        /* ===== ADVANCED SIDEBAR ===== */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, var(--deep-blue) 0%, var(--medical-blue) 100%);
+            position: fixed;
+            height: 100vh;
+            z-index: var(--z-fixed);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .sidebar-header {
+            padding: var(--space-xl);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .brand-logo {
             width: 48px;
             height: 48px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.15);
             border-radius: var(--radius-lg);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-            font-weight: 800;
-            flex-shrink: 0;
-        }
-
-        .nav-brand {
-            color: white;
-            flex: 1;
-            transition: opacity var(--transition-medium);
-        }
-
-        .nav-sidebar.collapsed .nav-brand {
-            opacity: 0;
-        }
-
-        .nav-brand h1 {
+            color: var(--surface-0);
             font-size: 1.25rem;
             font-weight: 800;
-            margin-bottom: 0.25rem;
         }
 
-        .nav-brand .subtitle {
-            font-size: 0.8rem;
-            opacity: 0.8;
+        .brand-text {
+            color: var(--surface-0);
+            flex: 1;
+        }
+
+        .brand-text h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 0.125rem;
+        }
+
+        .brand-text .subtitle {
+            font-size: 0.75rem;
+            opacity: 0.9;
             font-weight: 500;
         }
 
-        .nav-content {
-            padding: 1.5rem;
-            flex: 1;
+        .user-profile {
             display: flex;
-            flex-direction: column;
-            gap: 2rem;
-            overflow-y: auto;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            margin: var(--space-md);
+            color: var(--surface-0);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--surface-0);
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            opacity: 0.8;
         }
 
         .nav-section {
+            padding: var(--space-md);
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: var(--space-xs);
         }
 
-        .nav-section-title {
-            color: rgba(255,255,255,0.6);
+        .nav-title {
+            color: rgba(255, 255, 255, 0.6);
             font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.5rem;
-            padding-left: 0.5rem;
-            transition: opacity var(--transition-medium);
-        }
-
-        .nav-sidebar.collapsed .nav-section-title {
-            opacity: 0;
+            letter-spacing: 0.5px;
+            padding: var(--space-sm) var(--space-md);
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            padding: 0.875rem 1rem;
+            gap: var(--space-md);
+            padding: 0.875rem var(--space-md);
             border: none;
             background: none;
             border-radius: var(--radius-lg);
             cursor: pointer;
-            color: rgba(255,255,255,0.85);
-            transition: var(--transition-fast);
+            color: rgba(255, 255, 255, 0.85);
+            transition: all var(--transition-base);
             font-weight: 500;
             text-align: left;
-            width: 100%;
+            position: relative;
+            overflow: hidden;
         }
 
-        .nav-sidebar.collapsed .nav-item {
-            justify-content: center;
-            padding: 0.875rem;
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--surface-0);
+            transform: translateX(-100%);
+            transition: transform var(--transition-base);
         }
 
         .nav-item:hover {
-            background: rgba(255,255,255,0.12);
-            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--surface-0);
+            transform: translateX(5px);
+        }
+
+        .nav-item:hover::before {
+            transform: translateX(0);
         }
 
         .nav-item.active {
-            background: rgba(255,255,255,0.15);
-            color: white;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--surface-0);
             font-weight: 600;
         }
 
-        .nav-text {
-            flex: 1;
-            transition: opacity var(--transition-medium);
+        .nav-item.active::before {
+            transform: translateX(0);
         }
 
-        .nav-sidebar.collapsed .nav-text {
-            opacity: 0;
-            width: 0;
-        }
-
-        .nav-footer {
-            padding: 1.5rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            margin-top: auto;
-        }
-
-        .user-mini {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.8rem;
+        .nav-item i {
+            width: 20px;
             text-align: center;
         }
 
-        /* ===== MAIN WORKSPACE ===== */
-        .main-workspace {
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
             flex: 1;
             margin-left: 280px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            transition: var(--transition-medium);
+            transition: margin-left var(--transition-base);
         }
 
-        .nav-sidebar.collapsed ~ .main-workspace {
-            margin-left: 80px;
-        }
-
-        /* Workspace Header */
-        .workspace-header {
-            background: var(--professional-background);
-            padding: 1.25rem 2rem;
-            border-bottom: 1px solid var(--professional-border);
+        /* Header */
+        .content-header {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: var(--space-lg) var(--space-xl);
+            border-bottom: 1px solid var(--surface-200);
+            position: sticky;
+            top: 0;
+            z-index: var(--z-sticky);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            backdrop-filter: blur(10px);
-            background: rgba(255,255,255,0.95);
+            box-shadow: var(--shadow-sm);
         }
 
-        .header-title h1 {
-            font-size: 1.5rem;
+        .page-title h1 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
             font-weight: 800;
-            margin-bottom: 0.25rem;
-            color: var(--gray-900);
+            color: var(--surface-900);
+            margin-bottom: var(--space-xs);
         }
 
-        .header-subtitle {
-            color: var(--gray-600);
-            font-size: 0.95rem;
+        .page-subtitle {
+            color: var(--surface-600);
+            font-size: 0.875rem;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
         }
 
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: var(--space-md);
         }
 
-        .btn-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--professional-border);
-            background: var(--professional-background);
-            color: var(--gray-600);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition-fast);
+        .search-container {
+            position: relative;
+            width: 300px;
         }
 
-        .btn-icon:hover {
-            background: var(--professional-light);
-            border-color: var(--professional-accent);
-            color: var(--professional-primary);
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            background: var(--surface-0);
+            border: 2px solid var(--surface-200);
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem;
+            transition: all var(--transition-base);
         }
 
-        /* Workspace Content */
-        .workspace-content {
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 91, 142, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--surface-400);
+        }
+
+        /* Content Area */
+        .content-area {
             flex: 1;
-            padding: 2rem;
-            background: var(--professional-surface);
+            padding: var(--space-xl);
             overflow-y: auto;
         }
 
-        /* ===== PROFESSIONAL STAFF TABLE ===== */
-        .staff-table-container {
-            background: var(--professional-background);
+        /* ===== ENTERPRISE DASHBOARD ===== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .metric-card {
+            background: var(--surface-0);
             border-radius: var(--radius-xl);
-            border: 1px solid var(--professional-border);
-            box-shadow: var(--shadow-medium);
+            padding: var(--space-xl);
+            border: 1px solid var(--surface-200);
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+            position: relative;
             overflow: hidden;
         }
 
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--surface-300);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--medical-blue);
+            line-height: 1;
+            margin-bottom: var(--space-sm);
+        }
+
+        .metric-label {
+            color: var(--surface-600);
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        /* ===== ADVANCED DATA TABLES ===== */
+        .data-table-container {
+            background: var(--surface-0);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--surface-200);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin-bottom: var(--space-xl);
+        }
+
         .table-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--professional-border);
-            background: var(--professional-surface);
+            padding: var(--space-lg) var(--space-xl);
+            border-bottom: 1px solid var(--surface-200);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: var(--surface-50);
         }
 
         .table-title {
             font-size: 1.25rem;
             font-weight: 700;
-            color: var(--gray-900);
+            color: var(--surface-900);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .action-button {
+            padding: 0.625rem 1.25rem;
+            background: var(--surface-0);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-md);
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .action-button:hover {
+            background: var(--primary);
+            color: var(--surface-0);
+            transform: translateY(-1px);
+        }
+
+        .action-button.primary {
+            background: var(--gradient-primary);
+            color: var(--surface-0);
+            border: none;
         }
 
         .table-filters {
+            padding: var(--space-md) var(--space-xl);
+            border-bottom: 1px solid var(--surface-200);
+            background: var(--surface-50);
             display: flex;
-            gap: 0.75rem;
+            gap: var(--space-md);
             align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            color: var(--surface-600);
+            font-weight: 500;
         }
 
         .filter-select {
             padding: 0.5rem 1rem;
-            border: 1px solid var(--professional-border);
+            border: 2px solid var(--surface-200);
             border-radius: var(--radius-md);
-            background: var(--professional-background);
-            color: var(--gray-700);
+            background: var(--surface-0);
+            color: var(--surface-700);
             font-size: 0.875rem;
+            min-width: 150px;
             cursor: pointer;
+            transition: all var(--transition-base);
         }
 
-        .staff-table {
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .advanced-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
         }
 
-        .staff-table thead {
-            background: var(--professional-surface);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .staff-table th {
-            padding: 1rem 1.5rem;
-            text-align: left;
-            font-weight: 600;
-            color: var(--gray-700);
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid var(--professional-border);
-            white-space: nowrap;
-        }
-
-        .staff-table tbody tr {
-            cursor: pointer;
-            transition: var(--transition-fast);
-            border-bottom: 1px solid var(--professional-border);
-        }
-
-        .staff-table tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        .staff-table tbody tr:hover {
-            background: var(--professional-light);
-        }
-
-        .staff-table tbody tr.selected {
-            background: var(--professional-light);
-            border-left: 4px solid var(--professional-primary);
-        }
-
-        .staff-table td {
-            padding: 1rem 1.5rem;
-            vertical-align: middle;
-        }
-
-        /* Staff Avatar */
-        .staff-avatar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .avatar-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-        }
-
-        .avatar-circle.resident { background: var(--color-resident); }
-        .avatar-circle.attending { background: var(--color-attending); }
-        .avatar-circle.fellow { background: var(--color-fellow); }
-        .avatar-circle.nurse { background: var(--color-nurse); }
-        .avatar-circle.admin { background: var(--color-admin); }
-
-        .avatar-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .avatar-name {
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: 0.125rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .avatar-id {
-            font-size: 0.8rem;
-            color: var(--gray-500);
-        }
-
-        /* Staff Type Badges */
-        .type-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            padding: 0.375rem 0.75rem;
-            border-radius: var(--radius-full);
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .type-badge.resident {
-            background: rgba(0, 91, 142, 0.1);
-            color: var(--color-resident);
-        }
-
-        .type-badge.attending {
-            background: rgba(139, 92, 246, 0.1);
-            color: var(--color-attending);
-        }
-
-        .type-badge.fellow {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--color-fellow);
-        }
-
-        .type-badge.nurse {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--color-nurse);
-        }
-
-        /* Status Indicators */
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            font-size: 0.875rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .status-dot.active { background: var(--status-active); }
-        .status-dot.on_leave { background: var(--status-on-leave); }
-        .status-dot.inactive { background: var(--status-inactive); }
-
-        /* Current Assignment */
-        .current-assignment {
-            font-size: 0.875rem;
-            color: var(--gray-700);
-        }
-
-        .current-assignment .unit {
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 0.125rem;
-        }
-
-        .current-assignment .meta {
-            font-size: 0.8rem;
-            color: var(--gray-500);
-        }
-
-        /* Row Actions */
-        .row-actions {
-            display: flex;
-            gap: 0.5rem;
-            opacity: 0;
-            transition: opacity var(--transition-fast);
-        }
-
-        .staff-table tbody tr:hover .row-actions,
-        .staff-table tbody tr.selected .row-actions {
-            opacity: 1;
-        }
-
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--professional-border);
-            background: var(--professional-background);
-            color: var(--gray-600);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition-fast);
-        }
-
-        .action-btn:hover {
-            background: var(--professional-primary);
-            color: white;
-            border-color: var(--professional-primary);
-        }
-
-        /* ===== FULL PROFILE PANEL ===== */
-        .profile-panel {
-            position: fixed;
-            top: 0;
-            right: -450px;
-            width: 450px;
-            height: 100vh;
-            background: var(--professional-background);
-            border-left: 1px solid var(--professional-border);
-            box-shadow: var(--shadow-xl);
-            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .profile-panel.open {
-            right: 0;
-        }
-
-        .profile-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--professional-border);
-            background: var(--professional-surface);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .profile-identity {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex: 1;
-        }
-
-        .profile-avatar-large {
-            width: 64px;
-            height: 64px;
-            border-radius: var(--radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 800;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-
-        .profile-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .profile-name {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--gray-900);
-            margin-bottom: 0.25rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .profile-role {
-            font-size: 0.9rem;
-            color: var(--gray-600);
-            margin-bottom: 0.5rem;
-        }
-
-        .profile-status {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .panel-close {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-md);
-            border: none;
-            background: var(--professional-background);
-            color: var(--gray-600);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition-fast);
-        }
-
-        .panel-close:hover {
-            background: var(--professional-border);
-            color: var(--gray-900);
-        }
-
-        .profile-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0;
-        }
-
-        /* Profile Tabs */
-        .profile-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--professional-border);
-            background: var(--professional-surface);
+        .advanced-table thead {
+            background: var(--surface-50);
             position: sticky;
             top: 0;
             z-index: 1;
         }
 
-        .profile-tab {
-            flex: 1;
-            padding: 1rem;
-            border: none;
-            background: none;
-            color: var(--gray-600);
+        .advanced-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
             font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition-fast);
-            text-align: center;
-            border-bottom: 3px solid transparent;
-            font-size: 0.9rem;
-        }
-
-        .profile-tab:hover {
-            background: var(--professional-background);
-            color: var(--gray-900);
-        }
-
-        .profile-tab.active {
-            color: var(--professional-primary);
-            border-bottom-color: var(--professional-primary);
-            background: var(--professional-background);
-        }
-
-        /* Tab Content */
-        .tab-content {
-            display: none;
-            padding: 1.5rem;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Overview Tab */
-        .overview-grid {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .overview-section {
-            background: var(--professional-surface);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
-            border: 1px solid var(--professional-border);
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            color: var(--gray-700);
-            font-weight: 600;
-        }
-
-        .contact-list {
-            display: grid;
-            gap: 0.75rem;
-        }
-
-        .contact-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: var(--professional-background);
-            border-radius: var(--radius-md);
-        }
-
-        .contact-item i {
-            width: 20px;
-            color: var(--professional-primary);
-        }
-
-        .assignment-current {
-            background: rgba(0, 91, 142, 0.05);
-            border: 1px solid rgba(0, 91, 142, 0.2);
-        }
-
-        .assignment-item {
-            display: grid;
-            gap: 0.5rem;
-        }
-
-        .assignment-unit {
-            font-weight: 700;
-            color: var(--gray-900);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .assignment-dates {
-            font-size: 0.9rem;
-            color: var(--gray-600);
-        }
-
-        .assignment-supervisor {
-            font-size: 0.85rem;
-            color: var(--gray-500);
-        }
-
-        /* Professional Details Tab */
-        .details-grid {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .detail-row {
-            display: flex;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
-
-        .detail-label {
-            color: var(--gray-600);
-            min-width: 120px;
-            font-weight: 500;
-        }
-
-        .detail-value {
-            color: var(--gray-900);
-            flex: 1;
-        }
-
-        /* Assignments History Tab */
-        .assignments-timeline {
-            position: relative;
-            padding-left: 20px;
-        }
-
-        .timeline-track {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--professional-border);
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .timeline-dot {
-            position: absolute;
-            left: -24px;
-            top: 4px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--professional-primary);
-            border: 2px solid var(--professional-background);
-        }
-
-        .timeline-content {
-            background: var(--professional-surface);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            border: 1px solid var(--professional-border);
-        }
-
-        .timeline-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .timeline-title {
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-
-        .timeline-date {
-            font-size: 0.8rem;
-            color: var(--gray-500);
-        }
-
-        /* Schedule Tab */
-        .schedule-week {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .schedule-day {
-            background: var(--professional-surface);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            border-left: 4px solid var(--professional-primary);
-        }
-
-        .schedule-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-
-        .schedule-date {
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-
-        .schedule-items {
-            display: grid;
-            gap: 0.5rem;
-        }
-
-        .schedule-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: var(--professional-background);
-            border-radius: var(--radius-sm);
+            color: var(--surface-700);
             font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--surface-200);
+            white-space: nowrap;
         }
 
-        .schedule-item i {
-            color: var(--professional-primary);
-            width: 16px;
+        .advanced-table tbody tr {
+            transition: all var(--transition-base);
+            border-bottom: 1px solid var(--surface-200);
         }
 
-        /* Documents Tab */
-        .documents-grid {
+        .advanced-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .advanced-table tbody tr:hover {
+            background: var(--surface-50);
+        }
+
+        .advanced-table td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+        }
+
+        /* ===== STAFF PROFILE CARDS ===== */
+        .staff-grid {
             display: grid;
-            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: var(--space-lg);
         }
 
-        .document-card {
+        .staff-card {
+            background: var(--surface-0);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--surface-200);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+        }
+
+        .staff-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .card-header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--surface-200);
+            background: var(--gradient-glass);
             display: flex;
             align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: var(--professional-surface);
-            border-radius: var(--radius-md);
-            border: 1px solid var(--professional-border);
-            transition: var(--transition-fast);
+            gap: var(--space-md);
         }
 
-        .document-card:hover {
-            border-color: var(--professional-primary);
-            background: var(--professional-background);
-        }
-
-        .document-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-md);
-            background: var(--professional-light);
-            color: var(--professional-primary);
+        .staff-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-lg);
+            background: var(--gradient-primary);
             display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--surface-0);
             font-size: 1.25rem;
+            font-weight: 700;
+            flex-shrink: 0;
         }
 
-        .document-info {
+        .staff-info {
             flex: 1;
             min-width: 0;
         }
 
-        .document-name {
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 0.25rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .document-meta {
-            font-size: 0.8rem;
-            color: var(--gray-500);
-        }
-
-        /* Actions Tab */
-        .actions-grid {
-            display: grid;
-            gap: 0.75rem;
-        }
-
-        .action-button {
+        .staff-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--surface-900);
+            margin-bottom: var(--space-xs);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 1rem;
-            border: 1px solid var(--professional-border);
-            border-radius: var(--radius-md);
-            background: var(--professional-background);
-            color: var(--gray-800);
+            gap: var(--space-sm);
+        }
+
+        .staff-id {
+            font-size: 0.875rem;
+            color: var(--surface-500);
+            font-weight: 600;
+        }
+
+        .staff-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-top: var(--space-sm);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.resident {
+            background: rgba(0, 91, 142, 0.1);
+            color: var(--medical-blue);
+        }
+
+        .badge.attending {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--amethyst);
+        }
+
+        .badge.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--emerald);
+        }
+
+        .card-body {
+            padding: var(--space-lg);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--surface-100);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--surface-600);
+            font-size: 0.875rem;
             font-weight: 500;
+        }
+
+        .info-value {
+            color: var(--surface-800);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .card-footer {
+            padding: var(--space-lg);
+            border-top: 1px solid var(--surface-200);
+            background: var(--surface-50);
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: var(--transition-fast);
-            text-align: left;
-            width: 100%;
-        }
-
-        .action-button:hover {
-            background: var(--professional-primary);
-            color: white;
-            border-color: var(--professional-primary);
-        }
-
-        .action-button i {
-            width: 20px;
+            transition: all var(--transition-base);
+            flex: 1;
             text-align: center;
         }
 
-        /* ===== ANNOUNCEMENTS PANEL ===== */
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: var(--surface-0);
+        }
+
+        /* ===== ENTERPRISE MODALS ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: var(--z-modal-backdrop);
+            padding: var(--space-xl);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-container {
+            background: var(--surface-0);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-2xl);
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-2xl);
+            animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid var(--surface-200);
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-xl);
+            padding-bottom: var(--space-lg);
+            border-bottom: 2px solid var(--surface-200);
+        }
+
+        .modal-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--surface-900);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--surface-0);
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            border: none;
+            background: var(--surface-100);
+            color: var(--surface-600);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-base);
+        }
+
+        .modal-close:hover {
+            background: var(--surface-200);
+            color: var(--surface-900);
+        }
+
+        .modal-body {
+            display: grid;
+            gap: var(--space-lg);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+        }
+
+        .form-group {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--surface-700);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            border: 2px solid var(--surface-200);
+            border-radius: var(--radius-lg);
+            background: var(--surface-0);
+            font-size: 0.875rem;
+            color: var(--surface-800);
+            transition: all var(--transition-base);
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 91, 142, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            margin-top: var(--space-xl);
+            padding-top: var(--space-lg);
+            border-top: 2px solid var(--surface-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-md);
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: var(--surface-0);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--surface-100);
+            color: var(--surface-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-200);
+        }
+
+        /* ===== PERMISSION MANAGER ===== */
+        .permission-manager {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 400px;
+            background: var(--surface-0);
+            border-left: 1px solid var(--surface-200);
+            box-shadow: var(--shadow-2xl);
+            z-index: var(--z-modal);
+            transform: translateX(100%);
+            transition: transform var(--transition-base);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .permission-manager.open {
+            transform: translateX(0);
+        }
+
+        .permission-grid {
+            display: grid;
+            gap: var(--space-md);
+            padding: var(--space-lg);
+        }
+
+        .permission-card {
+            background: var(--surface-50);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            border: 1px solid var(--surface-200);
+        }
+
+        .permission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .permission-title {
+            font-weight: 600;
+            color: var(--surface-800);
+        }
+
+        .permission-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--surface-300);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .permission-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: var(--surface-0);
+            border-radius: 50%;
+            transition: all var(--transition-base);
+        }
+
+        .permission-toggle.active {
+            background: var(--emerald);
+        }
+
+        .permission-toggle.active::after {
+            left: calc(100% - 22px);
+        }
+
+        /* ===== TOAST SYSTEM ===== */
+        .toast-container {
+            position: fixed;
+            bottom: var(--space-xl);
+            right: var(--space-xl);
+            z-index: var(--z-toast);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            width: 350px;
+        }
+
+        .toast {
+            background: var(--surface-0);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid var(--primary);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success {
+            border-left-color: var(--emerald);
+        }
+
+        .toast.error {
+            border-left-color: var(--ruby);
+        }
+
+        .toast.warning {
+            border-left-color: var(--amber);
+        }
+
+        .toast.info {
+            border-left-color: var(--sapphire);
+        }
+
+        /* ===== ANNOUNCEMENTS SYSTEM ===== */
         .announcements-panel {
             position: fixed;
             top: 0;
             right: 0;
-            width: 350px;
+            width: 400px;
             height: 100vh;
-            background: var(--professional-background);
-            border-left: 1px solid var(--professional-border);
-            box-shadow: var(--shadow-xl);
+            background: var(--surface-0);
+            border-left: 1px solid var(--surface-200);
+            box-shadow: var(--shadow-2xl);
             transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
+            transition: transform var(--transition-base);
+            z-index: var(--z-modal);
             display: flex;
             flex-direction: column;
         }
@@ -985,1268 +1266,907 @@
             transform: translateX(0);
         }
 
-        .announcements-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--professional-border);
-            background: var(--professional-surface);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .announcements-header h3 {
-            margin: 0;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--gray-900);
-        }
-
-        .announcements-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-
         .announcement-card {
-            background: var(--professional-surface);
+            background: var(--surface-50);
             border-radius: var(--radius-lg);
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border-left: 4px solid var(--professional-primary);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+            border: 1px solid var(--surface-200);
+            transition: all var(--transition-base);
+        }
+
+        .announcement-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .announcement-card.critical {
-            border-left-color: #ef4444;
+            border-left: 4px solid var(--ruby);
             background: rgba(239, 68, 68, 0.05);
         }
 
-        .announcement-title {
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 0.5rem;
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .mobile-menu-toggle {
+                display: flex;
+                position: fixed;
+                top: 1rem;
+                left: 1rem;
+                z-index: var(--z-fixed);
+                background: var(--primary);
+                color: var(--surface-0);
+                border: none;
+                width: 48px;
+                height: 48px;
+                border-radius: var(--radius-lg);
+                align-items: center;
+                justify-content: center;
+                font-size: 1.25rem;
+                cursor: pointer;
+                box-shadow: var(--shadow-lg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-header {
+                flex-direction: column;
+                gap: var(--space-md);
+                align-items: stretch;
+            }
+            
+            .search-container {
+                width: 100%;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .staff-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-container {
+                margin: var(--space-md);
+                padding: var(--space-lg);
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== UTILITIES ===== */
+        .loading {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-2xl);
+            color: var(--surface-500);
         }
 
-        .announcement-time {
-            font-size: 0.8rem;
-            color: var(--gray-500);
-            white-space: nowrap;
-        }
-
-        .announcement-content {
-            font-size: 0.9rem;
-            color: var(--gray-700);
-            line-height: 1.5;
-        }
-
-        /* ===== UTILITY CLASSES ===== */
-        .empty-state {
-            text-align: center;
-            padding: 2rem;
-            color: var(--gray-500);
-        }
-
-        .empty-state i {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .loading-state {
-            padding: 3rem;
-            text-align: center;
-            color: var(--gray-500);
-        }
-
-        .loading-spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid var(--professional-border);
-            border-top-color: var(--professional-primary);
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--surface-200);
+            border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            margin-bottom: var(--space-md);
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* ===== RESPONSIVE DESIGN ===== */
-        @media (max-width: 1200px) {
-            .profile-panel {
-                width: 400px;
-            }
+        .empty-state {
+            text-align: center;
+            padding: var(--space-2xl);
+            color: var(--surface-500);
         }
 
-        @media (max-width: 1024px) {
-            .nav-sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .nav-sidebar.mobile-open {
-                transform: translateX(0);
-            }
-            
-            .main-workspace {
-                margin-left: 0;
-            }
-            
-            .profile-panel {
-                width: 100%;
-                max-width: 450px;
-            }
-            
-            .announcements-panel {
-                width: 100%;
-                max-width: 350px;
-            }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: var(--space-md);
+            opacity: 0.5;
         }
 
-        @media (max-width: 768px) {
-            .workspace-content {
-                padding: 1rem;
-            }
-            
-            .table-header {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
-            }
-            
-            .table-filters {
-                flex-wrap: wrap;
-            }
-            
-            .staff-table {
-                display: block;
-                overflow-x: auto;
-            }
-            
-            .profile-header {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .profile-tabs {
-                flex-wrap: wrap;
-            }
-            
-            .profile-tab {
-                flex: none;
-                min-width: 100px;
-            }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: var(--space-xs);
         }
 
-        /* Scrollbar */
+        .status-dot.active {
+            background: var(--emerald);
+        }
+
+        .status-dot.inactive {
+            background: var(--ruby);
+        }
+
+        .status-dot.pending {
+            background: var(--amber);
+        }
+
+        /* ===== CUSTOM SCROLLBAR ===== */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--professional-surface);
-            border-radius: 4px;
+            background: var(--surface-100);
+            border-radius: var(--radius-full);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--gray-400);
-            border-radius: 4px;
+            background: var(--surface-300);
+            border-radius: var(--radius-full);
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--gray-500);
+            background: var(--surface-400);
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- App Container -->
-        <div class="app-container">
-            <!-- Navigation Sidebar -->
-            <nav class="nav-sidebar" :class="{ collapsed: sidebarCollapsed }">
-                <div class="nav-header">
-                    <div class="nav-logo">
+        <!-- ===== LOGIN SCREEN ===== -->
+        <div v-if="!currentUser" class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-logo">
                         <i class="fas fa-lungs"></i>
                     </div>
-                    <div class="nav-brand">
-                        <h1>PneumoCare</h1>
-                        <div class="subtitle">Professional Staff</div>
-                    </div>
+                    <h1 class="login-title">PneumoCare</h1>
+                    <div class="login-subtitle">Enterprise Hospital Management System</div>
                 </div>
                 
-                <div class="nav-content">
-                    <div class="nav-section">
-                        <div class="nav-section-title">Management</div>
-                        <button class="nav-item" :class="{ active: currentView === 'staff' }" @click="switchView('staff')">
-                            <i class="fas fa-user-md"></i>
-                            <span class="nav-text">All Staff</span>
-                        </button>
-                        <button class="nav-item" :class="{ active: currentView === 'units' }" @click="switchView('units')">
-                            <i class="fas fa-hospital-alt"></i>
-                            <span class="nav-text">Clinical Units</span>
-                        </button>
-                        <button class="nav-item" :class="{ active: currentView === 'assignments' }" @click="switchView('assignments')">
-                            <i class="fas fa-tasks"></i>
-                            <span class="nav-text">Assignments</span>
-                        </button>
+                <form class="login-form" @submit.prevent="handleAdvancedLogin">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>Email Address</span>
+                            <i class="fas fa-key"></i>
+                        </label>
+                        <input type="email" 
+                               class="form-input" 
+                               v-model="loginForm.email" 
+                               required
+                               placeholder="username@hospital.org">
                     </div>
                     
-                    <div class="nav-section">
-                        <div class="nav-section-title">Operations</div>
-                        <button class="nav-item" :class="{ active: currentView === 'schedule' }" @click="switchView('schedule')">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span class="nav-text">Schedule</span>
-                        </button>
-                        <button class="nav-item" :class="{ active: currentView === 'oncall' }" @click="switchView('oncall')">
-                            <i class="fas fa-phone-alt"></i>
-                            <span class="nav-text">On-call</span>
-                        </button>
-                        <button class="nav-item" @click="toggleAnnouncements">
-                            <i class="fas fa-bullhorn"></i>
-                            <span class="nav-text">Announcements</span>
-                            <span v-if="unreadAnnouncements > 0" class="badge-count">
-                                {{ unreadAnnouncements }}
-                            </span>
-                        </button>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>Password</span>
+                            <i class="fas fa-lock"></i>
+                        </label>
+                        <input type="password" 
+                               class="form-input" 
+                               v-model="loginForm.password" 
+                               required
+                               placeholder="••••••••">
                     </div>
-                </div>
+                    
+                    <div v-if="loginForm.require_mfa" class="form-group">
+                        <label class="form-label">
+                            <span>MFA Code</span>
+                            <i class="fas fa-mobile-alt"></i>
+                        </label>
+                        <input type="text" 
+                               class="form-input" 
+                               v-model="loginForm.mfa_code"
+                               placeholder="Enter 6-digit code">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="login-button" 
+                            :disabled="loading">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span v-if="loading">Authenticating...</span>
+                        <span v-else>Sign In</span>
+                    </button>
+                </form>
                 
-                <div class="nav-footer">
-                    <div class="user-mini">
-                        <div>{{ currentUser?.full_name }}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.8;">{{ formatRole(currentUser?.role) }}</div>
-                    </div>
-                </div>
-            </nav>
-
-            <!-- Main Workspace -->
-            <main class="main-workspace">
-                <!-- Header -->
-                <header class="workspace-header">
-                    <div>
-                        <h1 class="header-title">{{ getViewTitle() }}</h1>
-                        <div class="header-subtitle">{{ getViewSubtitle() }}</div>
-                    </div>
-                    
-                    <div class="header-actions">
-                        <button class="btn-icon" @click="toggleSidebar" title="Toggle sidebar">
-                            <i class="fas" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
-                        </button>
-                        <button class="btn-icon" @click="refreshData" title="Refresh">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <button class="btn-icon" @click="exportData" title="Export">
-                            <i class="fas fa-download"></i>
-                        </button>
-                    </div>
-                </header>
-
-                <!-- Content -->
-                <div class="workspace-content">
-                    <!-- Staff Management View -->
-                    <div v-if="currentView === 'staff'">
-                        <div class="staff-table-container">
-                            <div class="table-header">
-                                <div class="table-title">Clinical Staff Directory</div>
-                                <div class="table-filters">
-                                    <select class="filter-select" v-model="filters.staff_type" @change="applyFilters">
-                                        <option value="">All Roles</option>
-                                        <option value="medical_resident">Residents</option>
-                                        <option value="attending_physician">Attendings</option>
-                                        <option value="fellow">Fellows</option>
-                                        <option value="nurse_practitioner">Nurse Practitioners</option>
-                                    </select>
-                                    <select class="filter-select" v-model="filters.status" @change="applyFilters">
-                                        <option value="">All Status</option>
-                                        <option value="active">Active</option>
-                                        <option value="on_leave">On Leave</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                    <input type="text" 
-                                           class="filter-select" 
-                                           placeholder="Search..." 
-                                           v-model="filters.search"
-                                           @input="applyFilters">
-                                </div>
-                            </div>
-                            
-                            <table class="staff-table">
-                                <thead>
-                                    <tr>
-                                        <th>Staff Member</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Current Assignment</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="staff in filteredStaff" 
-                                        :key="staff.id"
-                                        :class="{ selected: selectedStaffId === staff.id }"
-                                        @click="selectStaff(staff.id)"
-                                        @dblclick="openProfile(staff)">
-                                        
-                                        <!-- Staff Avatar & Info -->
-                                        <td>
-                                            <div class="staff-avatar">
-                                                <div class="avatar-circle" :class="getStaffTypeClass(staff.staff_type)">
-                                                    {{ getInitials(staff.full_name) }}
-                                                </div>
-                                                <div class="avatar-info">
-                                                    <div class="avatar-name">{{ staff.full_name }}</div>
-                                                    <div class="avatar-id">{{ staff.staff_id }}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        
-                                        <!-- Role -->
-                                        <td>
-                                            <span class="type-badge" :class="getStaffTypeClass(staff.staff_type)">
-                                                {{ formatStaffType(staff.staff_type) }}
-                                            </span>
-                                        </td>
-                                        
-                                        <!-- Status -->
-                                        <td>
-                                            <div class="status-indicator">
-                                                <span class="status-dot" :class="staff.employment_status"></span>
-                                                {{ formatStatus(staff.employment_status) }}
-                                            </div>
-                                        </td>
-                                        
-                                        <!-- Current Assignment -->
-                                        <td>
-                                            <div class="current-assignment">
-                                                <div class="unit">
-                                                    {{ getCurrentAssignment(staff)?.unit_name || 'Not assigned' }}
-                                                </div>
-                                                <div v-if="getCurrentAssignment(staff)?.end_date" class="meta">
-                                                    Ends {{ formatDateShort(getCurrentAssignment(staff).end_date) }}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        
-                                        <!-- Actions -->
-                                        <td>
-                                            <div class="row-actions">
-                                                <button class="action-btn" @click.stop="messageStaff(staff)" title="Message">
-                                                    <i class="fas fa-comment"></i>
-                                                </button>
-                                                <button class="action-btn" @click.stop="assignStaff(staff)" title="Assign">
-                                                    <i class="fas fa-map-marker-alt"></i>
-                                                </button>
-                                                <button class="action-btn" @click.stop="openProfile(staff)" title="View Profile">
-                                                    <i class="fas fa-chevron-right"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <div class="login-footer">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); font-size: 0.8rem;">
+                        <div>
+                            <i class="fas fa-shield-alt"></i> HIPAA Compliant
                         </div>
-                    </div>
-                    
-                    <!-- Other Views Placeholder -->
-                    <div v-if="currentView !== 'staff'" class="empty-state">
-                        <i class="fas fa-cogs"></i>
-                        <h3>{{ getViewTitle() }}</h3>
-                        <p>View implementation coming soon</p>
-                    </div>
-                </div>
-            </main>
-
-            <!-- FULL PROFILE PANEL -->
-            <div class="profile-panel" :class="{ open: profilePanel.open }">
-                <!-- Panel Header -->
-                <div class="profile-header" v-if="profilePanel.staff">
-                    <div class="profile-identity">
-                        <div class="profile-avatar-large" :class="getStaffTypeClass(profilePanel.staff.staff_type)">
-                            {{ getInitials(profilePanel.staff.full_name) }}
-                        </div>
-                        <div class="profile-info">
-                            <div class="profile-name">{{ profilePanel.staff.full_name }}</div>
-                            <div class="profile-role">
-                                {{ formatStaffType(profilePanel.staff.staff_type) }}
-                                <span v-if="profilePanel.staff.resident_category"> • {{ formatResidentCategory(profilePanel.staff.resident_category) }}</span>
-                            </div>
-                            <div class="profile-status">
-                                <span class="type-badge" :class="getStaffTypeClass(profilePanel.staff.staff_type)">
-                                    {{ formatStaffType(profilePanel.staff.staff_type) }}
-                                </span>
-                                <span class="status-badge" :class="profilePanel.staff.employment_status">
-                                    {{ formatStatus(profilePanel.staff.employment_status) }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="panel-close" @click="closeProfilePanel">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Profile Tabs -->
-                <div class="profile-tabs">
-                    <button class="profile-tab" 
-                            :class="{ active: profilePanel.activeTab === 'overview' }"
-                            @click="switchProfileTab('overview')">
-                        <i class="fas fa-user"></i> Overview
-                    </button>
-                    <button class="profile-tab" 
-                            :class="{ active: profilePanel.activeTab === 'details' }"
-                            @click="switchProfileTab('details')">
-                        <i class="fas fa-info-circle"></i> Details
-                    </button>
-                    <button class="profile-tab" 
-                            :class="{ active: profilePanel.activeTab === 'assignments' }"
-                            @click="switchProfileTab('assignments')">
-                        <i class="fas fa-history"></i> Assignments
-                    </button>
-                    <button class="profile-tab" 
-                            :class="{ active: profilePanel.activeTab === 'schedule' }"
-                            @click="switchProfileTab('schedule')">
-                        <i class="fas fa-calendar-alt"></i> Schedule
-                    </button>
-                    <button class="profile-tab" 
-                            :class="{ active: profilePanel.activeTab === 'documents' }"
-                            @click="switchProfileTab('documents')">
-                        <i class="fas fa-folder"></i> Documents
-                    </button>
-                    <button class="profile-tab" 
-                            :class="{ active: profilePanel.activeTab === 'actions' }"
-                            @click="switchProfileTab('actions')">
-                        <i class="fas fa-bolt"></i> Actions
-                    </button>
-                </div>
-                
-                <!-- Tab Content -->
-                <div class="profile-content">
-                    <!-- Overview Tab -->
-                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'overview' }">
-                        <div class="overview-grid">
-                            <!-- Contact Information -->
-                            <div class="overview-section">
-                                <div class="section-header">
-                                    <i class="fas fa-address-card"></i>
-                                    <span>Contact Information</span>
-                                </div>
-                                <div class="contact-list">
-                                    <div v-if="profilePanel.staff.professional_email" class="contact-item">
-                                        <i class="fas fa-envelope"></i>
-                                        <span>{{ profilePanel.staff.professional_email }}</span>
-                                    </div>
-                                    <div v-if="profilePanel.staff.primary_clinic" class="contact-item">
-                                        <i class="fas fa-hospital"></i>
-                                        <span>{{ profilePanel.staff.primary_clinic }}</span>
-                                    </div>
-                                    <div v-if="profilePanel.staff.staff_id" class="contact-item">
-                                        <i class="fas fa-id-card"></i>
-                                        <span>ID: {{ profilePanel.staff.staff_id }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Current Assignment -->
-                            <div v-if="currentAssignment" class="overview-section assignment-current">
-                                <div class="section-header">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span>Current Assignment</span>
-                                </div>
-                                <div class="assignment-item">
-                                    <div class="assignment-unit">
-                                        <i class="fas fa-hospital-alt"></i>
-                                        {{ currentAssignment.unit_name }}
-                                    </div>
-                                    <div class="assignment-dates">
-                                        {{ formatDate(currentAssignment.start_date) }} – {{ formatDate(currentAssignment.end_date) }}
-                                        <span v-if="currentAssignment.days_remaining">({{ currentAssignment.days_remaining }} days remaining)</span>
-                                    </div>
-                                    <div v-if="currentAssignment.supervisor_name" class="assignment-supervisor">
-                                        Supervisor: {{ currentAssignment.supervisor_name }}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Professional Summary -->
-                            <div class="overview-section">
-                                <div class="section-header">
-                                    <i class="fas fa-chart-line"></i>
-                                    <span>Professional Summary</span>
-                                </div>
-                                <div class="details-grid">
-                                    <div class="detail-row">
-                                        <span class="detail-label">Employment Status:</span>
-                                        <span class="detail-value">{{ formatStatus(profilePanel.staff.employment_status) }}</span>
-                                    </div>
-                                    <div v-if="profilePanel.staff.date_of_joining" class="detail-row">
-                                        <span class="detail-label">Joined:</span>
-                                        <span class="detail-value">{{ formatDate(profilePanel.staff.date_of_joining) }}</span>
-                                    </div>
-                                    <div v-if="profilePanel.staff.specialization" class="detail-row">
-                                        <span class="detail-label">Specialization:</span>
-                                        <span class="detail-value">{{ profilePanel.staff.specialization }}</span>
-                                    </div>
-                                    <div v-if="profilePanel.staff.can_supervise_residents" class="detail-row">
-                                        <span class="detail-label">Supervisor Role:</span>
-                                        <span class="detail-value">Can supervise residents</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Professional Details Tab -->
-                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'details' }">
-                        <div class="details-grid">
-                            <!-- Personal Details -->
-                            <div class="overview-section">
-                                <div class="section-header">
-                                    <i class="fas fa-user"></i>
-                                    <span>Personal Details</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Full Name:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.full_name }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.date_of_birth" class="detail-row">
-                                    <span class="detail-label">Date of Birth:</span>
-                                    <span class="detail-value">{{ formatDate(profilePanel.staff.date_of_birth) }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.gender" class="detail-row">
-                                    <span class="detail-label">Gender:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.gender }}</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Professional Details -->
-                            <div class="overview-section">
-                                <div class="section-header">
-                                    <i class="fas fa-briefcase"></i>
-                                    <span>Professional Details</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Staff Type:</span>
-                                    <span class="detail-value">{{ formatStaffType(profilePanel.staff.staff_type) }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.resident_category" class="detail-row">
-                                    <span class="detail-label">Resident Category:</span>
-                                    <span class="detail-value">{{ formatResidentCategory(profilePanel.staff.resident_category) }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.training_year" class="detail-row">
-                                    <span class="detail-label">Training Year:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.training_year }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.specialization" class="detail-row">
-                                    <span class="detail-label">Specialization:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.specialization }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.board_certification" class="detail-row">
-                                    <span class="detail-label">Board Certification:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.board_certification }}</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Contact Details -->
-                            <div class="overview-section">
-                                <div class="section-header">
-                                    <i class="fas fa-phone"></i>
-                                    <span>Contact Details</span>
-                                </div>
-                                <div v-if="profilePanel.staff.professional_email" class="detail-row">
-                                    <span class="detail-label">Email:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.professional_email }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.primary_clinic" class="detail-row">
-                                    <span class="detail-label">Primary Clinic:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.primary_clinic }}</span>
-                                </div>
-                                <div v-if="profilePanel.staff.office_phone" class="detail-row">
-                                    <span class="detail-label">Office Phone:</span>
-                                    <span class="detail-value">{{ profilePanel.staff.office_phone }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Assignments History Tab -->
-                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'assignments' }">
-                        <div v-if="profilePanel.assignmentsLoading" class="loading-state">
-                            <div class="loading-spinner"></div>
-                            <p>Loading assignments...</p>
-                        </div>
-                        <div v-else-if="profilePanel.assignments?.length" class="assignments-timeline">
-                            <div class="timeline-track"></div>
-                            <div v-for="assignment in profilePanel.assignments" 
-                                 :key="assignment.id"
-                                 class="timeline-item">
-                                <div class="timeline-dot"></div>
-                                <div class="timeline-content">
-                                    <div class="timeline-header">
-                                        <div class="timeline-title">{{ assignment.unit_name }}</div>
-                                        <div class="timeline-date">
-                                            {{ formatDate(assignment.start_date) }} – {{ formatDate(assignment.end_date) }}
-                                        </div>
-                                    </div>
-                                    <div v-if="assignment.supervisor_name" class="assignment-supervisor">
-                                        Supervisor: {{ assignment.supervisor_name }}
-                                    </div>
-                                    <div v-if="assignment.notes" class="assignment-notes" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray-600);">
-                                        {{ assignment.notes }}
-                                    </div>
-                                    <div class="assignment-status" style="margin-top: 0.5rem;">
-                                        <span class="status-badge" :class="assignment.status">{{ assignment.status }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="empty-state">
-                            <i class="fas fa-calendar-times"></i>
-                            <p>No assignments found</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Schedule Tab -->
-                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'schedule' }">
-                        <div v-if="profilePanel.scheduleLoading" class="loading-state">
-                            <div class="loading-spinner"></div>
-                            <p>Loading schedule...</p>
-                        </div>
-                        <div v-else-if="profilePanel.schedule?.length" class="schedule-week">
-                            <div v-for="day in profilePanel.schedule" 
-                                 :key="day.date"
-                                 class="schedule-day">
-                                <div class="schedule-header">
-                                    <div class="schedule-date">{{ formatDate(day.date) }}</div>
-                                    <div class="schedule-day-name">{{ formatDay(day.date) }}</div>
-                                </div>
-                                <div class="schedule-items">
-                                    <div v-for="item in day.items" 
-                                         :key="item.id"
-                                         class="schedule-item">
-                                        <i :class="getScheduleIcon(item.type)"></i>
-                                        <span style="min-width: 80px;">{{ item.time }}</span>
-                                        <span style="flex: 1;">{{ item.description }}</span>
-                                        <span>{{ item.location }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="empty-state">
-                            <i class="fas fa-calendar-check"></i>
-                            <p>No schedule found</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Documents Tab -->
-                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'documents' }">
-                        <div v-if="profilePanel.documentsLoading" class="loading-state">
-                            <div class="loading-spinner"></div>
-                            <p>Loading documents...</p>
-                        </div>
-                        <div v-else-if="profilePanel.documents?.length" class="documents-grid">
-                            <div v-for="doc in profilePanel.documents" 
-                                 :key="doc.id"
-                                 class="document-card">
-                                <div class="document-icon">
-                                    <i :class="getDocumentIcon(doc.type)"></i>
-                                </div>
-                                <div class="document-info">
-                                    <div class="document-name">{{ doc.name }}</div>
-                                    <div class="document-meta">
-                                        {{ formatDocumentType(doc.type) }} • Uploaded {{ formatDate(doc.upload_date) }}
-                                        <span v-if="doc.expiry_date"> • Expires {{ formatDate(doc.expiry_date) }}</span>
-                                    </div>
-                                </div>
-                                <button class="action-btn" @click="downloadDocument(doc)">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div v-else class="empty-state">
-                            <i class="fas fa-folder-open"></i>
-                            <p>No documents found</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Actions Tab -->
-                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'actions' }">
-                        <div class="actions-grid">
-                            <button class="action-button" @click="messageStaff(profilePanel.staff)">
-                                <i class="fas fa-comment"></i>
-                                <span>Send Message</span>
-                            </button>
-                            <button class="action-button" @click="assignStaff(profilePanel.staff)">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <span>Assign to Unit</span>
-                            </button>
-                            <button class="action-button" @click="scheduleMeeting(profilePanel.staff)">
-                                <i class="fas fa-calendar-plus"></i>
-                                <span>Schedule Meeting</span>
-                            </button>
-                            <button class="action-button" @click="requestLeave(profilePanel.staff)">
-                                <i class="fas fa-calendar-times"></i>
-                                <span>Request Leave</span>
-                            </button>
-                            <button class="action-button" @click="editStaff(profilePanel.staff)">
-                                <i class="fas fa-edit"></i>
-                                <span>Edit Profile</span>
-                            </button>
-                            <button class="action-button" @click="generateReport(profilePanel.staff)">
-                                <i class="fas fa-file-pdf"></i>
-                                <span>Generate Report</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ANNOUNCEMENTS PANEL -->
-            <div class="announcements-panel" :class="{ open: announcementsPanel.open }">
-                <div class="announcements-header">
-                    <h3>Department Announcements</h3>
-                    <button class="panel-close" @click="toggleAnnouncements">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="announcements-content">
-                    <div v-for="announcement in announcements" 
-                         :key="announcement.id"
-                         class="announcement-card" 
-                         :class="{ critical: announcement.priority === 'critical' }">
-                        <div class="announcement-title">
-                            <span>{{ announcement.title }}</span>
-                            <span class="announcement-time">{{ formatTime(announcement.created_at) }}</span>
-                        </div>
-                        <div class="announcement-content">
-                            {{ announcement.content }}
+                        <div>
+                            <i class="fas fa-database"></i> System v5.2
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- ===== MAIN APPLICATION ===== -->
+        <div v-else class="app-container">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <!-- Sidebar -->
+            <aside class="sidebar" :class="{ 'mobile-open': mobileMenuOpen }">
+                <div class="sidebar-header">
+                    <div class="brand-logo">
+                        <i class="fas fa-lungs"></i>
+                    </div>
+                    <div class="brand-text">
+                        <h1>PneumoCare</h1>
+                        <div class="subtitle">Enterprise Edition</div>
+                    </div>
+                </div>
+
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        {{ getInitials(currentUser.full_name) }}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{{ currentUser.full_name }}</div>
+                        <div class="user-role">{{ getUserRoleDisplay(currentUser.user_role) }}</div>
+                    </div>
+                </div>
+
+                <nav class="nav-section">
+                    <div class="nav-title">Dashboard</div>
+                    <button class="nav-item" :class="{ active: currentView === 'dashboard' }" @click="switchView('dashboard')">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Overview</span>
+                    </button>
+                    
+                    <div class="nav-title">Staff Management</div>
+                    <button class="nav-item" :class="{ active: currentView === 'medical_staff' }" @click="switchView('medical_staff')">
+                        <i class="fas fa-user-md"></i>
+                        <span>Medical Staff</span>
+                    </button>
+                    <button class="nav-item" :class="{ active: currentView === 'training_units' }" @click="switchView('training_units')">
+                        <i class="fas fa-hospital-alt"></i>
+                        <span>Training Units</span>
+                    </button>
+                    <button class="nav-item" :class="{ active: currentView === 'resident_rotations' }" @click="switchView('resident_rotations')">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Rotations</span>
+                    </button>
+                    
+                    <div class="nav-title">Operations</div>
+                    <button class="nav-item" :class="{ active: currentView === 'oncall_schedule' }" @click="switchView('oncall_schedule')">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>On-call</span>
+                    </button>
+                    <button class="nav-item" :class="{ active: currentView === 'leave_requests' }" @click="switchView('leave_requests')">
+                        <i class="fas fa-calendar-times"></i>
+                        <span>Leave Requests</span>
+                    </button>
+                    <button class="nav-item" :class="{ active: currentView === 'daily_operations' }" @click="switchView('daily_operations')">
+                        <i class="fas fa-tasks"></i>
+                        <span>Daily Ops</span>
+                    </button>
+                    
+                    <div class="nav-title">Communications</div>
+                    <button class="nav-item" :class="{ active: currentView === 'announcements' }" @click="switchView('announcements')">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Announcements</span>
+                    </button>
+                    
+                    <div v-if="hasPermission('system', 'admin')" class="nav-title">Administration</div>
+                    <button v-if="hasPermission('system', 'admin')" 
+                            class="nav-item" 
+                            :class="{ active: currentView === 'permission_management' }" 
+                            @click="switchView('permission_management')">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Permissions</span>
+                    </button>
+                    <button v-if="hasPermission('audit', 'read')" 
+                            class="nav-item" 
+                            :class="{ active: currentView === 'audit_logs' }" 
+                            @click="switchView('audit_logs')">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Audit Logs</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Header -->
+                <header class="content-header">
+                    <div class="page-title">
+                        <h1>{{ getCurrentTitle() }}</h1>
+                        <div class="page-subtitle">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ getCurrentSubtitle() }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <div class="search-container">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" 
+                                   class="search-input" 
+                                   v-model="searchQuery" 
+                                   :placeholder="getSearchPlaceholder()"
+                                   @input="handleAdvancedSearch">
+                        </div>
+                        
+                        <button class="action-button" @click="toggleAnnouncementsPanel">
+                            <i class="fas fa-bell"></i>
+                            <span v-if="unreadAnnouncements > 0">{{ unreadAnnouncements }}</span>
+                        </button>
+                        
+                        <div style="position: relative;">
+                            <button class="action-button" @click="toggleUserMenu">
+                                <i class="fas fa-user"></i>
+                                <span>{{ getInitials(currentUser.full_name) }}</span>
+                            </button>
+                            
+                            <!-- User Menu Dropdown -->
+                            <div v-if="userMenuOpen" class="dropdown-menu">
+                                <div class="dropdown-item" @click="showUserProfileModal">
+                                    <i class="fas fa-user-circle"></i> Profile
+                                </div>
+                                <div class="dropdown-item" @click="togglePermissionManager">
+                                    <i class="fas fa-cog"></i> Settings
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item" @click="handleLogout" style="color: var(--danger);">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Content Area -->
+                <div class="content-area">
+                    <!-- Dashboard View -->
+                    <div v-if="currentView === 'dashboard'">
+                        <div class="dashboard-grid">
+                            <div class="metric-card">
+                                <div class="metric-value">{{ stats.totalStaff }}</div>
+                                <div class="metric-label">Total Medical Staff</div>
+                                <div class="metric-trend trend-up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>12% from last month</span>
+                                </div>
+                            </div>
+                            
+                            <div class="metric-card">
+                                <div class="metric-value">{{ stats.activeResidents }}</div>
+                                <div class="metric-label">Active Residents</div>
+                                <div class="metric-trend trend-up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>8% growth</span>
+                                </div>
+                            </div>
+                            
+                            <div class="metric-card">
+                                <div class="metric-value">{{ stats.attendings }}</div>
+                                <div class="metric-label">Attending Physicians</div>
+                                <div class="metric-trend trend-up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>5% increase</span>
+                                </div>
+                            </div>
+                            
+                            <div class="metric-card">
+                                <div class="metric-value">{{ departmentStats.coverageRate }}%</div>
+                                <div class="metric-label">Today's Coverage</div>
+                                <div class="metric-trend trend-up">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Optimal</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activities -->
+                        <div class="data-table-container">
+                            <div class="table-header">
+                                <div class="table-title">Recent Activities</div>
+                            </div>
+                            <div style="padding: var(--space-xl);">
+                                <div v-if="todaysAssignments.length > 0" class="activity-list">
+                                    <div v-for="assignment in todaysAssignments.slice(0, 5)" 
+                                         :key="assignment.id"
+                                         class="activity-item">
+                                        <div style="display: flex; align-items: center; gap: var(--space-md);">
+                                            <div class="status-dot active"></div>
+                                            <div>
+                                                <strong>{{ assignment.staff_name }}</strong>
+                                                <div style="font-size: 0.875rem; color: var(--surface-600);">
+                                                    {{ assignment.location_name }} • {{ assignment.start_time.slice(0,5) }}-{{ assignment.end_time.slice(0,5) }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="empty-state">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <p>No activities scheduled for today</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medical Staff View -->
+                    <div v-if="currentView === 'medical_staff'">
+                        <div class="data-table-container">
+                            <div class="table-header">
+                                <div class="table-title">Medical Staff Directory</div>
+                                <div class="table-actions">
+                                    <button class="action-button primary" @click="showAddMedicalStaffModal">
+                                        <i class="fas fa-user-plus"></i>
+                                        Add Staff
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="table-filters">
+                                <div class="filter-group">
+                                    <label class="filter-label">Role:</label>
+                                    <select class="filter-select" v-model="staffFilter.staff_type" @change="applyFilters">
+                                        <option value="">All Roles</option>
+                                        <option value="medical_resident">Residents</option>
+                                        <option value="attending_physician">Attendings</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label class="filter-label">Status:</label>
+                                    <select class="filter-select" v-model="staffFilter.employment_status" @change="applyFilters">
+                                        <option value="">All Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="on_leave">On Leave</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="staff-grid">
+                                <div v-for="staff in filteredMedicalStaff" 
+                                     :key="staff.id" 
+                                     class="staff-card"
+                                     @click="showMedicalStaffDetails(staff)">
+                                    
+                                    <div class="card-header">
+                                        <div class="staff-avatar">
+                                            {{ getInitials(staff.full_name) }}
+                                        </div>
+                                        <div class="staff-info">
+                                            <div class="staff-name">
+                                                {{ staff.full_name }}
+                                                <span class="badge" :class="staff.staff_type === 'medical_resident' ? 'resident' : 'attending'">
+                                                    {{ formatStaffType(staff.staff_type) }}
+                                                </span>
+                                            </div>
+                                            <div class="staff-id">ID: {{ staff.staff_id }}</div>
+                                            <div class="staff-meta">
+                                                <span class="badge active">{{ formatEmploymentStatus(staff.employment_status) }}</span>
+                                                <span style="font-size: 0.875rem; color: var(--surface-500);">
+                                                    <i class="fas fa-hospital"></i> {{ staff.primary_clinic || 'Unassigned' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body">
+                                        <div class="info-row">
+                                            <span class="info-label">Email</span>
+                                            <span class="info-value">{{ staff.professional_email || 'N/A' }}</span>
+                                        </div>
+                                        <div v-if="staff.staff_type === 'medical_resident'" class="info-row">
+                                            <span class="info-label">Category</span>
+                                            <span class="info-value">{{ formatResidentCategory(staff.resident_category) }}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Supervisor</span>
+                                            <span class="info-value">{{ staff.can_supervise_residents ? 'Yes' : 'No' }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-footer">
+                                        <button class="btn-sm btn-outline" @click.stop="editMedicalStaff(staff)">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn-sm btn-outline" @click.stop="viewStaffSchedule(staff)">
+                                            <i class="fas fa-calendar"></i> Schedule
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Training Units View -->
+                    <div v-if="currentView === 'training_units'">
+                        <div class="data-table-container">
+                            <div class="table-header">
+                                <div class="table-title">Training Units Management</div>
+                                <div class="table-actions">
+                                    <button class="action-button primary" @click="showAddTrainingUnitModal">
+                                        <i class="fas fa-plus"></i> Add Unit
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="staff-grid">
+                                <div v-for="unit in trainingUnits" 
+                                     :key="unit.id" 
+                                     class="staff-card">
+                                    
+                                    <div class="card-header">
+                                        <div class="staff-avatar" style="background: var(--gradient-success);">
+                                            <i class="fas fa-hospital-alt"></i>
+                                        </div>
+                                        <div class="staff-info">
+                                            <div class="staff-name">
+                                                {{ unit.unit_name }}
+                                                <span class="badge active">{{ unit.unit_status }}</span>
+                                            </div>
+                                            <div class="staff-id">Code: {{ unit.unit_code }}</div>
+                                            <div class="staff-meta">
+                                                <span style="font-size: 0.875rem; color: var(--surface-500);">
+                                                    <i class="fas fa-users"></i> {{ unit.current_residents || 0 }}/{{ unit.maximum_residents }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body">
+                                        <div class="info-row">
+                                            <span class="info-label">Department</span>
+                                            <span class="info-value">{{ unit.department_name }}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Specialty</span>
+                                            <span class="info-value">{{ unit.specialty || 'General' }}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Capacity</span>
+                                            <span class="info-value">{{ Math.round((unit.current_residents || 0) / unit.maximum_residents * 100) }}% filled</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-footer">
+                                        <button class="btn-sm btn-outline" @click="editTrainingUnit(unit)">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn-sm btn-outline" @click="assignResidentsToUnit(unit)">
+                                            <i class="fas fa-user-plus"></i> Assign
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Views (to be implemented similarly) -->
+                    <div v-if="currentView !== 'dashboard' && currentView !== 'medical_staff' && currentView !== 'training_units'">
+                        <div class="data-table-container">
+                            <div class="table-header">
+                                <div class="table-title">{{ getCurrentTitle() }}</div>
+                                <div class="table-actions">
+                                    <button class="action-button primary" v-if="hasPermission(currentView, 'create')">
+                                        <i class="fas fa-plus"></i>
+                                        Add New
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="empty-state">
+                                <i class="fas fa-cogs"></i>
+                                <p>{{ getCurrentTitle() }} view is being loaded...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- ===== ENTERPRISE MODALS ===== -->
+            
+            <!-- Medical Staff Modal -->
+            <div v-if="medicalStaffModal.show" class="modal-overlay">
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <div class="modal-title">
+                            <div class="modal-icon">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            {{ medicalStaffModal.mode === 'add' ? 'Add Medical Staff' : 'Edit Medical Staff' }}
+                        </div>
+                        <button class="modal-close" @click="medicalStaffModal.show = false">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" 
+                                       class="form-input" 
+                                       v-model="medicalStaffModal.form.full_name" 
+                                       required
+                                       placeholder="Dr. John Doe">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Staff Type *</label>
+                                <select class="form-select" v-model="medicalStaffModal.form.staff_type" required>
+                                    <option value="medical_resident">Medical Resident</option>
+                                    <option value="attending_physician">Attending Physician</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Email Address *</label>
+                                <input type="email" 
+                                       class="form-input" 
+                                       v-model="medicalStaffModal.form.professional_email"
+                                       required
+                                       placeholder="doctor@hospital.org">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Status *</label>
+                                <select class="form-select" v-model="medicalStaffModal.form.employment_status" required>
+                                    <option value="active">Active</option>
+                                    <option value="on_leave">On Leave</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            
+                            <div v-if="medicalStaffModal.form.staff_type === 'medical_resident'" class="form-group">
+                                <label class="form-label">Resident Category</label>
+                                <select class="form-select" v-model="medicalStaffModal.form.resident_category">
+                                    <option value="pgy1">PGY-1</option>
+                                    <option value="pgy2">PGY-2</option>
+                                    <option value="pgy3">PGY-3</option>
+                                    <option value="pgy4">PGY-4</option>
+                                    <option value="pgy5">PGY-5</option>
+                                </select>
+                            </div>
+                            
+                            <div v-if="medicalStaffModal.form.staff_type === 'medical_resident'" class="form-group">
+                                <label class="form-label">Training Year</label>
+                                <input type="number" 
+                                       class="form-input" 
+                                       v-model="medicalStaffModal.form.training_year"
+                                       min="2020" max="2030">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Primary Clinic</label>
+                                <input type="text" 
+                                       class="form-input" 
+                                       v-model="medicalStaffModal.form.primary_clinic"
+                                       placeholder="e.g., ICU, Pulmonary Unit">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <span>Can Supervise Residents</span>
+                                    <input type="checkbox" v-model="medicalStaffModal.form.can_supervise_residents">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @click="medicalStaffModal.show = false">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary" @click="saveMedicalStaff" :disabled="saving">
+                            <i class="fas fa-save"></i>
+                            {{ saving ? 'Saving...' : (medicalStaffModal.mode === 'add' ? 'Add Staff' : 'Update Staff') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training Unit Modal -->
+            <div v-if="trainingUnitModal.show" class="modal-overlay">
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <div class="modal-title">
+                            <div class="modal-icon">
+                                <i class="fas fa-hospital-alt"></i>
+                            </div>
+                            {{ trainingUnitModal.mode === 'add' ? 'Add Training Unit' : 'Edit Training Unit' }}
+                        </div>
+                        <button class="modal-close" @click="trainingUnitModal.show = false">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Unit Name *</label>
+                                <input type="text" class="form-input" v-model="trainingUnitModal.form.unit_name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Unit Code *</label>
+                                <input type="text" 
+                                       class="form-input" 
+                                       v-model="trainingUnitModal.form.unit_code" 
+                                       required
+                                       placeholder="e.g., ICU-PULM-1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Department *</label>
+                                <select class="form-select" v-model="trainingUnitModal.form.department_name" required>
+                                    <option value="Pulmonology">Pulmonology</option>
+                                    <option value="Cardiology">Cardiology</option>
+                                    <option value="ICU">Intensive Care</option>
+                                    <option value="Emergency">Emergency</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Specialty</label>
+                                <input type="text" 
+                                       class="form-input" 
+                                       v-model="trainingUnitModal.form.specialty"
+                                       placeholder="e.g., Critical Care, Sleep Medicine">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Maximum Residents *</label>
+                                <input type="number" 
+                                       class="form-input" 
+                                       v-model="trainingUnitModal.form.maximum_residents" 
+                                       min="1" max="50" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Status *</label>
+                                <select class="form-select" v-model="trainingUnitModal.form.unit_status" required>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-textarea" 
+                                          v-model="trainingUnitModal.form.unit_description"
+                                          placeholder="Describe the unit's focus and capabilities..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @click="trainingUnitModal.show = false">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary" @click="saveTrainingUnit" :disabled="saving">
+                            <i class="fas fa-save"></i>
+                            {{ saving ? 'Saving...' : (trainingUnitModal.mode === 'add' ? 'Add Unit' : 'Update Unit') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add more modals similarly for:
+                 - Resident Rotations
+                 - On-call Schedule
+                 - Leave Requests
+                 - Announcements
+                 - Permission Management
+                 - User Profile
+                 - System Settings
+            -->
+
+            <!-- ===== PERMISSION MANAGER ===== -->
+            <div class="permission-manager" :class="{ open: showPermissionManager }">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <div class="modal-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        Permission Manager
+                    </div>
+                    <button class="modal-close" @click="showPermissionManager = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="permission-grid">
+                        <div v-for="(resource, key) in permissionResources" 
+                             :key="key"
+                             class="permission-card">
+                            <div class="permission-header">
+                                <div class="permission-title">{{ resource.name }}</div>
+                                <div class="permission-toggle" 
+                                     :class="{ active: hasPermission(key, 'read') }"
+                                     @click="togglePermission('system_admin', key, 'read')"></div>
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--surface-600);">
+                                {{ resource.description }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="btn btn-primary" @click="savePermissionChanges" :disabled="savingPermissions">
+                        <i class="fas fa-save"></i>
+                        Save Permissions
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== ANNOUNCEMENTS PANEL ===== -->
+            <div class="announcements-panel" :class="{ open: announcementsPanel.open }">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <div class="modal-icon">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        Announcements
+                    </div>
+                    <button class="modal-close" @click="toggleAnnouncementsPanel">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <div v-for="announcement in announcements.slice(0, 10)" 
+                         :key="announcement.id"
+                         class="announcement-card" 
+                         :class="{ critical: announcement.priority_level === 'urgent' }">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-sm);">
+                            <strong>{{ announcement.announcement_title }}</strong>
+                            <small style="color: var(--surface-500);">{{ formatDateShort(announcement.publish_start_date) }}</small>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--surface-600);">
+                            {{ announcement.announcement_content }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TOAST CONTAINER ===== -->
+            <div class="toast-container">
+                <div v-for="toast in toasts" 
+                     :key="toast.id"
+                     class="toast" 
+                     :class="toast.type"
+                     @click="removeToast(toast.id)">
+                    <i :class="toast.icon"></i>
+                    <div style="flex: 1;">
+                        <strong>{{ toast.title }}</strong>
+                        <p style="font-size: 0.875rem; margin-top: 0.25rem; color: var(--surface-600);">
+                            {{ toast.message }}
+                        </p>
+                    </div>
+                    <button class="modal-close" @click.stop="removeToast(toast.id)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const { createApp } = Vue;
-
-        createApp({
-            data() {
-                return {
-                    // User
-                    currentUser: {
-                        full_name: 'Dr. Department Head',
-                        role: 'department_head'
-                    },
-                    
-                    // Navigation
-                    sidebarCollapsed: false,
-                    currentView: 'staff',
-                    
-                    // Staff Data
-                    medicalStaff: [],
-                    selectedStaffId: null,
-                    filters: {
-                        search: '',
-                        staff_type: '',
-                        status: ''
-                    },
-                    
-                    // Profile Panel
-                    profilePanel: {
-                        open: false,
-                        staff: null,
-                        activeTab: 'overview',
-                        assignments: null,
-                        assignmentsLoading: false,
-                        schedule: null,
-                        scheduleLoading: false,
-                        documents: null,
-                        documentsLoading: false
-                    },
-                    
-                    // Announcements
-                    announcementsPanel: {
-                        open: false
-                    },
-                    announcements: [
-                        {
-                            id: 1,
-                            title: 'System Maintenance',
-                            content: 'EMR system will be unavailable Sunday 2-4 AM for maintenance.',
-                            priority: 'normal',
-                            created_at: new Date().toISOString()
-                        },
-                        {
-                            id: 2,
-                            title: 'Monthly Meeting',
-                            content: 'Department meeting moved to Thursday 3 PM in Conference Room B.',
-                            priority: 'normal',
-                            created_at: new Date(Date.now() - 86400000).toISOString()
-                        }
-                    ],
-                    unreadAnnouncements: 2,
-                    
-                    // Sample Data - ALL STAFF TYPES
-                    sampleStaff: [
-                        // Medical Residents
-                        {
-                            id: 1,
-                            full_name: 'Dr. Ava Chen',
-                            staff_id: 'RES-2048',
-                            staff_type: 'medical_resident',
-                            employment_status: 'active',
-                            professional_email: 'ava.chen@hospital.edu',
-                            primary_clinic: 'Pulmonary ICU',
-                            resident_category: 'pgy3',
-                            training_year: '3',
-                            specialization: 'Pulmonary Medicine',
-                            date_of_joining: '2022-08-01',
-                            can_supervise_residents: false
-                        },
-                        {
-                            id: 2,
-                            full_name: 'Dr. Ben Lee',
-                            staff_id: 'RES-2049',
-                            staff_type: 'medical_resident',
-                            employment_status: 'active',
-                            professional_email: 'ben.lee@hospital.edu',
-                            primary_clinic: 'Cardiac Ward',
-                            resident_category: 'pgy2',
-                            training_year: '2',
-                            specialization: 'Cardiology',
-                            date_of_joining: '2023-08-01',
-                            can_supervise_residents: false
-                        },
-                        
-                        // Attending Physicians
-                        {
-                            id: 3,
-                            full_name: 'Dr. Carla Moss',
-                            staff_id: 'ATT-105',
-                            staff_type: 'attending_physician',
-                            employment_status: 'active',
-                            professional_email: 'carla.moss@hospital.edu',
-                            primary_clinic: 'Pulmonary Department',
-                            specialization: 'Interventional Pulmonology',
-                            board_certification: 'Board Certified',
-                            date_of_joining: '2018-07-01',
-                            can_supervise_residents: true,
-                            office_phone: '555-0101'
-                        },
-                        {
-                            id: 4,
-                            full_name: 'Dr. David Wong',
-                            staff_id: 'ATT-106',
-                            staff_type: 'attending_physician',
-                            employment_status: 'on_leave',
-                            professional_email: 'david.wong@hospital.edu',
-                            primary_clinic: 'Critical Care',
-                            specialization: 'Critical Care Medicine',
-                            board_certification: 'Board Certified',
-                            date_of_joining: '2017-09-01',
-                            can_supervise_residents: true,
-                            office_phone: '555-0102'
-                        },
-                        
-                        // Fellows
-                        {
-                            id: 5,
-                            full_name: 'Dr. Emma Garcia',
-                            staff_id: 'FEL-301',
-                            staff_type: 'fellow',
-                            employment_status: 'active',
-                            professional_email: 'emma.garcia@hospital.edu',
-                            primary_clinic: 'Sleep Medicine',
-                            specialization: 'Sleep Medicine',
-                            training_year: '1',
-                            date_of_joining: '2024-07-01',
-                            can_supervise_residents: true
-                        },
-                        
-                        // Nurse Practitioners
-                        {
-                            id: 6,
-                            full_name: 'Sarah Johnson, NP',
-                            staff_id: 'NP-501',
-                            staff_type: 'nurse_practitioner',
-                            employment_status: 'active',
-                            professional_email: 'sarah.johnson@hospital.edu',
-                            primary_clinic: 'Pulmonary Clinic',
-                            specialization: 'Adult-Gerontology',
-                            board_certification: 'ANCC Certified',
-                            date_of_joining: '2021-03-15',
-                            can_supervise_residents: false
-                        }
-                    ],
-                    
-                    sampleAssignments: {
-                        1: [
-                            {
-                                id: 101,
-                                unit_name: 'Pulmonary ICU',
-                                start_date: '2024-01-15',
-                                end_date: '2024-02-15',
-                                status: 'active',
-                                supervisor_name: 'Dr. Robert Kim',
-                                notes: 'Primary rotation for Q1',
-                                days_remaining: 12
-                            }
-                        ],
-                        3: [
-                            {
-                                id: 102,
-                                unit_name: 'Pulmonary Department',
-                                start_date: '2024-01-01',
-                                end_date: '2024-12-31',
-                                status: 'active',
-                                notes: 'Department leadership role',
-                                days_remaining: 330
-                            }
-                        ],
-                        5: [
-                            {
-                                id: 103,
-                                unit_name: 'Sleep Medicine Center',
-                                start_date: '2024-01-01',
-                                end_date: '2024-06-30',
-                                status: 'active',
-                                supervisor_name: 'Dr. Lisa Park',
-                                notes: 'Fellowship rotation',
-                                days_remaining: 150
-                            }
-                        ]
-                    }
-                };
-            },
-            
-            computed: {
-                filteredStaff() {
-                    let staff = this.medicalStaff.length ? this.medicalStaff : this.sampleStaff;
-                    
-                    if (this.filters.search) {
-                        const search = this.filters.search.toLowerCase();
-                        staff = staff.filter(s => 
-                            s.full_name.toLowerCase().includes(search) ||
-                            s.staff_id.toLowerCase().includes(search) ||
-                            s.primary_clinic?.toLowerCase().includes(search)
-                        );
-                    }
-                    
-                    if (this.filters.staff_type) {
-                        staff = staff.filter(s => s.staff_type === this.filters.staff_type);
-                    }
-                    
-                    if (this.filters.status) {
-                        staff = staff.filter(s => s.employment_status === this.filters.status);
-                    }
-                    
-                    return staff;
-                },
-                
-                currentAssignment() {
-                    if (!this.profilePanel.staff) return null;
-                    return this.getCurrentAssignment(this.profilePanel.staff);
-                }
-            },
-            
-            mounted() {
-                this.loadMedicalStaff();
-            },
-            
-            methods: {
-                // Navigation
-                switchView(view) {
-                    this.currentView = view;
-                    this.closeProfilePanel();
-                    this.announcementsPanel.open = false;
-                },
-                
-                toggleSidebar() {
-                    this.sidebarCollapsed = !this.sidebarCollapsed;
-                },
-                
-                // Staff Management
-                loadMedicalStaff() {
-                    // This would call your backend API
-                    this.medicalStaff = [...this.sampleStaff];
-                },
-                
-                applyFilters() {
-                    // Filtering happens automatically through computed property
-                },
-                
-                selectStaff(staffId) {
-                    this.selectedStaffId = staffId;
-                },
-                
-                getCurrentAssignment(staff) {
-                    const assignments = this.sampleAssignments[staff.id];
-                    if (!assignments) return null;
-                    return assignments.find(a => a.status === 'active') || null;
-                },
-                
-                // Profile Panel
-                openProfile(staff) {
-                    this.profilePanel.open = true;
-                    this.profilePanel.staff = staff;
-                    this.profilePanel.activeTab = 'overview';
-                    this.selectedStaffId = staff.id;
-                    
-                    // Clear loaded data
-                    this.profilePanel.assignments = null;
-                    this.profilePanel.schedule = null;
-                    this.profilePanel.documents = null;
-                },
-                
-                closeProfilePanel() {
-                    this.profilePanel.open = false;
-                    this.profilePanel.staff = null;
-                    this.profilePanel.activeTab = 'overview';
-                    this.selectedStaffId = null;
-                },
-                
-                switchProfileTab(tab) {
-                    this.profilePanel.activeTab = tab;
-                    
-                    // Load data for tab if not already loaded
-                    if (tab === 'assignments' && !this.profilePanel.assignments) {
-                        this.loadAssignments();
-                    } else if (tab === 'schedule' && !this.profilePanel.schedule) {
-                        this.loadSchedule();
-                    } else if (tab === 'documents' && !this.profilePanel.documents) {
-                        this.loadDocuments();
-                    }
-                },
-                
-                loadAssignments() {
-                    this.profilePanel.assignmentsLoading = true;
-                    
-                    setTimeout(() => {
-                        if (this.profilePanel.staff) {
-                            this.profilePanel.assignments = this.sampleAssignments[this.profilePanel.staff.id] || [];
-                        }
-                        this.profilePanel.assignmentsLoading = false;
-                    }, 300);
-                },
-                
-                loadSchedule() {
-                    this.profilePanel.scheduleLoading = true;
-                    
-                    setTimeout(() => {
-                        this.profilePanel.schedule = [
-                            {
-                                date: '2024-01-29',
-                                items: [
-                                    { id: 1, time: '08:00-16:00', description: 'Clinical Duties', type: 'work', location: 'Unit 3B' },
-                                    { id: 2, time: '16:30-17:30', description: 'Team Meeting', type: 'meeting', location: 'Conf Room A' }
-                                ]
-                            },
-                            {
-                                date: '2024-01-30',
-                                items: [
-                                    { id: 3, time: '08:00-12:00', description: 'Clinic Hours', type: 'work', location: 'Pulmonary Clinic' },
-                                    { id: 4, time: '13:00-17:00', description: 'Research Time', type: 'research', location: 'Research Lab' }
-                                ]
-                            }
-                        ];
-                        this.profilePanel.scheduleLoading = false;
-                    }, 300);
-                },
-                
-                loadDocuments() {
-                    this.profilePanel.documentsLoading = true;
-                    
-                    setTimeout(() => {
-                        this.profilePanel.documents = [
-                            {
-                                id: 1,
-                                name: 'Medical License',
-                                type: 'license',
-                                upload_date: '2024-01-01',
-                                expiry_date: '2025-01-01'
-                            },
-                            {
-                                id: 2,
-                                name: 'Board Certification',
-                                type: 'certification',
-                                upload_date: '2023-12-15',
-                                expiry_date: '2028-12-15'
-                            }
-                        ];
-                        this.profilePanel.documentsLoading = false;
-                    }, 300);
-                },
-                
-                // Actions
-                messageStaff(staff) {
-                    alert(`Message ${staff.full_name}`);
-                },
-                
-                assignStaff(staff) {
-                    alert(`Assign ${staff.full_name} to unit`);
-                },
-                
-                scheduleMeeting(staff) {
-                    alert(`Schedule meeting with ${staff.full_name}`);
-                },
-                
-                requestLeave(staff) {
-                    alert(`Request leave for ${staff.full_name}`);
-                },
-                
-                editStaff(staff) {
-                    alert(`Edit profile of ${staff.full_name}`);
-                },
-                
-                generateReport(staff) {
-                    alert(`Generate report for ${staff.full_name}`);
-                },
-                
-                downloadDocument(doc) {
-                    alert(`Download ${doc.name}`);
-                },
-                
-                // Announcements
-                toggleAnnouncements() {
-                    this.announcementsPanel.open = !this.announcementsPanel.open;
-                    if (this.announcementsPanel.open) {
-                        this.unreadAnnouncements = 0;
-                    }
-                },
-                
-                // Utility Functions
-                getInitials(name) {
-                    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-                },
-                
-                getStaffTypeClass(type) {
-                    const classes = {
-                        medical_resident: 'resident',
-                        attending_physician: 'attending',
-                        fellow: 'fellow',
-                        nurse_practitioner: 'nurse'
-                    };
-                    return classes[type] || 'admin';
-                },
-                
-                formatStaffType(type) {
-                    const types = {
-                        medical_resident: 'Medical Resident',
-                        attending_physician: 'Attending Physician',
-                        fellow: 'Fellow',
-                        nurse_practitioner: 'Nurse Practitioner'
-                    };
-                    return types[type] || type.replace('_', ' ').charAt(0).toUpperCase() + type.slice(1);
-                },
-                
-                formatResidentCategory(category) {
-                    if (!category) return '';
-                    const categories = {
-                        pgy1: 'PGY-1',
-                        pgy2: 'PGY-2',
-                        pgy3: 'PGY-3',
-                        pgy4: 'PGY-4',
-                        pgy5: 'PGY-5',
-                        department_internal: 'Department Internal',
-                        rotating_other_dept: 'Rotating Other Dept'
-                    };
-                    return categories[category] || category;
-                },
-                
-                formatStatus(status) {
-                    return status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1);
-                },
-                
-                formatDate(dateStr) {
-                    if (!dateStr) return '';
-                    const date = new Date(dateStr);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                },
-                
-                formatDateShort(dateStr) {
-                    if (!dateStr) return '';
-                    const date = new Date(dateStr);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                },
-                
-                formatDay(dateStr) {
-                    const date = new Date(dateStr);
-                    return date.toLocaleDateString('en-US', { weekday: 'long' });
-                },
-                
-                formatTime(dateStr) {
-                    const date = new Date(dateStr);
-                    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                },
-                
-                formatDocumentType(type) {
-                    const types = {
-                        license: 'License',
-                        certification: 'Certification',
-                        evaluation: 'Evaluation',
-                        other: 'Document'
-                    };
-                    return types[type] || type;
-                },
-                
-                getScheduleIcon(type) {
-                    const icons = {
-                        work: 'fas fa-briefcase',
-                        meeting: 'fas fa-users',
-                        research: 'fas fa-flask',
-                        oncall: 'fas fa-phone-alt',
-                        training: 'fas fa-graduation-cap'
-                    };
-                    return icons[type] || 'fas fa-calendar';
-                },
-                
-                getDocumentIcon(type) {
-                    const icons = {
-                        license: 'fas fa-certificate',
-                        certification: 'fas fa-award',
-                        evaluation: 'fas fa-clipboard-check',
-                        other: 'fas fa-file'
-                    };
-                    return icons[type] || 'fas fa-file';
-                },
-                
-                getViewTitle() {
-                    const titles = {
-                        staff: 'Clinical Staff Directory',
-                        units: 'Clinical Units',
-                        assignments: 'Staff Assignments',
-                        schedule: 'Schedule Management',
-                        oncall: 'On-call Schedule'
-                    };
-                    return titles[this.currentView] || 'Dashboard';
-                },
-                
-                getViewSubtitle() {
-                    const count = this.filteredStaff.length;
-                    return `${count} ${count === 1 ? 'staff member' : 'staff members'} found`;
-                },
-                
-                formatRole(role) {
-                    const roles = {
-                        department_head: 'Department Head',
-                        resident_manager: 'Resident Manager',
-                        system_admin: 'System Administrator'
-                    };
-                    return roles[role] || role;
-                },
-                
-                refreshData() {
-                    this.loadMedicalStaff();
-                },
-                
-                exportData() {
-                    alert('Exporting data...');
-                }
-            }
-        }).mount('#app');
-    </script>
+    <!-- Your existing app.js script -->
+    <script src="app.js"></script>
 </body>
 </html>
