@@ -1,0 +1,2252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PneumoCare | Professional Staff Management</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Professional Color System */
+            --professional-deep: #003366;
+            --professional-primary: #005b8e;
+            --professional-accent: #4A90E2;
+            --professional-light: #E8F4F8;
+            --professional-border: #E2E8F0;
+            --professional-background: #FFFFFF;
+            --professional-surface: #F8FAFC;
+            
+            /* Staff Type Colors */
+            --color-resident: #005b8e;
+            --color-attending: #8b5cf6;
+            --color-fellow: #10b981;
+            --color-nurse: #f59e0b;
+            --color-admin: #64748b;
+            
+            /* Status Colors */
+            --status-active: #10B981;
+            --status-on-leave: #F59E0B;
+            --status-inactive: #94A3B8;
+            
+            /* Gray Scale */
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            
+            /* Shadows */
+            --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+            --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            
+            /* Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-medium: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--professional-background);
+            color: var(--gray-800);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== APP LAYOUT ===== */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* ===== NAVIGATION SIDEBAR ===== */
+        .nav-sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, var(--professional-deep) 0%, var(--professional-primary) 100%);
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            transition: width var(--transition-medium);
+        }
+
+        .nav-sidebar.collapsed {
+            width: 80px;
+        }
+
+        .nav-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-logo {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .nav-brand {
+            color: white;
+            flex: 1;
+            transition: opacity var(--transition-medium);
+        }
+
+        .nav-sidebar.collapsed .nav-brand {
+            opacity: 0;
+        }
+
+        .nav-brand h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-brand .subtitle {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        .nav-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-section-title {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+            transition: opacity var(--transition-medium);
+        }
+
+        .nav-sidebar.collapsed .nav-section-title {
+            opacity: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.875rem 1rem;
+            border: none;
+            background: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            color: rgba(255,255,255,0.85);
+            transition: var(--transition-fast);
+            font-weight: 500;
+            text-align: left;
+            width: 100%;
+        }
+
+        .nav-sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 0.875rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.12);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-weight: 600;
+        }
+
+        .nav-text {
+            flex: 1;
+            transition: opacity var(--transition-medium);
+        }
+
+        .nav-sidebar.collapsed .nav-text {
+            opacity: 0;
+            width: 0;
+        }
+
+        .nav-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: auto;
+        }
+
+        .user-mini {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        /* ===== MAIN WORKSPACE ===== */
+        .main-workspace {
+            flex: 1;
+            margin-left: 280px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition-medium);
+        }
+
+        .nav-sidebar.collapsed ~ .main-workspace {
+            margin-left: 80px;
+        }
+
+        /* Workspace Header */
+        .workspace-header {
+            background: var(--professional-background);
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--professional-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+            color: var(--gray-900);
+        }
+
+        .header-subtitle {
+            color: var(--gray-600);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--professional-border);
+            background: var(--professional-background);
+            color: var(--gray-600);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+        }
+
+        .btn-icon:hover {
+            background: var(--professional-light);
+            border-color: var(--professional-accent);
+            color: var(--professional-primary);
+        }
+
+        /* Workspace Content */
+        .workspace-content {
+            flex: 1;
+            padding: 2rem;
+            background: var(--professional-surface);
+            overflow-y: auto;
+        }
+
+        /* ===== PROFESSIONAL STAFF TABLE ===== */
+        .staff-table-container {
+            background: var(--professional-background);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--professional-border);
+            box-shadow: var(--shadow-medium);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--professional-border);
+            background: var(--professional-surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .table-filters {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--professional-border);
+            border-radius: var(--radius-md);
+            background: var(--professional-background);
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .staff-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .staff-table thead {
+            background: var(--professional-surface);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .staff-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--professional-border);
+            white-space: nowrap;
+        }
+
+        .staff-table tbody tr {
+            cursor: pointer;
+            transition: var(--transition-fast);
+            border-bottom: 1px solid var(--professional-border);
+        }
+
+        .staff-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .staff-table tbody tr:hover {
+            background: var(--professional-light);
+        }
+
+        .staff-table tbody tr.selected {
+            background: var(--professional-light);
+            border-left: 4px solid var(--professional-primary);
+        }
+
+        .staff-table td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+        }
+
+        /* Staff Avatar */
+        .staff-avatar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .avatar-circle.resident { background: var(--color-resident); }
+        .avatar-circle.attending { background: var(--color-attending); }
+        .avatar-circle.fellow { background: var(--color-fellow); }
+        .avatar-circle.nurse { background: var(--color-nurse); }
+        .avatar-circle.admin { background: var(--color-admin); }
+
+        .avatar-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .avatar-name {
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .avatar-id {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        /* Staff Type Badges */
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .type-badge.resident {
+            background: rgba(0, 91, 142, 0.1);
+            color: var(--color-resident);
+        }
+
+        .type-badge.attending {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--color-attending);
+        }
+
+        .type-badge.fellow {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--color-fellow);
+        }
+
+        .type-badge.nurse {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--color-nurse);
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.active { background: var(--status-active); }
+        .status-dot.on_leave { background: var(--status-on-leave); }
+        .status-dot.inactive { background: var(--status-inactive); }
+
+        /* Current Assignment */
+        .current-assignment {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+
+        .current-assignment .unit {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.125rem;
+        }
+
+        .current-assignment .meta {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        /* Row Actions */
+        .row-actions {
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .staff-table tbody tr:hover .row-actions,
+        .staff-table tbody tr.selected .row-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--professional-border);
+            background: var(--professional-background);
+            color: var(--gray-600);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+        }
+
+        .action-btn:hover {
+            background: var(--professional-primary);
+            color: white;
+            border-color: var(--professional-primary);
+        }
+
+        /* ===== FULL PROFILE PANEL ===== */
+        .profile-panel {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 450px;
+            height: 100vh;
+            background: var(--professional-background);
+            border-left: 1px solid var(--professional-border);
+            box-shadow: var(--shadow-xl);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile-panel.open {
+            right: 0;
+        }
+
+        .profile-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--professional-border);
+            background: var(--professional-surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .profile-identity {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .profile-avatar-large {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .profile-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-role {
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-status {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .panel-close {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            border: none;
+            background: var(--professional-background);
+            color: var(--gray-600);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+        }
+
+        .panel-close:hover {
+            background: var(--professional-border);
+            color: var(--gray-900);
+        }
+
+        .profile-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        /* Profile Tabs */
+        .profile-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--professional-border);
+            background: var(--professional-surface);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .profile-tab {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background: none;
+            color: var(--gray-600);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-align: center;
+            border-bottom: 3px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .profile-tab:hover {
+            background: var(--professional-background);
+            color: var(--gray-900);
+        }
+
+        .profile-tab.active {
+            color: var(--professional-primary);
+            border-bottom-color: var(--professional-primary);
+            background: var(--professional-background);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Overview Tab */
+        .overview-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .overview-section {
+            background: var(--professional-surface);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            border: 1px solid var(--professional-border);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--gray-700);
+            font-weight: 600;
+        }
+
+        .contact-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--professional-background);
+            border-radius: var(--radius-md);
+        }
+
+        .contact-item i {
+            width: 20px;
+            color: var(--professional-primary);
+        }
+
+        .assignment-current {
+            background: rgba(0, 91, 142, 0.05);
+            border: 1px solid rgba(0, 91, 142, 0.2);
+        }
+
+        .assignment-item {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .assignment-unit {
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .assignment-dates {
+            font-size: 0.9rem;
+            color: var(--gray-600);
+        }
+
+        .assignment-supervisor {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+
+        /* Professional Details Tab */
+        .details-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: var(--gray-600);
+            min-width: 120px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: var(--gray-900);
+            flex: 1;
+        }
+
+        /* Assignments History Tab */
+        .assignments-timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .timeline-track {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--professional-border);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -24px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--professional-primary);
+            border: 2px solid var(--professional-background);
+        }
+
+        .timeline-content {
+            background: var(--professional-surface);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            border: 1px solid var(--professional-border);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .timeline-date {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        /* Schedule Tab */
+        .schedule-week {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .schedule-day {
+            background: var(--professional-surface);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            border-left: 4px solid var(--professional-primary);
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .schedule-date {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .schedule-items {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--professional-background);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+        }
+
+        .schedule-item i {
+            color: var(--professional-primary);
+            width: 16px;
+        }
+
+        /* Documents Tab */
+        .documents-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .document-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--professional-surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--professional-border);
+            transition: var(--transition-fast);
+        }
+
+        .document-card:hover {
+            border-color: var(--professional-primary);
+            background: var(--professional-background);
+        }
+
+        .document-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            background: var(--professional-light);
+            color: var(--professional-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .document-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .document-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .document-meta {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        /* Actions Tab */
+        .actions-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--professional-border);
+            border-radius: var(--radius-md);
+            background: var(--professional-background);
+            color: var(--gray-800);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-align: left;
+            width: 100%;
+        }
+
+        .action-button:hover {
+            background: var(--professional-primary);
+            color: white;
+            border-color: var(--professional-primary);
+        }
+
+        .action-button i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* ===== ANNOUNCEMENTS PANEL ===== */
+        .announcements-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background: var(--professional-background);
+            border-left: 1px solid var(--professional-border);
+            box-shadow: var(--shadow-xl);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .announcements-panel.open {
+            transform: translateX(0);
+        }
+
+        .announcements-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--professional-border);
+            background: var(--professional-surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .announcements-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .announcements-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .announcement-card {
+            background: var(--professional-surface);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--professional-primary);
+        }
+
+        .announcement-card.critical {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .announcement-title {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .announcement-time {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            white-space: nowrap;
+        }
+
+        .announcement-content {
+            font-size: 0.9rem;
+            color: var(--gray-700);
+            line-height: 1.5;
+        }
+
+        /* ===== UTILITY CLASSES ===== */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-500);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .loading-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--gray-500);
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--professional-border);
+            border-top-color: var(--professional-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .profile-panel {
+                width: 400px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .nav-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .nav-sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .main-workspace {
+                margin-left: 0;
+            }
+            
+            .profile-panel {
+                width: 100%;
+                max-width: 450px;
+            }
+            
+            .announcements-panel {
+                width: 100%;
+                max-width: 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .workspace-content {
+                padding: 1rem;
+            }
+            
+            .table-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            
+            .table-filters {
+                flex-wrap: wrap;
+            }
+            
+            .staff-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .profile-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .profile-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .profile-tab {
+                flex: none;
+                min-width: 100px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--professional-surface);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-400);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- App Container -->
+        <div class="app-container">
+            <!-- Navigation Sidebar -->
+            <nav class="nav-sidebar" :class="{ collapsed: sidebarCollapsed }">
+                <div class="nav-header">
+                    <div class="nav-logo">
+                        <i class="fas fa-lungs"></i>
+                    </div>
+                    <div class="nav-brand">
+                        <h1>PneumoCare</h1>
+                        <div class="subtitle">Professional Staff</div>
+                    </div>
+                </div>
+                
+                <div class="nav-content">
+                    <div class="nav-section">
+                        <div class="nav-section-title">Management</div>
+                        <button class="nav-item" :class="{ active: currentView === 'staff' }" @click="switchView('staff')">
+                            <i class="fas fa-user-md"></i>
+                            <span class="nav-text">All Staff</span>
+                        </button>
+                        <button class="nav-item" :class="{ active: currentView === 'units' }" @click="switchView('units')">
+                            <i class="fas fa-hospital-alt"></i>
+                            <span class="nav-text">Clinical Units</span>
+                        </button>
+                        <button class="nav-item" :class="{ active: currentView === 'assignments' }" @click="switchView('assignments')">
+                            <i class="fas fa-tasks"></i>
+                            <span class="nav-text">Assignments</span>
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <div class="nav-section-title">Operations</div>
+                        <button class="nav-item" :class="{ active: currentView === 'schedule' }" @click="switchView('schedule')">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span class="nav-text">Schedule</span>
+                        </button>
+                        <button class="nav-item" :class="{ active: currentView === 'oncall' }" @click="switchView('oncall')">
+                            <i class="fas fa-phone-alt"></i>
+                            <span class="nav-text">On-call</span>
+                        </button>
+                        <button class="nav-item" @click="toggleAnnouncements">
+                            <i class="fas fa-bullhorn"></i>
+                            <span class="nav-text">Announcements</span>
+                            <span v-if="unreadAnnouncements > 0" class="badge-count">
+                                {{ unreadAnnouncements }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="nav-footer">
+                    <div class="user-mini">
+                        <div>{{ currentUser?.full_name }}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8;">{{ formatRole(currentUser?.role) }}</div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Workspace -->
+            <main class="main-workspace">
+                <!-- Header -->
+                <header class="workspace-header">
+                    <div>
+                        <h1 class="header-title">{{ getViewTitle() }}</h1>
+                        <div class="header-subtitle">{{ getViewSubtitle() }}</div>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <button class="btn-icon" @click="toggleSidebar" title="Toggle sidebar">
+                            <i class="fas" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+                        </button>
+                        <button class="btn-icon" @click="refreshData" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="btn-icon" @click="exportData" title="Export">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Content -->
+                <div class="workspace-content">
+                    <!-- Staff Management View -->
+                    <div v-if="currentView === 'staff'">
+                        <div class="staff-table-container">
+                            <div class="table-header">
+                                <div class="table-title">Clinical Staff Directory</div>
+                                <div class="table-filters">
+                                    <select class="filter-select" v-model="filters.staff_type" @change="applyFilters">
+                                        <option value="">All Roles</option>
+                                        <option value="medical_resident">Residents</option>
+                                        <option value="attending_physician">Attendings</option>
+                                        <option value="fellow">Fellows</option>
+                                        <option value="nurse_practitioner">Nurse Practitioners</option>
+                                    </select>
+                                    <select class="filter-select" v-model="filters.status" @change="applyFilters">
+                                        <option value="">All Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="on_leave">On Leave</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                    <input type="text" 
+                                           class="filter-select" 
+                                           placeholder="Search..." 
+                                           v-model="filters.search"
+                                           @input="applyFilters">
+                                </div>
+                            </div>
+                            
+                            <table class="staff-table">
+                                <thead>
+                                    <tr>
+                                        <th>Staff Member</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Current Assignment</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="staff in filteredStaff" 
+                                        :key="staff.id"
+                                        :class="{ selected: selectedStaffId === staff.id }"
+                                        @click="selectStaff(staff.id)"
+                                        @dblclick="openProfile(staff)">
+                                        
+                                        <!-- Staff Avatar & Info -->
+                                        <td>
+                                            <div class="staff-avatar">
+                                                <div class="avatar-circle" :class="getStaffTypeClass(staff.staff_type)">
+                                                    {{ getInitials(staff.full_name) }}
+                                                </div>
+                                                <div class="avatar-info">
+                                                    <div class="avatar-name">{{ staff.full_name }}</div>
+                                                    <div class="avatar-id">{{ staff.staff_id }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Role -->
+                                        <td>
+                                            <span class="type-badge" :class="getStaffTypeClass(staff.staff_type)">
+                                                {{ formatStaffType(staff.staff_type) }}
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Status -->
+                                        <td>
+                                            <div class="status-indicator">
+                                                <span class="status-dot" :class="staff.employment_status"></span>
+                                                {{ formatStatus(staff.employment_status) }}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Current Assignment -->
+                                        <td>
+                                            <div class="current-assignment">
+                                                <div class="unit">
+                                                    {{ getCurrentAssignment(staff)?.unit_name || 'Not assigned' }}
+                                                </div>
+                                                <div v-if="getCurrentAssignment(staff)?.end_date" class="meta">
+                                                    Ends {{ formatDateShort(getCurrentAssignment(staff).end_date) }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Actions -->
+                                        <td>
+                                            <div class="row-actions">
+                                                <button class="action-btn" @click.stop="messageStaff(staff)" title="Message">
+                                                    <i class="fas fa-comment"></i>
+                                                </button>
+                                                <button class="action-btn" @click.stop="assignStaff(staff)" title="Assign">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                </button>
+                                                <button class="action-btn" @click.stop="openProfile(staff)" title="View Profile">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Other Views Placeholder -->
+                    <div v-if="currentView !== 'staff'" class="empty-state">
+                        <i class="fas fa-cogs"></i>
+                        <h3>{{ getViewTitle() }}</h3>
+                        <p>View implementation coming soon</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- FULL PROFILE PANEL -->
+            <div class="profile-panel" :class="{ open: profilePanel.open }">
+                <!-- Panel Header -->
+                <div class="profile-header" v-if="profilePanel.staff">
+                    <div class="profile-identity">
+                        <div class="profile-avatar-large" :class="getStaffTypeClass(profilePanel.staff.staff_type)">
+                            {{ getInitials(profilePanel.staff.full_name) }}
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-name">{{ profilePanel.staff.full_name }}</div>
+                            <div class="profile-role">
+                                {{ formatStaffType(profilePanel.staff.staff_type) }}
+                                <span v-if="profilePanel.staff.resident_category"> • {{ formatResidentCategory(profilePanel.staff.resident_category) }}</span>
+                            </div>
+                            <div class="profile-status">
+                                <span class="type-badge" :class="getStaffTypeClass(profilePanel.staff.staff_type)">
+                                    {{ formatStaffType(profilePanel.staff.staff_type) }}
+                                </span>
+                                <span class="status-badge" :class="profilePanel.staff.employment_status">
+                                    {{ formatStatus(profilePanel.staff.employment_status) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="panel-close" @click="closeProfilePanel">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Profile Tabs -->
+                <div class="profile-tabs">
+                    <button class="profile-tab" 
+                            :class="{ active: profilePanel.activeTab === 'overview' }"
+                            @click="switchProfileTab('overview')">
+                        <i class="fas fa-user"></i> Overview
+                    </button>
+                    <button class="profile-tab" 
+                            :class="{ active: profilePanel.activeTab === 'details' }"
+                            @click="switchProfileTab('details')">
+                        <i class="fas fa-info-circle"></i> Details
+                    </button>
+                    <button class="profile-tab" 
+                            :class="{ active: profilePanel.activeTab === 'assignments' }"
+                            @click="switchProfileTab('assignments')">
+                        <i class="fas fa-history"></i> Assignments
+                    </button>
+                    <button class="profile-tab" 
+                            :class="{ active: profilePanel.activeTab === 'schedule' }"
+                            @click="switchProfileTab('schedule')">
+                        <i class="fas fa-calendar-alt"></i> Schedule
+                    </button>
+                    <button class="profile-tab" 
+                            :class="{ active: profilePanel.activeTab === 'documents' }"
+                            @click="switchProfileTab('documents')">
+                        <i class="fas fa-folder"></i> Documents
+                    </button>
+                    <button class="profile-tab" 
+                            :class="{ active: profilePanel.activeTab === 'actions' }"
+                            @click="switchProfileTab('actions')">
+                        <i class="fas fa-bolt"></i> Actions
+                    </button>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="profile-content">
+                    <!-- Overview Tab -->
+                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'overview' }">
+                        <div class="overview-grid">
+                            <!-- Contact Information -->
+                            <div class="overview-section">
+                                <div class="section-header">
+                                    <i class="fas fa-address-card"></i>
+                                    <span>Contact Information</span>
+                                </div>
+                                <div class="contact-list">
+                                    <div v-if="profilePanel.staff.professional_email" class="contact-item">
+                                        <i class="fas fa-envelope"></i>
+                                        <span>{{ profilePanel.staff.professional_email }}</span>
+                                    </div>
+                                    <div v-if="profilePanel.staff.primary_clinic" class="contact-item">
+                                        <i class="fas fa-hospital"></i>
+                                        <span>{{ profilePanel.staff.primary_clinic }}</span>
+                                    </div>
+                                    <div v-if="profilePanel.staff.staff_id" class="contact-item">
+                                        <i class="fas fa-id-card"></i>
+                                        <span>ID: {{ profilePanel.staff.staff_id }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Current Assignment -->
+                            <div v-if="currentAssignment" class="overview-section assignment-current">
+                                <div class="section-header">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>Current Assignment</span>
+                                </div>
+                                <div class="assignment-item">
+                                    <div class="assignment-unit">
+                                        <i class="fas fa-hospital-alt"></i>
+                                        {{ currentAssignment.unit_name }}
+                                    </div>
+                                    <div class="assignment-dates">
+                                        {{ formatDate(currentAssignment.start_date) }} – {{ formatDate(currentAssignment.end_date) }}
+                                        <span v-if="currentAssignment.days_remaining">({{ currentAssignment.days_remaining }} days remaining)</span>
+                                    </div>
+                                    <div v-if="currentAssignment.supervisor_name" class="assignment-supervisor">
+                                        Supervisor: {{ currentAssignment.supervisor_name }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Professional Summary -->
+                            <div class="overview-section">
+                                <div class="section-header">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Professional Summary</span>
+                                </div>
+                                <div class="details-grid">
+                                    <div class="detail-row">
+                                        <span class="detail-label">Employment Status:</span>
+                                        <span class="detail-value">{{ formatStatus(profilePanel.staff.employment_status) }}</span>
+                                    </div>
+                                    <div v-if="profilePanel.staff.date_of_joining" class="detail-row">
+                                        <span class="detail-label">Joined:</span>
+                                        <span class="detail-value">{{ formatDate(profilePanel.staff.date_of_joining) }}</span>
+                                    </div>
+                                    <div v-if="profilePanel.staff.specialization" class="detail-row">
+                                        <span class="detail-label">Specialization:</span>
+                                        <span class="detail-value">{{ profilePanel.staff.specialization }}</span>
+                                    </div>
+                                    <div v-if="profilePanel.staff.can_supervise_residents" class="detail-row">
+                                        <span class="detail-label">Supervisor Role:</span>
+                                        <span class="detail-value">Can supervise residents</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Professional Details Tab -->
+                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'details' }">
+                        <div class="details-grid">
+                            <!-- Personal Details -->
+                            <div class="overview-section">
+                                <div class="section-header">
+                                    <i class="fas fa-user"></i>
+                                    <span>Personal Details</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Full Name:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.full_name }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.date_of_birth" class="detail-row">
+                                    <span class="detail-label">Date of Birth:</span>
+                                    <span class="detail-value">{{ formatDate(profilePanel.staff.date_of_birth) }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.gender" class="detail-row">
+                                    <span class="detail-label">Gender:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.gender }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Professional Details -->
+                            <div class="overview-section">
+                                <div class="section-header">
+                                    <i class="fas fa-briefcase"></i>
+                                    <span>Professional Details</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Staff Type:</span>
+                                    <span class="detail-value">{{ formatStaffType(profilePanel.staff.staff_type) }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.resident_category" class="detail-row">
+                                    <span class="detail-label">Resident Category:</span>
+                                    <span class="detail-value">{{ formatResidentCategory(profilePanel.staff.resident_category) }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.training_year" class="detail-row">
+                                    <span class="detail-label">Training Year:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.training_year }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.specialization" class="detail-row">
+                                    <span class="detail-label">Specialization:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.specialization }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.board_certification" class="detail-row">
+                                    <span class="detail-label">Board Certification:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.board_certification }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Contact Details -->
+                            <div class="overview-section">
+                                <div class="section-header">
+                                    <i class="fas fa-phone"></i>
+                                    <span>Contact Details</span>
+                                </div>
+                                <div v-if="profilePanel.staff.professional_email" class="detail-row">
+                                    <span class="detail-label">Email:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.professional_email }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.primary_clinic" class="detail-row">
+                                    <span class="detail-label">Primary Clinic:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.primary_clinic }}</span>
+                                </div>
+                                <div v-if="profilePanel.staff.office_phone" class="detail-row">
+                                    <span class="detail-label">Office Phone:</span>
+                                    <span class="detail-value">{{ profilePanel.staff.office_phone }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assignments History Tab -->
+                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'assignments' }">
+                        <div v-if="profilePanel.assignmentsLoading" class="loading-state">
+                            <div class="loading-spinner"></div>
+                            <p>Loading assignments...</p>
+                        </div>
+                        <div v-else-if="profilePanel.assignments?.length" class="assignments-timeline">
+                            <div class="timeline-track"></div>
+                            <div v-for="assignment in profilePanel.assignments" 
+                                 :key="assignment.id"
+                                 class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <div class="timeline-title">{{ assignment.unit_name }}</div>
+                                        <div class="timeline-date">
+                                            {{ formatDate(assignment.start_date) }} – {{ formatDate(assignment.end_date) }}
+                                        </div>
+                                    </div>
+                                    <div v-if="assignment.supervisor_name" class="assignment-supervisor">
+                                        Supervisor: {{ assignment.supervisor_name }}
+                                    </div>
+                                    <div v-if="assignment.notes" class="assignment-notes" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray-600);">
+                                        {{ assignment.notes }}
+                                    </div>
+                                    <div class="assignment-status" style="margin-top: 0.5rem;">
+                                        <span class="status-badge" :class="assignment.status">{{ assignment.status }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <p>No assignments found</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Schedule Tab -->
+                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'schedule' }">
+                        <div v-if="profilePanel.scheduleLoading" class="loading-state">
+                            <div class="loading-spinner"></div>
+                            <p>Loading schedule...</p>
+                        </div>
+                        <div v-else-if="profilePanel.schedule?.length" class="schedule-week">
+                            <div v-for="day in profilePanel.schedule" 
+                                 :key="day.date"
+                                 class="schedule-day">
+                                <div class="schedule-header">
+                                    <div class="schedule-date">{{ formatDate(day.date) }}</div>
+                                    <div class="schedule-day-name">{{ formatDay(day.date) }}</div>
+                                </div>
+                                <div class="schedule-items">
+                                    <div v-for="item in day.items" 
+                                         :key="item.id"
+                                         class="schedule-item">
+                                        <i :class="getScheduleIcon(item.type)"></i>
+                                        <span style="min-width: 80px;">{{ item.time }}</span>
+                                        <span style="flex: 1;">{{ item.description }}</span>
+                                        <span>{{ item.location }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="empty-state">
+                            <i class="fas fa-calendar-check"></i>
+                            <p>No schedule found</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Documents Tab -->
+                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'documents' }">
+                        <div v-if="profilePanel.documentsLoading" class="loading-state">
+                            <div class="loading-spinner"></div>
+                            <p>Loading documents...</p>
+                        </div>
+                        <div v-else-if="profilePanel.documents?.length" class="documents-grid">
+                            <div v-for="doc in profilePanel.documents" 
+                                 :key="doc.id"
+                                 class="document-card">
+                                <div class="document-icon">
+                                    <i :class="getDocumentIcon(doc.type)"></i>
+                                </div>
+                                <div class="document-info">
+                                    <div class="document-name">{{ doc.name }}</div>
+                                    <div class="document-meta">
+                                        {{ formatDocumentType(doc.type) }} • Uploaded {{ formatDate(doc.upload_date) }}
+                                        <span v-if="doc.expiry_date"> • Expires {{ formatDate(doc.expiry_date) }}</span>
+                                    </div>
+                                </div>
+                                <button class="action-btn" @click="downloadDocument(doc)">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div v-else class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <p>No documents found</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions Tab -->
+                    <div class="tab-content" :class="{ active: profilePanel.activeTab === 'actions' }">
+                        <div class="actions-grid">
+                            <button class="action-button" @click="messageStaff(profilePanel.staff)">
+                                <i class="fas fa-comment"></i>
+                                <span>Send Message</span>
+                            </button>
+                            <button class="action-button" @click="assignStaff(profilePanel.staff)">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Assign to Unit</span>
+                            </button>
+                            <button class="action-button" @click="scheduleMeeting(profilePanel.staff)">
+                                <i class="fas fa-calendar-plus"></i>
+                                <span>Schedule Meeting</span>
+                            </button>
+                            <button class="action-button" @click="requestLeave(profilePanel.staff)">
+                                <i class="fas fa-calendar-times"></i>
+                                <span>Request Leave</span>
+                            </button>
+                            <button class="action-button" @click="editStaff(profilePanel.staff)">
+                                <i class="fas fa-edit"></i>
+                                <span>Edit Profile</span>
+                            </button>
+                            <button class="action-button" @click="generateReport(profilePanel.staff)">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Generate Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANNOUNCEMENTS PANEL -->
+            <div class="announcements-panel" :class="{ open: announcementsPanel.open }">
+                <div class="announcements-header">
+                    <h3>Department Announcements</h3>
+                    <button class="panel-close" @click="toggleAnnouncements">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="announcements-content">
+                    <div v-for="announcement in announcements" 
+                         :key="announcement.id"
+                         class="announcement-card" 
+                         :class="{ critical: announcement.priority === 'critical' }">
+                        <div class="announcement-title">
+                            <span>{{ announcement.title }}</span>
+                            <span class="announcement-time">{{ formatTime(announcement.created_at) }}</span>
+                        </div>
+                        <div class="announcement-content">
+                            {{ announcement.content }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    // User
+                    currentUser: {
+                        full_name: 'Dr. Department Head',
+                        role: 'department_head'
+                    },
+                    
+                    // Navigation
+                    sidebarCollapsed: false,
+                    currentView: 'staff',
+                    
+                    // Staff Data
+                    medicalStaff: [],
+                    selectedStaffId: null,
+                    filters: {
+                        search: '',
+                        staff_type: '',
+                        status: ''
+                    },
+                    
+                    // Profile Panel
+                    profilePanel: {
+                        open: false,
+                        staff: null,
+                        activeTab: 'overview',
+                        assignments: null,
+                        assignmentsLoading: false,
+                        schedule: null,
+                        scheduleLoading: false,
+                        documents: null,
+                        documentsLoading: false
+                    },
+                    
+                    // Announcements
+                    announcementsPanel: {
+                        open: false
+                    },
+                    announcements: [
+                        {
+                            id: 1,
+                            title: 'System Maintenance',
+                            content: 'EMR system will be unavailable Sunday 2-4 AM for maintenance.',
+                            priority: 'normal',
+                            created_at: new Date().toISOString()
+                        },
+                        {
+                            id: 2,
+                            title: 'Monthly Meeting',
+                            content: 'Department meeting moved to Thursday 3 PM in Conference Room B.',
+                            priority: 'normal',
+                            created_at: new Date(Date.now() - 86400000).toISOString()
+                        }
+                    ],
+                    unreadAnnouncements: 2,
+                    
+                    // Sample Data - ALL STAFF TYPES
+                    sampleStaff: [
+                        // Medical Residents
+                        {
+                            id: 1,
+                            full_name: 'Dr. Ava Chen',
+                            staff_id: 'RES-2048',
+                            staff_type: 'medical_resident',
+                            employment_status: 'active',
+                            professional_email: 'ava.chen@hospital.edu',
+                            primary_clinic: 'Pulmonary ICU',
+                            resident_category: 'pgy3',
+                            training_year: '3',
+                            specialization: 'Pulmonary Medicine',
+                            date_of_joining: '2022-08-01',
+                            can_supervise_residents: false
+                        },
+                        {
+                            id: 2,
+                            full_name: 'Dr. Ben Lee',
+                            staff_id: 'RES-2049',
+                            staff_type: 'medical_resident',
+                            employment_status: 'active',
+                            professional_email: 'ben.lee@hospital.edu',
+                            primary_clinic: 'Cardiac Ward',
+                            resident_category: 'pgy2',
+                            training_year: '2',
+                            specialization: 'Cardiology',
+                            date_of_joining: '2023-08-01',
+                            can_supervise_residents: false
+                        },
+                        
+                        // Attending Physicians
+                        {
+                            id: 3,
+                            full_name: 'Dr. Carla Moss',
+                            staff_id: 'ATT-105',
+                            staff_type: 'attending_physician',
+                            employment_status: 'active',
+                            professional_email: 'carla.moss@hospital.edu',
+                            primary_clinic: 'Pulmonary Department',
+                            specialization: 'Interventional Pulmonology',
+                            board_certification: 'Board Certified',
+                            date_of_joining: '2018-07-01',
+                            can_supervise_residents: true,
+                            office_phone: '555-0101'
+                        },
+                        {
+                            id: 4,
+                            full_name: 'Dr. David Wong',
+                            staff_id: 'ATT-106',
+                            staff_type: 'attending_physician',
+                            employment_status: 'on_leave',
+                            professional_email: 'david.wong@hospital.edu',
+                            primary_clinic: 'Critical Care',
+                            specialization: 'Critical Care Medicine',
+                            board_certification: 'Board Certified',
+                            date_of_joining: '2017-09-01',
+                            can_supervise_residents: true,
+                            office_phone: '555-0102'
+                        },
+                        
+                        // Fellows
+                        {
+                            id: 5,
+                            full_name: 'Dr. Emma Garcia',
+                            staff_id: 'FEL-301',
+                            staff_type: 'fellow',
+                            employment_status: 'active',
+                            professional_email: 'emma.garcia@hospital.edu',
+                            primary_clinic: 'Sleep Medicine',
+                            specialization: 'Sleep Medicine',
+                            training_year: '1',
+                            date_of_joining: '2024-07-01',
+                            can_supervise_residents: true
+                        },
+                        
+                        // Nurse Practitioners
+                        {
+                            id: 6,
+                            full_name: 'Sarah Johnson, NP',
+                            staff_id: 'NP-501',
+                            staff_type: 'nurse_practitioner',
+                            employment_status: 'active',
+                            professional_email: 'sarah.johnson@hospital.edu',
+                            primary_clinic: 'Pulmonary Clinic',
+                            specialization: 'Adult-Gerontology',
+                            board_certification: 'ANCC Certified',
+                            date_of_joining: '2021-03-15',
+                            can_supervise_residents: false
+                        }
+                    ],
+                    
+                    sampleAssignments: {
+                        1: [
+                            {
+                                id: 101,
+                                unit_name: 'Pulmonary ICU',
+                                start_date: '2024-01-15',
+                                end_date: '2024-02-15',
+                                status: 'active',
+                                supervisor_name: 'Dr. Robert Kim',
+                                notes: 'Primary rotation for Q1',
+                                days_remaining: 12
+                            }
+                        ],
+                        3: [
+                            {
+                                id: 102,
+                                unit_name: 'Pulmonary Department',
+                                start_date: '2024-01-01',
+                                end_date: '2024-12-31',
+                                status: 'active',
+                                notes: 'Department leadership role',
+                                days_remaining: 330
+                            }
+                        ],
+                        5: [
+                            {
+                                id: 103,
+                                unit_name: 'Sleep Medicine Center',
+                                start_date: '2024-01-01',
+                                end_date: '2024-06-30',
+                                status: 'active',
+                                supervisor_name: 'Dr. Lisa Park',
+                                notes: 'Fellowship rotation',
+                                days_remaining: 150
+                            }
+                        ]
+                    }
+                };
+            },
+            
+            computed: {
+                filteredStaff() {
+                    let staff = this.medicalStaff.length ? this.medicalStaff : this.sampleStaff;
+                    
+                    if (this.filters.search) {
+                        const search = this.filters.search.toLowerCase();
+                        staff = staff.filter(s => 
+                            s.full_name.toLowerCase().includes(search) ||
+                            s.staff_id.toLowerCase().includes(search) ||
+                            s.primary_clinic?.toLowerCase().includes(search)
+                        );
+                    }
+                    
+                    if (this.filters.staff_type) {
+                        staff = staff.filter(s => s.staff_type === this.filters.staff_type);
+                    }
+                    
+                    if (this.filters.status) {
+                        staff = staff.filter(s => s.employment_status === this.filters.status);
+                    }
+                    
+                    return staff;
+                },
+                
+                currentAssignment() {
+                    if (!this.profilePanel.staff) return null;
+                    return this.getCurrentAssignment(this.profilePanel.staff);
+                }
+            },
+            
+            mounted() {
+                this.loadMedicalStaff();
+            },
+            
+            methods: {
+                // Navigation
+                switchView(view) {
+                    this.currentView = view;
+                    this.closeProfilePanel();
+                    this.announcementsPanel.open = false;
+                },
+                
+                toggleSidebar() {
+                    this.sidebarCollapsed = !this.sidebarCollapsed;
+                },
+                
+                // Staff Management
+                loadMedicalStaff() {
+                    // This would call your backend API
+                    this.medicalStaff = [...this.sampleStaff];
+                },
+                
+                applyFilters() {
+                    // Filtering happens automatically through computed property
+                },
+                
+                selectStaff(staffId) {
+                    this.selectedStaffId = staffId;
+                },
+                
+                getCurrentAssignment(staff) {
+                    const assignments = this.sampleAssignments[staff.id];
+                    if (!assignments) return null;
+                    return assignments.find(a => a.status === 'active') || null;
+                },
+                
+                // Profile Panel
+                openProfile(staff) {
+                    this.profilePanel.open = true;
+                    this.profilePanel.staff = staff;
+                    this.profilePanel.activeTab = 'overview';
+                    this.selectedStaffId = staff.id;
+                    
+                    // Clear loaded data
+                    this.profilePanel.assignments = null;
+                    this.profilePanel.schedule = null;
+                    this.profilePanel.documents = null;
+                },
+                
+                closeProfilePanel() {
+                    this.profilePanel.open = false;
+                    this.profilePanel.staff = null;
+                    this.profilePanel.activeTab = 'overview';
+                    this.selectedStaffId = null;
+                },
+                
+                switchProfileTab(tab) {
+                    this.profilePanel.activeTab = tab;
+                    
+                    // Load data for tab if not already loaded
+                    if (tab === 'assignments' && !this.profilePanel.assignments) {
+                        this.loadAssignments();
+                    } else if (tab === 'schedule' && !this.profilePanel.schedule) {
+                        this.loadSchedule();
+                    } else if (tab === 'documents' && !this.profilePanel.documents) {
+                        this.loadDocuments();
+                    }
+                },
+                
+                loadAssignments() {
+                    this.profilePanel.assignmentsLoading = true;
+                    
+                    setTimeout(() => {
+                        if (this.profilePanel.staff) {
+                            this.profilePanel.assignments = this.sampleAssignments[this.profilePanel.staff.id] || [];
+                        }
+                        this.profilePanel.assignmentsLoading = false;
+                    }, 300);
+                },
+                
+                loadSchedule() {
+                    this.profilePanel.scheduleLoading = true;
+                    
+                    setTimeout(() => {
+                        this.profilePanel.schedule = [
+                            {
+                                date: '2024-01-29',
+                                items: [
+                                    { id: 1, time: '08:00-16:00', description: 'Clinical Duties', type: 'work', location: 'Unit 3B' },
+                                    { id: 2, time: '16:30-17:30', description: 'Team Meeting', type: 'meeting', location: 'Conf Room A' }
+                                ]
+                            },
+                            {
+                                date: '2024-01-30',
+                                items: [
+                                    { id: 3, time: '08:00-12:00', description: 'Clinic Hours', type: 'work', location: 'Pulmonary Clinic' },
+                                    { id: 4, time: '13:00-17:00', description: 'Research Time', type: 'research', location: 'Research Lab' }
+                                ]
+                            }
+                        ];
+                        this.profilePanel.scheduleLoading = false;
+                    }, 300);
+                },
+                
+                loadDocuments() {
+                    this.profilePanel.documentsLoading = true;
+                    
+                    setTimeout(() => {
+                        this.profilePanel.documents = [
+                            {
+                                id: 1,
+                                name: 'Medical License',
+                                type: 'license',
+                                upload_date: '2024-01-01',
+                                expiry_date: '2025-01-01'
+                            },
+                            {
+                                id: 2,
+                                name: 'Board Certification',
+                                type: 'certification',
+                                upload_date: '2023-12-15',
+                                expiry_date: '2028-12-15'
+                            }
+                        ];
+                        this.profilePanel.documentsLoading = false;
+                    }, 300);
+                },
+                
+                // Actions
+                messageStaff(staff) {
+                    alert(`Message ${staff.full_name}`);
+                },
+                
+                assignStaff(staff) {
+                    alert(`Assign ${staff.full_name} to unit`);
+                },
+                
+                scheduleMeeting(staff) {
+                    alert(`Schedule meeting with ${staff.full_name}`);
+                },
+                
+                requestLeave(staff) {
+                    alert(`Request leave for ${staff.full_name}`);
+                },
+                
+                editStaff(staff) {
+                    alert(`Edit profile of ${staff.full_name}`);
+                },
+                
+                generateReport(staff) {
+                    alert(`Generate report for ${staff.full_name}`);
+                },
+                
+                downloadDocument(doc) {
+                    alert(`Download ${doc.name}`);
+                },
+                
+                // Announcements
+                toggleAnnouncements() {
+                    this.announcementsPanel.open = !this.announcementsPanel.open;
+                    if (this.announcementsPanel.open) {
+                        this.unreadAnnouncements = 0;
+                    }
+                },
+                
+                // Utility Functions
+                getInitials(name) {
+                    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+                },
+                
+                getStaffTypeClass(type) {
+                    const classes = {
+                        medical_resident: 'resident',
+                        attending_physician: 'attending',
+                        fellow: 'fellow',
+                        nurse_practitioner: 'nurse'
+                    };
+                    return classes[type] || 'admin';
+                },
+                
+                formatStaffType(type) {
+                    const types = {
+                        medical_resident: 'Medical Resident',
+                        attending_physician: 'Attending Physician',
+                        fellow: 'Fellow',
+                        nurse_practitioner: 'Nurse Practitioner'
+                    };
+                    return types[type] || type.replace('_', ' ').charAt(0).toUpperCase() + type.slice(1);
+                },
+                
+                formatResidentCategory(category) {
+                    if (!category) return '';
+                    const categories = {
+                        pgy1: 'PGY-1',
+                        pgy2: 'PGY-2',
+                        pgy3: 'PGY-3',
+                        pgy4: 'PGY-4',
+                        pgy5: 'PGY-5',
+                        department_internal: 'Department Internal',
+                        rotating_other_dept: 'Rotating Other Dept'
+                    };
+                    return categories[category] || category;
+                },
+                
+                formatStatus(status) {
+                    return status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1);
+                },
+                
+                formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                },
+                
+                formatDateShort(dateStr) {
+                    if (!dateStr) return '';
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                },
+                
+                formatDay(dateStr) {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', { weekday: 'long' });
+                },
+                
+                formatTime(dateStr) {
+                    const date = new Date(dateStr);
+                    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                },
+                
+                formatDocumentType(type) {
+                    const types = {
+                        license: 'License',
+                        certification: 'Certification',
+                        evaluation: 'Evaluation',
+                        other: 'Document'
+                    };
+                    return types[type] || type;
+                },
+                
+                getScheduleIcon(type) {
+                    const icons = {
+                        work: 'fas fa-briefcase',
+                        meeting: 'fas fa-users',
+                        research: 'fas fa-flask',
+                        oncall: 'fas fa-phone-alt',
+                        training: 'fas fa-graduation-cap'
+                    };
+                    return icons[type] || 'fas fa-calendar';
+                },
+                
+                getDocumentIcon(type) {
+                    const icons = {
+                        license: 'fas fa-certificate',
+                        certification: 'fas fa-award',
+                        evaluation: 'fas fa-clipboard-check',
+                        other: 'fas fa-file'
+                    };
+                    return icons[type] || 'fas fa-file';
+                },
+                
+                getViewTitle() {
+                    const titles = {
+                        staff: 'Clinical Staff Directory',
+                        units: 'Clinical Units',
+                        assignments: 'Staff Assignments',
+                        schedule: 'Schedule Management',
+                        oncall: 'On-call Schedule'
+                    };
+                    return titles[this.currentView] || 'Dashboard';
+                },
+                
+                getViewSubtitle() {
+                    const count = this.filteredStaff.length;
+                    return `${count} ${count === 1 ? 'staff member' : 'staff members'} found`;
+                },
+                
+                formatRole(role) {
+                    const roles = {
+                        department_head: 'Department Head',
+                        resident_manager: 'Resident Manager',
+                        system_admin: 'System Administrator'
+                    };
+                    return roles[role] || role;
+                },
+                
+                refreshData() {
+                    this.loadMedicalStaff();
+                },
+                
+                exportData() {
+                    alert('Exporting data...');
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
