@@ -1154,6 +1154,10 @@ const app = createApp({
     }
 };
 
+const toggleMobileMenu = () => {
+    mobileMenuOpen.value = !mobileMenuOpen.value;
+};
+
 const closeMobileMenu = () => {
     mobileMenuOpen.value = false;
 };
@@ -1169,6 +1173,13 @@ const closeMobileMenu = () => {
             return placeholders[currentView.value] || 'Search...';
         };
 
+        const toggleMobileMenu = () => {
+            mobileMenuOpen.value = !mobileMenuOpen.value;
+        };
+
+        const closeMobileMenu = () => {
+            mobileMenuOpen.value = false;
+        };
 
         const togglePermissionManager = () => {
             showPermissionManager.value = !showPermissionManager.value;
@@ -3219,6 +3230,7 @@ const closeMobileMenu = () => {
             loginForm,
             loading,
             saving,
+            permissionLoading,
             savingPermissions,
             currentView,
             sidebarCollapsed,
