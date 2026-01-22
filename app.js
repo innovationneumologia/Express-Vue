@@ -1,43 +1,4 @@
 // ============ SUPABASE CONFIGURATION ============
-// Check if supabase is loaded, if not load it dynamically
-function initializeSupabase() {
-    if (!window.supabase) {
-        console.error('Supabase client not found. Make sure supabase.js is loaded.');
-        // Create a mock client for demo purposes
-        window.supabase = {
-            createClient: function(url, key, options) {
-                return {
-                    from: function(table) {
-                        return {
-                            select: function() { return Promise.resolve({ data: [], error: null }); },
-                            insert: function() { return Promise.resolve({ data: [], error: null }); },
-                            update: function() { return Promise.resolve({ data: [], error: null }); },
-                            delete: function() { return Promise.resolve({ data: [], error: null }); },
-                            eq: function() { return this; },
-                            order: function() { return this; },
-                            limit: function() { return this; },
-                            maybeSingle: function() { return Promise.resolve({ data: null, error: null }); },
-                            single: function() { return Promise.resolve({ data: null, error: null }); }
-                        };
-                    },
-                    auth: {
-                        getSession: function() { 
-                            return Promise.resolve({ 
-                                data: { session: null }, 
-                                error: null 
-                            }); 
-                        }
-                    }
-                };
-            }
-        };
-        console.log('Created mock Supabase client for demo');
-    }
-}
-
-// Initialize Supabase before creating client
-initializeSupabase();
-
 const SUPABASE_URL = 'https://vssmguzuvekkecbmwcjw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzc21ndXp1dmVra2VjYm13Y2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI4NTIsImV4cCI6MjA4NDE2ODg1Mn0.8qPFsMEn4n5hDfxhgXvq2lQarts8OlL8hWiRYXb-vXw';
 
@@ -923,14 +884,13 @@ const app = createApp({
                 availableSupervisors: supervisors.length
             };
         });
-        
         const unreadAnnouncements = computed(() => {
-            const today = new Date().toISOString().split('T')[0];
-            return announcements.value.filter(a => 
-                a.publish_start_date <= today && 
-                (!a.publish_end_date || a.publish_end_date >= today)
-            ).length;
-        });
+    const today = new Date().toISOString().split('T')[0];
+    return announcements.value.filter(a => 
+        a.publish_start_date <= today && 
+        (!a.publish_end_date || a.publish_end_date >= today)
+    ).length;
+});
 
         const filteredMedicalStaff = computed(() => {
             let filtered = medicalStaff.value;
@@ -1187,21 +1147,20 @@ const app = createApp({
             };
             return subtitles[currentView.value] || 'Advanced DRBA Hospital Management System';
         };
-        
         const toggleAnnouncementsPanel = () => {
-            announcementsPanel.value.open = !announcementsPanel.value.open;
-            if (announcementsPanel.value.open) {
-                loadAnnouncements();
-            }
-        };
+    announcementsPanel.value.open = !announcementsPanel.value.open;
+    if (announcementsPanel.value.open) {
+        loadAnnouncements();
+    }
+};
 
-        const toggleMobileMenu = () => {
-            mobileMenuOpen.value = !mobileMenuOpen.value;
-        };
+const toggleMobileMenu = () => {
+    mobileMenuOpen.value = !mobileMenuOpen.value;
+};
 
-        const closeMobileMenu = () => {
-            mobileMenuOpen.value = false;
-        };
+const closeMobileMenu = () => {
+    mobileMenuOpen.value = false;
+};
 
         const getSearchPlaceholder = () => {
             const placeholders = {
@@ -3423,8 +3382,8 @@ const app = createApp({
             logAudit,
             removeToast,
             announcementsPanel,
-            unreadAnnouncements,
-            toggleAnnouncementsPanel,
+    unreadAnnouncements,
+    toggleAnnouncementsPanel,
             loadStaffDailyActivities,
             getTodaysSchedule,
             getUpcomingOnCall,
