@@ -3169,8 +3169,8 @@
                                         <div class="p-3 rounded-lg" :class="getDayStatus(day)">
                                             <div class="font-medium">{{ formatDateShort(day.date) }}</div>
                                             <div v-if="day.schedule" class="text-xs mt-1">
-                                                {{ getPhysicianName(day.schedule.primary_physician_id).split(' ')[0] }}
-                                            </div>
+    {{ getPhysicianFirstName(day.schedule.primary_physician_id) }}
+</div>
                                             <div v-else class="text-xs mt-1 text-gray-500">
                                                 Uncovered
                                             </div>
