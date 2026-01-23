@@ -534,6 +534,21 @@ const generateUUID = () => {
         return v.toString(16);
     });
 };
+        // ============ UUID CONVERSION ============
+const convertToUUID = (oldId) => {
+    // If it's already a UUID, return it
+    if (isValidUUID(oldId)) return oldId;
+    
+    // If it's your old format, convert it to a proper UUID
+    if (oldId && typeof oldId === 'string' && oldId.includes('-')) {
+        // Generate a stable UUID from the old ID
+        const hash = oldId.split('-').join('');
+        return `${hash.substring(0,8)}-${hash.substring(8,12)}-4${hash.substring(13,16)}-8${hash.substring(17,20)}-${hash.substring(20,32)}`;
+    }
+    
+    // Otherwise generate a new UUID
+    return generateUUID();
+};
         // ============ UUID VALIDATION ============
 const isValidUUID = (uuid) => {
     if (!uuid) return true; // null is valid for optional UUID fields
@@ -2556,7 +2571,7 @@ const saveOnCallSchedule = async () => {
             
             // Add ID and created fields for new records
             if (onCallModal.value.mode === 'add') {
-                scheduleData.id = onCallModal.value.form.id || generateUUID();
+    scheduleData.id = convertToUUID(onCallModal.value.form.id);
                 scheduleData.created_at = getLocalDateTime();
                 scheduleData.created_by = currentUser.value?.id;
             }
