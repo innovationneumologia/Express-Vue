@@ -4258,6 +4258,10 @@ const saveUserProfile = async () => {
 const exportStaffList = () => {
     showImportExportModal('export', 'medical_staff');
 };
+        const getPhysicianFirstName = async (physicianId) => {
+    const name = await getPhysicianName(physicianId);
+    return name.split(' ')[0] || name;
+};
         // ============ RETURN STATEMENT ============
         return {
             // State
@@ -4287,6 +4291,7 @@ const exportStaffList = () => {
     updateCapacity,
     quickAssignToUnit,
     showImportExportModal,
+             getPhysicianFirstName, 
             
             // Undo/Redo
             undoStack,
