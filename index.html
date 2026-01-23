@@ -14,9 +14,6 @@
     <!-- Vue.js 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
         /* ============ BASE STYLES ============ */
         :root {
@@ -2140,41 +2137,41 @@
             font-weight: 600;
         }
 
-        /* ============ LEAVE REQUEST VIEW ============ */
-        .leave-details-view {
+        /* ============ ABSENCE DETAILS VIEW ============ */
+        .absence-details-view {
             background: var(--gray-50);
             padding: 20px;
             border-radius: var(--border-radius-md);
             margin-bottom: 24px;
         }
 
-        .leave-info-grid {
+        .absence-info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-bottom: 20px;
         }
 
-        .leave-info-item {
+        .absence-info-item {
             padding: 12px;
             background: white;
             border-radius: var(--border-radius-md);
             border-left: 4px solid var(--primary-color);
         }
 
-        .leave-info-label {
+        .absence-info-label {
             font-size: 12px;
             color: var(--gray-600);
             margin-bottom: 4px;
         }
 
-        .leave-info-value {
+        .absence-info-value {
             font-size: 14px;
             font-weight: 500;
             color: var(--gray-900);
         }
 
-        .leave-timeline {
+        .absence-timeline {
             background: white;
             padding: 16px;
             border-radius: var(--border-radius-md);
@@ -2434,7 +2431,6 @@
         .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
         .grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
         .grid-cols-6 { grid-template-columns: repeat(6, 1fr); }
-        .grid-cols-7 { grid-template-columns: repeat(7, 1fr); }
         .grid-cols-7 { grid-template-columns: repeat(7, 1fr); }
 
 
@@ -2993,7 +2989,7 @@
                     <input type="text" class="form-control" v-model="loginForm.mfa_code" placeholder="000000" aria-required="true">
                 </div>
                 
-                <button class="btn btn-primary btn-lg w-100" @click="handleAdvancedLogin" :disabled="loading" aria-label="Login to NeumoCare system">
+                <button class="btn btn-primary btn-lg w-100" @click="handleLogin" :disabled="loading" aria-label="Login to NeumoCare system">
                     <span v-if="loading" class="loading"></span>
                     <span v-else><i class="fas fa-sign-in-alt"></i> Login to NeumoCare</span>
                 </button>
@@ -3068,11 +3064,11 @@
                                 </a>
                             </li>
                             <li class="sidebar-menu-item">
-                                <a href="#" class="sidebar-menu-link" :class="{ active: currentView === 'leave_requests' }" 
-                                   @click.prevent="switchView('leave_requests'); mobileMenuOpen = false" v-if="hasPermission('leave_requests', 'read')"
-                                   :aria-current="currentView === 'leave_requests' ? 'page' : null">
-                                    <i class="fas fa-calendar-check"></i>
-                                    <span>Leave Requests</span>
+                                <a href="#" class="sidebar-menu-link" :class="{ active: currentView === 'staff_absence' }" 
+                                   @click.prevent="switchView('staff_absence'); mobileMenuOpen = false" v-if="hasPermission('staff_absence', 'read')"
+                                   :aria-current="currentView === 'staff_absence' ? 'page' : null">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <span>Staff Absence</span>
                                 </a>
                             </li>
                         </ul>
@@ -3095,6 +3091,14 @@
                     <div class="sidebar-section" v-if="hasAnyPermission(['communications', 'audit', 'system'])">
                         <div class="sidebar-section-title">Administration</div>
                         <ul class="sidebar-menu">
+                            <li class="sidebar-menu-item">
+                                <a href="#" class="sidebar-menu-link" :class="{ active: currentView === 'department_management' }" 
+                                   @click.prevent="switchView('department_management'); mobileMenuOpen = false" v-if="hasPermission('system', 'manage_departments')"
+                                   :aria-current="currentView === 'department_management' ? 'page' : null">
+                                    <i class="fas fa-sitemap"></i>
+                                    <span>Departments</span>
+                                </a>
+                            </li>
                             <li class="sidebar-menu-item" v-if="hasPermission('communications', 'read')">
                                 <a href="#" class="sidebar-menu-link" :class="{ active: currentView === 'communications' }" 
                                    @click.prevent="switchView('communications'); mobileMenuOpen = false"
@@ -3220,7 +3224,7 @@
                             <div class="search-box">
                                 <i class="fas fa-search search-icon"></i>
                                 <input type="text" class="search-input" :placeholder="getSearchPlaceholder()" 
-                                       v-model="searchQuery" @keyup.enter="handleAdvancedSearch"
+                                       v-model="searchQuery" @keyup.enter="handleSearch"
                                        @focus="showRecentSearches = true"
                                        @blur="setTimeout(() => { showRecentSearches = false }, 200)"
                                        aria-label="Search">
@@ -3323,9 +3327,9 @@
                                 <i class="fas fa-phone-alt text-primary"></i>
                                 Add On-call
                             </div>
-                            <div class="quick-action-btn" @click="showAddLeaveRequestModal" v-if="hasPermission('leave_requests', 'create')">
-                                <i class="fas fa-calendar-plus text-warning"></i>
-                                Request Leave
+                            <div class="quick-action-btn" @click="showAddAbsenceModal" v-if="hasPermission('staff_absence', 'create')">
+                                <i class="fas fa-calendar-times text-warning"></i>
+                                Document Absence
                             </div>
                             <div class="quick-action-btn" @click="showQuickPlacementModal" v-if="hasPermission('placements', 'create')">
                                 <i class="fas fa-user-md text-info"></i>
@@ -3806,7 +3810,7 @@
                                                 </span>
                                             </td>
                                             <td>{{ staff.staff_id }}</td>
-                                            <td>{{ staff.primary_clinic || 'Unassigned' }}</td>
+                                            <td>{{ getDepartmentName(staff.department_id) || 'Unassigned' }}</td>
                                             <td>
                                                 <span class="badge" :class="staff.employment_status === 'active' ? 'status-available' : 'status-busy'">
                                                     {{ formatEmploymentStatus(staff.employment_status) }}
@@ -3838,6 +3842,143 @@
                                                         </div>
                                                         <div class="action-menu-item text-danger" @click="deleteMedicalStaff(staff)"
                                                                 v-if="hasPermission('medical_staff', 'delete')">
+                                                            <i class="fas fa-trash"></i>
+                                                            Delete
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department Management View -->
+                    <div v-if="currentView === 'department_management'">
+                        <div class="section-header mb-6">
+                            <div>
+                                <h2 class="section-title">Department Management</h2>
+                                <p class="text-muted">Manage departments and clinical units for organizational structure</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-primary" @click="showAddDepartmentModal" 
+                                        v-if="hasPermission('system', 'manage_departments')">
+                                    <i class="fas fa-plus"></i> Add Department
+                                </button>
+                                <button class="btn btn-success" @click="showAddClinicalUnitModal" 
+                                        v-if="hasPermission('system', 'manage_departments')">
+                                    <i class="fas fa-plus"></i> Add Clinical Unit
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Departments Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div v-for="department in departments" :key="department.id" class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-hospital"></i>
+                                        {{ department.name }}
+                                    </div>
+                                    <span class="badge" :class="department.status === 'active' ? 'status-available' : 'status-busy'">
+                                        {{ department.status }}
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <div class="text-sm text-gray-600 mb-2">Department Code: {{ department.code }}</div>
+                                    <div class="text-sm text-gray-600 mb-4">{{ department.description || 'No description' }}</div>
+                                    
+                                    <div class="mt-3">
+                                        <div class="text-sm font-medium mb-2">Associated Clinical Units:</div>
+                                        <div class="flex flex-wrap gap-2">
+                                            <span v-for="unit in getDepartmentUnits(department.id)" :key="unit.id" 
+                                                  class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">
+                                                {{ unit.name }}
+                                            </span>
+                                            <span v-if="getDepartmentUnits(department.id).length === 0" class="text-gray-500 text-sm">
+                                                No units assigned
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex gap-2">
+                                    <button class="btn btn-sm btn-primary flex-1" @click="editDepartment(department)"
+                                            v-if="hasPermission('system', 'manage_departments')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger flex-1" @click="deleteDepartment(department)"
+                                            v-if="hasPermission('system', 'manage_departments') && getDepartmentUnits(department.id).length === 0">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Clinical Units Table -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-clinic-medical"></i>
+                                    All Clinical Units
+                                </div>
+                            </div>
+                            <div v-if="loading" class="loading-overlay">
+                                <div class="loading-spinner"></div>
+                            </div>
+                            <div v-else-if="clinicalUnits.length === 0" class="empty-state p-6">
+                                <i class="fas fa-clinic-medical empty-state-icon"></i>
+                                <div class="empty-state-title">No Clinical Units</div>
+                                <div class="empty-state-description">
+                                    No clinical units have been created yet.
+                                </div>
+                                <button class="btn btn-primary mt-4" @click="showAddClinicalUnitModal" v-if="hasPermission('system', 'manage_departments')">
+                                    <i class="fas fa-plus"></i> Add Clinical Unit
+                                </button>
+                            </div>
+                            <div v-else class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Unit Name</th>
+                                            <th>Unit Code</th>
+                                            <th>Department</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="unit in clinicalUnits" :key="unit.id">
+                                            <td>{{ unit.name }}</td>
+                                            <td>{{ unit.code }}</td>
+                                            <td>{{ getDepartmentName(unit.department_id) }}</td>
+                                            <td>
+                                                <span class="badge" :class="unit.unit_type === 'clinical' ? 'badge-primary' : 'badge-info'">
+                                                    {{ unit.unit_type }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge" :class="unit.status === 'active' ? 'status-available' : 'status-busy'">
+                                                    {{ unit.status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="action-dropdown">
+                                                    <button class="btn btn-sm btn-secondary" aria-label="Unit actions">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="action-menu">
+                                                        <div class="action-menu-item" @click="editClinicalUnit(unit)"
+                                                                v-if="hasPermission('system', 'manage_departments')">
+                                                            <i class="fas fa-edit"></i>
+                                                            Edit
+                                                        </div>
+                                                        <div class="action-menu-item text-danger" @click="deleteClinicalUnit(unit)"
+                                                                v-if="hasPermission('system', 'manage_departments')">
                                                             <i class="fas fa-trash"></i>
                                                             Delete
                                                         </div>
@@ -3929,32 +4070,32 @@
                         </div>
                     </div>
 
-                    <!-- Leave Requests View -->
-                    <div v-if="currentView === 'leave_requests'">
+                    <!-- Staff Absence View (Replacing Leave Requests) -->
+                    <div v-if="currentView === 'staff_absence'">
                         <div class="section-header mb-6">
                             <div>
-                                <h2 class="section-title">Leave Requests</h2>
-                                <p class="text-muted">Review and approve leave requests with coverage management</p>
+                                <h2 class="section-title">Staff Absence Documentation</h2>
+                                <p class="text-muted">Document staff absences and manage clinical coverage</p>
                             </div>
-                            <button class="btn btn-primary" @click="showAddLeaveRequestModal" 
-                                    v-if="hasPermission('leave_requests', 'create')">
-                                <i class="fas fa-plus"></i> Request Leave
+                            <button class="btn btn-primary" @click="showAddAbsenceModal" 
+                                    v-if="hasPermission('staff_absence', 'create')">
+                                <i class="fas fa-plus"></i> Document Absence
                             </button>
                         </div>
 
-                        <!-- Leave Requests Table -->
+                        <!-- Absence Table -->
                         <div class="card">
                             <div v-if="loading" class="loading-overlay">
                                 <div class="loading-spinner"></div>
                             </div>
-                            <div v-else-if="leaveRequests.length === 0" class="empty-state p-6">
+                            <div v-else-if="staffAbsences.length === 0" class="empty-state p-6">
                                 <i class="fas fa-calendar-check empty-state-icon"></i>
-                                <div class="empty-state-title">No Leave Requests</div>
+                                <div class="empty-state-title">No Absence Records</div>
                                 <div class="empty-state-description">
-                                    No leave requests have been submitted yet.
+                                    No staff absence records have been documented yet.
                                 </div>
-                                <button class="btn btn-primary mt-4" @click="showAddLeaveRequestModal" v-if="hasPermission('leave_requests', 'create')">
-                                    <i class="fas fa-plus"></i> Request Leave
+                                <button class="btn btn-primary mt-4" @click="showAddAbsenceModal" v-if="hasPermission('staff_absence', 'create')">
+                                    <i class="fas fa-plus"></i> Document Absence
                                 </button>
                             </div>
                             <div v-else class="table-responsive">
@@ -3962,44 +4103,41 @@
                                     <thead>
                                         <tr>
                                             <th>Staff Member</th>
-                                            <th>Leave Type</th>
+                                            <th>Absence Reason</th>
                                             <th>Dates</th>
                                             <th>Duration</th>
-                                            <th>Status</th>
+                                            <th>Replacement</th>
+                                            <th>Documented By</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="request in leaveRequests" :key="request.id" @click="viewLeaveRequestDetails(request)" style="cursor: pointer;">
-                                            <td>{{ getPhysicianName(request.staff_member_id) }}</td>
-                                            <td>{{ request.leave_category || request.leave_type }}</td>
-                                            <td>{{ formatDate(request.leave_start_date) }} - {{ formatDate(request.leave_end_date) }}</td>
-                                            <td>{{ request.total_days || 'N/A' }} days</td>
-                                            <td>
-                                                <span class="badge" :class="request.status === 'approved' ? 'status-available' : 
-                                                                           request.status === 'pending' ? 'status-busy' : 'status-critical'">
-                                                    {{ request.status?.toUpperCase() || 'PENDING' }}
-                                                </span>
-                                            </td>
+                                        <tr v-for="absence in staffAbsences" :key="absence.id" @click="viewAbsenceDetails(absence)" style="cursor: pointer;">
+                                            <td>{{ getPhysicianName(absence.staff_member_id) }}</td>
+                                            <td>{{ absence.absence_reason }}</td>
+                                            <td>{{ formatDate(absence.start_date) }} - {{ formatDate(absence.end_date) }}</td>
+                                            <td>{{ absence.total_days || 'N/A' }} days</td>
+                                            <td>{{ absence.replacement_staff_id ? getPhysicianName(absence.replacement_staff_id) : 'None' }}</td>
+                                            <td>{{ absence.documented_by_name || 'Unknown' }}</td>
                                             <td @click.stop>
                                                 <div class="action-dropdown">
-                                                    <button class="btn btn-sm btn-secondary" aria-label="Leave request actions">
+                                                    <button class="btn btn-sm btn-secondary" aria-label="Absence actions">
                                                         <i class="fas fa-ellipsis-v"></i>
                                                     </button>
                                                     <div class="action-menu">
-                                                        <div class="action-menu-item" @click="viewLeaveRequestDetails(request)">
+                                                        <div class="action-menu-item" @click="viewAbsenceDetails(absence)">
                                                             <i class="fas fa-eye"></i>
                                                             View Details
                                                         </div>
-                                                        <div class="action-menu-item" @click="approveLeaveRequest(request)"
-                                                                v-if="hasPermission('leave_requests', 'approve') && request.status === 'pending'">
-                                                            <i class="fas fa-check"></i>
-                                                            Approve
+                                                        <div class="action-menu-item" @click="editAbsence(absence)"
+                                                                v-if="hasPermission('staff_absence', 'update')">
+                                                            <i class="fas fa-edit"></i>
+                                                            Edit
                                                         </div>
-                                                        <div class="action-menu-item text-danger" @click="rejectLeaveRequest(request)"
-                                                                v-if="hasPermission('leave_requests', 'reject') && request.status === 'pending'">
-                                                            <i class="fas fa-times"></i>
-                                                            Reject
+                                                        <div class="action-menu-item text-danger" @click="deleteAbsence(absence)"
+                                                                v-if="hasPermission('staff_absence', 'delete')">
+                                                            <i class="fas fa-trash"></i>
+                                                            Delete
                                                         </div>
                                                     </div>
                                                 </div>
@@ -4077,7 +4215,7 @@
                                         <tr>
                                             <th>Rotation ID</th>
                                             <th>Resident</th>
-                                            <th>Training Unit</th>
+                                            <th>Clinical Unit</th>
                                             <th>Supervisor</th>
                                             <th>Duration</th>
                                             <th>Status</th>
@@ -4088,9 +4226,9 @@
                                         <tr v-for="rotation in filteredRotations" :key="rotation.id">
                                             <td>{{ rotation.rotation_id }}</td>
                                             <td>{{ getResidentName(rotation.resident_id) }}</td>
-                                            <td>{{ getTrainingUnitName(rotation.training_unit_id) }}</td>
+                                            <td>{{ getClinicalUnitName(rotation.clinical_unit_id) }}</td>
                                             <td>{{ rotation.supervising_attending_id ? getAttendingName(rotation.supervising_attending_id) : 'Unassigned' }}</td>
-                                            <td>{{ formatDate(rotation.rotation_start_date) }} - {{ formatDate(rotation.rotation_end_date) }}</td>
+                                            <td>{{ formatDate(rotation.start_date) }} - {{ formatDate(rotation.end_date) }}</td>
                                             <td>
                                                 <span class="badge" :class="getRotationCategoryClass(rotation.rotation_category)">
                                                     {{ formatRotationCategory(rotation.rotation_category) }}
@@ -4131,12 +4269,12 @@
                     <div v-if="currentView === 'training_units'">
                         <div class="section-header mb-6">
                             <div>
-                                <h2 class="section-title">Training Units</h2>
+                                <h2 class="section-title">Training Units Management</h2>
                                 <p class="text-muted">Manage training units and resident capacity allocation</p>
                             </div>
                             <button class="btn btn-primary" @click="showAddTrainingUnitModal" 
                                     v-if="hasPermission('training_units', 'create')">
-                                <i class="fas fa-plus"></i> Add Unit
+                                <i class="fas fa-plus"></i> Add Training Unit
                             </button>
                         </div>
 
@@ -4154,6 +4292,7 @@
                                 </div>
                                 
                                 <div class="mb-4">
+                                    <p class="text-sm text-gray-600 mb-2">Clinical Unit: {{ getClinicalUnitName(unit.clinical_unit_id) }}</p>
                                     <p class="text-sm text-gray-600 mb-4 truncate-3">{{ unit.unit_description }}</p>
                                     <div class="flex justify-between items-center mb-2">
                                         <span class="text-sm font-medium">Resident Capacity</span>
@@ -4548,8 +4687,8 @@
                                         <div class="form-control">{{ systemSettings.default_rotation_duration }}</div>
                                     </div>
                                     <div>
-                                        <label class="form-label">Max Leave Days per Year</label>
-                                        <div class="form-control">{{ systemSettings.max_leave_days_per_year }}</div>
+                                        <label class="form-label">Max Absence Days per Year</label>
+                                        <div class="form-control">{{ systemSettings.max_absence_days_per_year }}</div>
                                     </div>
                                     <div class="form-check">
                                         <input type="checkbox" class="form-check-input" :checked="systemSettings.maintenance_mode" disabled>
@@ -4579,8 +4718,8 @@
                                         <div class="form-control">{{ systemSettings.max_consecutive_oncall_days }}</div>
                                     </div>
                                     <div>
-                                        <label class="form-label">Leave Approval Required Days</label>
-                                        <div class="form-control">{{ systemSettings.leave_approval_required_days }}</div>
+                                        <label class="form-label">Absence Notice Required Days</label>
+                                        <div class="form-control">{{ systemSettings.absence_notice_required_days }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -4676,7 +4815,7 @@
                                 </div>
                                 <div class="staff-meta-item">
                                     <i class="fas fa-hospital"></i>
-                                    {{ staffDetailsModal.staff.primary_clinic || 'Unassigned' }}
+                                    {{ getDepartmentName(staffDetailsModal.staff.department_id) || 'Unassigned' }}
                                 </div>
                             </div>
                             <div class="flex gap-4">
@@ -4686,6 +4825,19 @@
                                 <span class="badge" :class="staffDetailsModal.staff.employment_status === 'active' ? 'status-available' : 'status-busy'">
                                     {{ formatEmploymentStatus(staffDetailsModal.staff.employment_status) }}
                                 </span>
+                            </div>
+                            <!-- Resident Specific Information -->
+                            <div v-if="staffDetailsModal.staff.staff_type === 'medical_resident'" class="mt-4">
+                                <div class="flex gap-4">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-600">Resident Category</div>
+                                        <div>{{ staffDetailsModal.staff.resident_category ? formatResidentCategory(staffDetailsModal.staff.resident_category) : 'Not specified' }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-600">Training Year/Level</div>
+                                        <div>{{ staffDetailsModal.staff.training_level ? formatTrainingLevel(staffDetailsModal.staff.training_level) : 'Not specified' }}</div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="staff-stats">
                                 <div class="staff-stat">
@@ -4697,8 +4849,8 @@
                                     <div class="staff-stat-label">On-call</div>
                                 </div>
                                 <div class="staff-stat">
-                                    <div class="staff-stat-value">{{ staffDetailsModal.stats.leaveDays || 0 }}</div>
-                                    <div class="staff-stat-label">Leave Days</div>
+                                    <div class="staff-stat-value">{{ staffDetailsModal.stats.absenceDays || 0 }}</div>
+                                    <div class="staff-stat-label">Absence Days</div>
                                 </div>
                                 <div class="staff-stat">
                                     <div class="staff-stat-value">{{ staffDetailsModal.stats.supervisionCount || 0 }}</div>
@@ -4785,8 +4937,8 @@
                                 <tbody>
                                     <tr v-for="rotation in staffDetailsModal.rotations" :key="rotation.id">
                                         <td>{{ rotation.rotation_id }}</td>
-                                        <td>{{ getTrainingUnitName(rotation.training_unit_id) }}</td>
-                                        <td>{{ formatDate(rotation.rotation_start_date) }} - {{ formatDate(rotation.rotation_end_date) }}</td>
+                                        <td>{{ getClinicalUnitName(rotation.clinical_unit_id) }}</td>
+                                        <td>{{ formatDate(rotation.start_date) }} - {{ formatDate(rotation.end_date) }}</td>
                                         <td>
                                             <span class="badge" :class="getRotationCategoryClass(rotation.rotation_category)">
                                                 {{ formatRotationCategory(rotation.rotation_category) }}
@@ -4864,7 +5016,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Staff Type *</label>
-                                <select class="form-select" v-model="medicalStaffModal.form.staff_type" aria-required="true">
+                                <select class="form-select" v-model="medicalStaffModal.form.staff_type" aria-required="true" @change="onStaffTypeChange">
                                     <option value="medical_resident">Medical Resident</option>
                                     <option value="attending_physician">Attending Physician</option>
                                     <option value="fellow">Fellow</option>
@@ -4888,8 +5040,13 @@
                                 <input type="email" class="form-control" v-model="medicalStaffModal.form.professional_email">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Primary Clinic/Unit</label>
-                                <input type="text" class="form-control" v-model="medicalStaffModal.form.primary_clinic">
+                                <label class="form-label">Department</label>
+                                <select class="form-select" v-model="medicalStaffModal.form.department_id">
+                                    <option value="">Select Department</option>
+                                    <option v-for="department in departments" :key="department.id" :value="department.id">
+                                        {{ department.name }}
+                                    </option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -4901,20 +5058,41 @@
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div class="form-group">
-                                <label class="form-label">Resident Category</label>
-                                <select class="form-select" v-model="medicalStaffModal.form.resident_category">
+                                <label class="form-label">Resident Category *</label>
+                                <select class="form-select" v-model="medicalStaffModal.form.resident_category" aria-required="true">
+                                    <option value="">Select Category</option>
                                     <option value="department_internal">Department Internal</option>
                                     <option value="rotating_other_dept">Rotating Other Dept</option>
-                                    <option value="pgy1">PGY-1</option>
-                                    <option value="pgy2">PGY-2</option>
-                                    <option value="pgy3">PGY-3</option>
-                                    <option value="pgy4">PGY-4</option>
-                                    <option value="pgy5">PGY-5</option>
+                                    <option value="external_institution">External (Other Institution/Country)</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Training Year</label>
-                                <input type="number" class="form-control" v-model="medicalStaffModal.form.training_year" min="2020" max="2030">
+                                <label class="form-label">Training Year/Level *</label>
+                                <select class="form-select" v-model="medicalStaffModal.form.training_level" aria-required="true">
+                                    <option value="">Select Level</option>
+                                    <option value="pgy1">PGY-1 (First Year)</option>
+                                    <option value="pgy2">PGY-2 (Second Year)</option>
+                                    <option value="pgy3">PGY-3 (Third Year)</option>
+                                    <option value="pgy4">PGY-4 (Fourth Year)</option>
+                                    <option value="other">Other (International/Non-standard)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section" v-if="medicalStaffModal.form.staff_type === 'attending_physician'">
+                        <div class="modal-section-title">
+                            <i class="fas fa-stethoscope"></i>
+                            Attending Details
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Specialization</label>
+                                <input type="text" class="form-control" v-model="medicalStaffModal.form.specialization">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Years of Experience</label>
+                                <input type="number" class="form-control" v-model="medicalStaffModal.form.years_experience" min="0" max="50">
                             </div>
                         </div>
                     </div>
@@ -4937,6 +5115,127 @@
                     <button class="btn btn-primary" @click="saveMedicalStaff" :disabled="saving">
                         <span v-if="saving" class="loading"></span>
                         <span v-else>{{ medicalStaffModal.mode === 'add' ? 'Add Staff' : 'Save Changes' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Department Modal -->
+        <div v-if="departmentModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="department-title">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title" id="department-title">
+                        <i class="fas fa-hospital"></i>
+                        {{ departmentModal.mode === 'add' ? 'Add Department' : 'Edit Department' }}
+                    </div>
+                    <button class="modal-close" @click="departmentModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Department Information
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Department Name *</label>
+                                <input type="text" class="form-control" v-model="departmentModal.form.name" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department Code *</label>
+                                <input type="text" class="form-control" v-model="departmentModal.form.code" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" v-model="departmentModal.form.status">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="archived">Archived</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" v-model="departmentModal.form.description" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="departmentModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveDepartment" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>{{ departmentModal.mode === 'add' ? 'Add Department' : 'Save Changes' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Clinical Unit Modal -->
+        <div v-if="clinicalUnitModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="clinical-unit-title">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title" id="clinical-unit-title">
+                        <i class="fas fa-clinic-medical"></i>
+                        {{ clinicalUnitModal.mode === 'add' ? 'Add Clinical Unit' : 'Edit Clinical Unit' }}
+                    </div>
+                    <button class="modal-close" @click="clinicalUnitModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Clinical Unit Information
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Unit Name *</label>
+                                <input type="text" class="form-control" v-model="clinicalUnitModal.form.name" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Unit Code *</label>
+                                <input type="text" class="form-control" v-model="clinicalUnitModal.form.code" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department *</label>
+                                <select class="form-select" v-model="clinicalUnitModal.form.department_id" aria-required="true">
+                                    <option value="">Select Department</option>
+                                    <option v-for="department in departments" :key="department.id" :value="department.id">
+                                        {{ department.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Unit Type</label>
+                                <select class="form-select" v-model="clinicalUnitModal.form.unit_type">
+                                    <option value="clinical">Clinical</option>
+                                    <option value="administrative">Administrative</option>
+                                    <option value="support">Support</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" v-model="clinicalUnitModal.form.status">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="maintenance">Maintenance</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" v-model="clinicalUnitModal.form.description" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="clinicalUnitModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveClinicalUnit" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>{{ clinicalUnitModal.mode === 'add' ? 'Add Clinical Unit' : 'Save Changes' }}</span>
                     </button>
                 </div>
             </div>
@@ -5032,203 +5331,179 @@
             </div>
         </div>
 
-        <!-- Add/Edit Leave Request Modal -->
-        <div v-if="leaveRequestModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="leave-request-title">
+        <!-- Add/Edit Staff Absence Modal -->
+        <div v-if="absenceModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="absence-title">
             <div class="modal-container">
                 <div class="modal-header">
-                    <div class="modal-title" id="leave-request-title">
-                        <i class="fas fa-calendar-check"></i>
-                        {{ leaveRequestModal.mode === 'add' ? 'Request Leave' : 'Review Leave Request' }}
+                    <div class="modal-title" id="absence-title">
+                        <i class="fas fa-calendar-times"></i>
+                        {{ absenceModal.mode === 'add' ? 'Document Staff Absence' : 'Edit Absence Record' }}
                     </div>
-                    <button class="modal-close" @click="leaveRequestModal.show = false" aria-label="Close modal">
+                    <button class="modal-close" @click="absenceModal.show = false" aria-label="Close modal">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
+                    <div class="modal-section">
                         <div class="modal-section-title">
-                            <i class="fas fa-info-circle"></i>
-                            Request Information
+                            <i class="fas fa-calendar-alt"></i>
+                            Absence Details
                         </div>
-                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-                            <div class="text-sm font-medium">Request Submitted by: {{ leaveRequestModal.request?.staff_name || 'Unknown' }}</div>
-                            <div class="text-sm text-gray-600">Submitted on: {{ formatDateTime(leaveRequestModal.request?.created_at) }}</div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Staff Member *</label>
+                                <select class="form-select" v-model="absenceModal.form.staff_member_id" aria-required="true">
+                                    <option value="">Select Staff Member</option>
+                                    <option v-for="staff in availableStaff" :key="staff.id" :value="staff.id">
+                                        {{ staff.full_name }} ({{ formatStaffType(staff.staff_type) }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Absence Reason *</label>
+                                <select class="form-select" v-model="absenceModal.form.absence_reason" aria-required="true">
+                                    <option value="">Select Reason</option>
+                                    <option value="vacation">Vacation</option>
+                                    <option value="sick_leave">Sick Leave</option>
+                                    <option value="conference">Conference/Education</option>
+                                    <option value="personal">Personal</option>
+                                    <option value="maternity_paternity">Maternity/Paternity</option>
+                                    <option value="administrative">Administrative Duty</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" v-model="absenceModal.form.start_date" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">End Date *</label>
+                                <input type="date" class="form-control" v-model="absenceModal.form.end_date" aria-required="true">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" v-model="absenceModal.form.notes" rows="3"></textarea>
                         </div>
                     </div>
                     
                     <div class="modal-section">
                         <div class="modal-section-title">
-                            <i class="fas fa-calendar-alt"></i>
-                            Leave Details
+                            <i class="fas fa-user-md"></i>
+                            Coverage Arrangement
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Start Date *</label>
-                                <input type="date" class="form-control" v-model="leaveRequestModal.form.start_date" 
-                                       :disabled="leaveRequestModal.mode === 'review'" aria-required="true">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">End Date *</label>
-                                <input type="date" class="form-control" v-model="leaveRequestModal.form.end_date"
-                                       :disabled="leaveRequestModal.mode === 'review'" aria-required="true">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Leave Type</label>
-                                <select class="form-select" v-model="leaveRequestModal.form.leave_type"
-                                        :disabled="leaveRequestModal.mode === 'review'">
-                                    <option value="vacation">Vacation</option>
-                                    <option value="sick_leave">Sick Leave</option>
-                                    <option value="conference">Conference</option>
-                                    <option value="personal">Personal</option>
-                                    <option value="maternity_paternity">Maternity/Paternity</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" v-model="leaveRequestModal.form.status"
-                                        :disabled="!hasPermission('leave_requests', 'update')">
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">Replacement Staff</label>
+                            <select class="form-select" v-model="absenceModal.form.replacement_staff_id">
+                                <option value="">No Replacement (Coverage Managed Elsewhere)</option>
+                                <option v-for="staff in availableCoverageStaff" :key="staff.id" :value="staff.id">
+                                    {{ staff.full_name }} ({{ formatStaffType(staff.staff_type) }})
+                                </option>
+                            </select>
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">Reason</label>
-                            <textarea class="form-control" v-model="leaveRequestModal.form.reason" rows="3"
-                                    :disabled="leaveRequestModal.mode === 'review'"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div v-if="leaveRequestModal.mode === 'review'" class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-edit"></i>
-                            Approver Notes
-                        </div>
-                        <div class="form-group">
-                            <textarea class="form-control" v-model="leaveRequestModal.form.approver_notes" rows="3"></textarea>
+                            <label class="form-label">Coverage Instructions</label>
+                            <textarea class="form-control" v-model="absenceModal.form.coverage_instructions" rows="3" 
+                                      placeholder="Any specific instructions for covering clinical duties..."></textarea>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="leaveRequestModal.show = false">Cancel</button>
-                    <div v-if="leaveRequestModal.mode === 'review'" class="flex gap-2">
-                        <button class="btn btn-success" @click="approveLeaveRequest(leaveRequestModal.request)"
-                                v-if="hasPermission('leave_requests', 'approve') && leaveRequestModal.form.status === 'pending'">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveRequestModal.request)"
-                                v-if="hasPermission('leave_requests', 'reject') && leaveRequestModal.form.status === 'pending'">
-                            <i class="fas fa-times"></i> Reject
-                        </button>
-                    </div>
-                    <button v-else class="btn btn-primary" @click="saveLeaveRequest" :disabled="saving">
+                    <button class="btn btn-secondary" @click="absenceModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveAbsence" :disabled="saving">
                         <span v-if="saving" class="loading"></span>
-                        <span v-else>Submit Request</span>
+                        <span v-else>{{ absenceModal.mode === 'add' ? 'Document Absence' : 'Save Changes' }}</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Leave Request Details Modal (Read-only view) -->
-        <div v-if="leaveDetailsModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="leave-details-title">
+        <!-- Absence Details Modal -->
+        <div v-if="absenceDetailsModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="absence-details-title">
             <div class="modal-container">
                 <div class="modal-header">
-                    <div class="modal-title" id="leave-details-title">
-                        <i class="fas fa-calendar-check"></i>
-                        Leave Request Details
+                    <div class="modal-title" id="absence-details-title">
+                        <i class="fas fa-calendar-times"></i>
+                        Absence Details
                     </div>
-                    <button class="modal-close" @click="leaveDetailsModal.show = false" aria-label="Close modal">
+                    <button class="modal-close" @click="absenceDetailsModal.show = false" aria-label="Close modal">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="leave-details-view">
-                        <div class="leave-info-grid">
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Staff Member</div>
-                                <div class="leave-info-value">{{ getPhysicianName(leaveDetailsModal.request.staff_member_id) }}</div>
+                    <div class="absence-details-view">
+                        <div class="absence-info-grid">
+                            <div class="absence-info-item">
+                                <div class="absence-info-label">Staff Member</div>
+                                <div class="absence-info-value">{{ getPhysicianName(absenceDetailsModal.absence.staff_member_id) }}</div>
                             </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Leave Type</div>
-                                <div class="leave-info-value">{{ leaveDetailsModal.request.leave_type }}</div>
+                            <div class="absence-info-item">
+                                <div class="absence-info-label">Absence Reason</div>
+                                <div class="absence-info-value">{{ absenceDetailsModal.absence.absence_reason }}</div>
                             </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Duration</div>
-                                <div class="leave-info-value">{{ leaveDetailsModal.request.total_days }} days</div>
+                            <div class="absence-info-item">
+                                <div class="absence-info-label">Duration</div>
+                                <div class="absence-info-value">{{ absenceDetailsModal.absence.total_days }} days</div>
                             </div>
-                            <div class="leave-info-item">
-                                <div class="leave-info-label">Status</div>
-                                <div class="leave-info-value">
-                                    <span class="badge" :class="leaveDetailsModal.request.status === 'approved' ? 'status-available' : 
-                                                               leaveDetailsModal.request.status === 'pending' ? 'status-busy' : 'status-critical'">
-                                        {{ leaveDetailsModal.request.status?.toUpperCase() || 'PENDING' }}
-                                    </span>
-                                </div>
+                            <div class="absence-info-item">
+                                <div class="absence-info-label">Documented By</div>
+                                <div class="absence-info-value">{{ absenceDetailsModal.absence.documented_by_name || 'Unknown' }}</div>
                             </div>
                         </div>
                         
                         <div class="mb-4">
-                            <div class="leave-info-label">Dates</div>
-                            <div class="leave-info-value">
-                                {{ formatDate(leaveDetailsModal.request.leave_start_date) }} to {{ formatDate(leaveDetailsModal.request.leave_end_date) }}
+                            <div class="absence-info-label">Dates</div>
+                            <div class="absence-info-value">
+                                {{ formatDate(absenceDetailsModal.absence.start_date) }} to {{ formatDate(absenceDetailsModal.absence.end_date) }}
                             </div>
                         </div>
                         
-                        <div class="mb-4">
-                            <div class="leave-info-label">Reason</div>
+                        <div v-if="absenceDetailsModal.absence.replacement_staff_id" class="mb-4">
+                            <div class="absence-info-label">Replacement Staff</div>
+                            <div class="absence-info-value">
+                                {{ getPhysicianName(absenceDetailsModal.absence.replacement_staff_id) }}
+                            </div>
+                        </div>
+                        
+                        <div v-if="absenceDetailsModal.absence.notes" class="mb-4">
+                            <div class="absence-info-label">Notes</div>
                             <div class="form-control" style="min-height: 80px;">
-                                {{ leaveDetailsModal.request.reason || 'No reason provided.' }}
+                                {{ absenceDetailsModal.absence.notes }}
                             </div>
                         </div>
                         
-                        <div v-if="leaveDetailsModal.request.approver_notes" class="mb-4">
-                            <div class="leave-info-label">Approver Notes</div>
+                        <div v-if="absenceDetailsModal.absence.coverage_instructions" class="mb-4">
+                            <div class="absence-info-label">Coverage Instructions</div>
                             <div class="form-control" style="min-height: 60px;">
-                                {{ leaveDetailsModal.request.approver_notes }}
+                                {{ absenceDetailsModal.absence.coverage_instructions }}
                             </div>
                         </div>
                         
-                        <div class="leave-timeline">
-                            <div class="timeline-status" :class="leaveDetailsModal.request.created_at ? 'completed' : ''">
+                        <div class="absence-timeline">
+                            <div class="timeline-status completed">
                                 <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">Request Submitted</div>
-                                <div class="timeline-date">{{ formatDateTime(leaveDetailsModal.request.created_at) }}</div>
+                                <div class="timeline-text">Absence Documented</div>
+                                <div class="timeline-date">{{ formatDateTime(absenceDetailsModal.absence.created_at) }}</div>
                             </div>
                             
-                            <div class="timeline-status" :class="leaveDetailsModal.request.reviewed_at ? 'completed' : 
-                                                                leaveDetailsModal.request.status === 'pending' ? 'current' : ''">
+                            <div class="timeline-status" :class="isAbsenceActive(absenceDetailsModal.absence) ? 'current' : 'completed'">
                                 <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">Under Review</div>
-                                <div class="timeline-date" v-if="leaveDetailsModal.request.reviewed_at">
-                                    {{ formatDateTime(leaveDetailsModal.request.reviewed_at) }}
-                                </div>
-                            </div>
-                            
-                            <div class="timeline-status" :class="leaveDetailsModal.request.status === 'approved' ? 'completed' : 
-                                                                leaveDetailsModal.request.status === 'rejected' ? 'completed' : ''">
-                                <div class="timeline-dot-small"></div>
-                                <div class="timeline-text">{{ leaveDetailsModal.request.status === 'approved' ? 'Approved' : 
-                                                              leaveDetailsModal.request.status === 'rejected' ? 'Rejected' : 'Decision' }}</div>
-                                <div class="timeline-date" v-if="leaveDetailsModal.request.decision_date">
-                                    {{ formatDateTime(leaveDetailsModal.request.decision_date) }}
+                                <div class="timeline-text">Absence Period</div>
+                                <div class="timeline-date">
+                                    {{ formatDate(absenceDetailsModal.absence.start_date) }} - {{ formatDate(absenceDetailsModal.absence.end_date) }}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="leaveDetailsModal.show = false">Close</button>
-                    <div v-if="hasPermission('leave_requests', 'approve') && leaveDetailsModal.request.status === 'pending'">
-                        <button class="btn btn-success" @click="approveLeaveRequest(leaveDetailsModal.request)">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button class="btn btn-danger" @click="rejectLeaveRequest(leaveDetailsModal.request)">
-                            <i class="fas fa-times"></i> Reject
-                        </button>
-                    </div>
+                    <button class="btn btn-secondary" @click="absenceDetailsModal.show = false">Close</button>
+                    <button class="btn btn-primary" @click="editAbsence(absenceDetailsModal.absence)"
+                            v-if="hasPermission('staff_absence', 'update')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
                 </div>
             </div>
         </div>
@@ -5257,22 +5532,13 @@
                                 <input type="text" class="form-control" v-model="trainingUnitModal.form.unit_name" aria-required="true">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Unit Code</label>
-                                <input type="text" class="form-control" v-model="trainingUnitModal.form.unit_code">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Department</label>
-                                <select class="form-select" v-model="trainingUnitModal.form.department_name">
-                                    <option value="Pulmonology">Pulmonology</option>
-                                    <option value="ICU">ICU</option>
-                                    <option value="Cardiology">Cardiology</option>
-                                    <option value="Emergency">Emergency Medicine</option>
-                                    <option value="Surgery">Surgery</option>
+                                <label class="form-label">Clinical Unit *</label>
+                                <select class="form-select" v-model="trainingUnitModal.form.clinical_unit_id" aria-required="true">
+                                    <option value="">Select Clinical Unit</option>
+                                    <option v-for="unit in clinicalUnits" :key="unit.id" :value="unit.id">
+                                        {{ unit.name }} ({{ unit.code }})
+                                    </option>
                                 </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Specialty</label>
-                                <input type="text" class="form-control" v-model="trainingUnitModal.form.specialty">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Maximum Residents</label>
@@ -5344,9 +5610,9 @@
                             <div class="form-group">
                                 <label class="form-label">Training Unit *</label>
                                 <select class="form-select" v-model="rotationModal.form.training_unit_id" aria-required="true">
-                                    <option value="">Select Unit</option>
+                                    <option value="">Select Training Unit</option>
                                     <option v-for="unit in trainingUnits" :key="unit.id" :value="unit.id">
-                                        {{ unit.unit_name }} ({{ unit.specialty }})
+                                        {{ unit.unit_name }}
                                     </option>
                                 </select>
                             </div>
@@ -5370,11 +5636,11 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div class="form-group">
                                 <label class="form-label">Start Date *</label>
-                                <input type="date" class="form-control" v-model="rotationModal.form.rotation_start_date" aria-required="true">
+                                <input type="date" class="form-control" v-model="rotationModal.form.start_date" aria-required="true">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">End Date *</label>
-                                <input type="date" class="form-control" v-model="rotationModal.form.rotation_end_date" aria-required="true">
+                                <input type="date" class="form-control" v-model="rotationModal.form.end_date" aria-required="true">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Rotation Category</label>
@@ -5450,7 +5716,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Select Training Unit</label>
-                            <select class="form-select" v-model="quickPlacementModal.form.unit_id">
+                            <select class="form-select" v-model="quickPlacementModal.form.training_unit_id">
                                 <option value="">Choose a unit</option>
                                 <option v-for="unit in activeTrainingUnits" :key="unit.id" :value="unit.id">
                                     {{ unit.unit_name }} ({{ unit.current_residents }}/{{ unit.maximum_residents }})
@@ -5775,11 +6041,16 @@
                                 <input type="text" class="form-control" v-model="systemSettingsModal.form.hospital_name">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Department Name</label>
-                                <input type="text" class="form-control" v-model="systemSettingsModal.form.department_name">
+                                <label class="form-label">Default Department</label>
+                                <select class="form-select" v-model="systemSettingsModal.form.default_department_id">
+                                    <option value="">Select Default Department</option>
+                                    <option v-for="department in departments" :key="department.id" :value="department.id">
+                                        {{ department.name }}
+                                    </option>
+                                </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Max Residents per Unit</label>
+                                <label class="form-label">Max Residents per Training Unit</label>
                                 <input type="number" class="form-control" v-model="systemSettingsModal.form.max_residents_per_unit" min="1" max="50">
                             </div>
                             <div class="form-group">
@@ -5856,7 +6127,12 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Department</label>
-                                <input type="text" class="form-control" v-model="userProfileModal.form.department">
+                                <select class="form-select" v-model="userProfileModal.form.department_id">
+                                    <option value="">Select Department</option>
+                                    <option v-for="department in departments" :key="department.id" :value="department.id">
+                                        {{ department.name }}
+                                    </option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -5874,8 +6150,8 @@
                         </div>
                         <div class="form-group">
                             <label class="form-check">
-                                <input type="checkbox" class="form-check-input" v-model="userProfileModal.form.leave_request_notifications">
-                                <span class="form-check-label">Leave Request Notifications</span>
+                                <input type="checkbox" class="form-check-input" v-model="userProfileModal.form.absence_notifications">
+                                <span class="form-check-label">Staff Absence Notifications</span>
                             </label>
                         </div>
                         <div class="form-group">
@@ -5918,10 +6194,12 @@
                             <label class="form-label">Select Table</label>
                             <select class="form-select" v-model="importExportModal.selectedTable">
                                 <option value="medical_staff">Medical Staff</option>
+                                <option value="departments">Departments</option>
+                                <option value="clinical_units">Clinical Units</option>
                                 <option value="training_units">Training Units</option>
                                 <option value="resident_rotations">Resident Rotations</option>
                                 <option value="oncall_schedule">On-call Schedule</option>
-                                <option value="leave_requests">Leave Requests</option>
+                                <option value="staff_absence">Staff Absence</option>
                                 <option value="audit_logs">Audit Logs</option>
                             </select>
                         </div>
