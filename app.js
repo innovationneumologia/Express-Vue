@@ -4202,6 +4202,25 @@ const showImportExportModal = (mode = 'export', table = null) => {
         exportFormat: 'csv', overwriteExisting: false, progress: 0
     };
 };
+        const saveSystemSettings = async () => {
+    if (!hasPermission('system', 'update')) {
+        showAdvancedToast('Permission Denied', 'Need update permission for system settings', 'permission');
+        return;
+    }
+    
+    saving.value = true;
+    try {
+        systemSettings.value = { ...systemSettingsModal.value.form };
+        showAdvancedToast('Settings Saved', 'System settings updated successfully', 'success');
+        await logAudit('SETTINGS_UPDATE', 'Updated system settings', 'system');
+        systemSettingsModal.value.show = false;
+    } catch (error) {
+        console.error('Error saving system settings:', error);
+        showAdvancedToast('Save Failed', error.message, 'error');
+    } finally {
+        saving.value = false;
+    }
+};
 
         // ============ RETURN STATEMENT ============
         return {
