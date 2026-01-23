@@ -4237,7 +4237,24 @@ const showUserProfileModal = () => {
     };
     userMenuOpen.value = false;
 };
-
+const saveUserProfile = async () => {
+    saving.value = true;
+    try {
+        currentUser.value = {
+            ...currentUser.value,
+            ...userProfileModal.value.form
+        };
+        
+        showAdvancedToast('Profile Updated', 'Your profile has been updated', 'success');
+        await logAudit('PROFILE_UPDATE', 'Updated user profile', 'user_profile');
+        userProfileModal.value.show = false;
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showAdvancedToast('Save Failed', error.message, 'error');
+    } finally {
+        saving.value = false;
+    }
+};
         // ============ RETURN STATEMENT ============
         return {
             // State
