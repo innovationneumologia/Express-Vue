@@ -4175,6 +4175,33 @@ const app = createApp({
                 if (showPermissionManager.value) showPermissionManager.value = false;
             }
         };
+        const showSystemSettingsModal = () => {
+    if (!hasPermission('system', 'read')) return;
+    systemSettingsModal.value = { show: true, form: { ...systemSettings.value } };
+};
+
+const exportAuditLogs = () => {
+    showImportExportModal('export', 'audit_logs');
+};
+
+const showImportModal = (table) => {
+    showImportExportModal('import', table);
+};
+
+const updateCapacity = () => {
+    showAdvancedToast('Capacity Updated', 'Department capacity updated', 'success');
+};
+
+const quickAssignToUnit = (alert) => {
+    showQuickPlacementModal();
+};
+
+const showImportExportModal = (mode = 'export', table = null) => {
+    importExportModal.value = {
+        show: true, mode, selectedTable: table || 'medical_staff',
+        exportFormat: 'csv', overwriteExisting: false, progress: 0
+    };
+};
 
         // ============ RETURN STATEMENT ============
         return {
@@ -4199,6 +4226,12 @@ const app = createApp({
             // Pagination
             pagination,
             loadMore,
+            showSystemSettingsModal,
+    exportAuditLogs,
+    showImportModal,
+    updateCapacity,
+    quickAssignToUnit,
+    showImportExportModal,
             
             // Undo/Redo
             undoStack,
