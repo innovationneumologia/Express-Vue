@@ -3409,8 +3409,9 @@
                                     <tbody>
                                         <tr v-for="schedule in onCallSchedule" :key="schedule.id">
                                             <td>{{ formatDate(schedule.duty_date) }}</td>
-                                            <td>{{ getPhysicianName(schedule.primary_physician_id) }}</td>
-                                            <td>{{ schedule.backup_physician_id ? getPhysicianName(schedule.backup_physician_id) : 'None' }}</td>
+                                            <td>{{ getPhysicianDisplayName(schedule.primary_physician_id) }}</td>
+<td>{{ getPhysicianDisplayName(schedule.backup_physician_id) || 'None' }}</td>
+                                            
                                             <td>{{ formatTimeRange(schedule.start_time, schedule.end_time) }}</td>
                                             <td class="max-w-xs truncate">{{ schedule.coverage_notes || 'None' }}</td>
                                             <td>
