@@ -4255,6 +4255,9 @@ const saveUserProfile = async () => {
         saving.value = false;
     }
 };
+const exportStaffList = () => {
+    showImportExportModal('export', 'medical_staff');
+};
         // ============ RETURN STATEMENT ============
         return {
             // State
