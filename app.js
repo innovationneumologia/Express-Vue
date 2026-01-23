@@ -526,6 +526,14 @@ const app = createApp({
         const validatePhone = (phone) => {
             return /^[\+]?[1-9][\d]?[\s]?\(?[0-9]{3}\)?[\s]?[0-9]{3}[\s]?[0-9]{4}$/.test(phone);
         };
+        // ============ UUID GENERATION ============
+const generateUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
 
         // ============ ERROR BOUNDARY FUNCTIONS ============
         const withErrorHandling = async (operation, context, fallback = null) => {
@@ -2407,296 +2415,144 @@ const app = createApp({
                 
             }, 'Deleting medical staff');
         };
-
         // ============ ON-CALL SCHEDULE FUNCTIONS ============
-        const showAddOnCallModal = () => {
-            if (!hasPermission('oncall_schedule', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
-                return;
-            }
-            
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const dateString = getLocalDateString(tomorrow);
-            const scheduleId = `ONCALL-${dateString.replace(/-/g, '')}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
-            
+const showAddOnCallModal = () => {
+    if (!hasPermission('oncall_schedule', 'create')) {
+        showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+        return;
+    }
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateString = getLocalDateString(tomorrow);
+    const scheduleId = `ONCALL-${dateString.replace(/-/g, '')}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
+    
+    onCallModal.value = {
+        show: true,
+        mode: 'add',
+        schedule: null,
+        form: {
+            id: generateUUID(), // FIXED: Added proper UUID
+            duty_date: dateString,
+            schedule_id: scheduleId,
+            shift_type: 'backup_call',
+            primary_physician_id: '',
+            backup_physician_id: '',
+            start_time: '08:00',
+            end_time: '20:00',
+            coverage_notes: ''
+        }
+    };
+};
+
+const editOnCallSchedule = (scheduleOrDay) => {
+    if (!hasPermission('oncall_schedule', 'update')) {
+        showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
+        return;
+    }
+    
+    if (scheduleOrDay.date) {
+        const day = scheduleOrDay;
+        
+        if (day.schedule) {
             onCallModal.value = {
                 show: true,
-                mode: 'add',
-                schedule: null,
+                mode: 'edit',
+                schedule: day.schedule,
                 form: {
-                    duty_date: dateString,
-                    schedule_id: scheduleId,
-                    shift_type: 'backup_call',
-                    primary_physician_id: '',
-                    backup_physician_id: '',
-                    start_time: '08:00',
-                    end_time: '20:00',
-                    coverage_notes: ''
+                    id: day.schedule.id, // FIXED: Keep the existing UUID
+                    duty_date: day.schedule.duty_date,
+                    schedule_id: day.schedule.schedule_id,
+                    shift_type: day.schedule.shift_type || 'backup_call',
+                    primary_physician_id: day.schedule.primary_physician_id,
+                    backup_physician_id: day.schedule.backup_physician_id || '',
+                    start_time: day.schedule.start_time?.slice(0, 5) || '08:00',
+                    end_time: day.schedule.end_time?.slice(0, 5) || '20:00',
+                    coverage_notes: day.schedule.coverage_notes || ''
                 }
             };
+        } else {
+            showAddOnCallModal();
+            onCallModal.value.form.duty_date = day.date;
+        }
+    } else {
+        const schedule = scheduleOrDay;
+        onCallModal.value = {
+            show: true,
+            mode: 'edit',
+            schedule: schedule,
+            form: {
+                id: schedule.id, // FIXED: Keep the existing UUID
+                duty_date: schedule.duty_date,
+                schedule_id: schedule.schedule_id,
+                shift_type: schedule.shift_type || 'backup_call',
+                primary_physician_id: schedule.primary_physician_id,
+                backup_physician_id: schedule.backup_physician_id || '',
+                start_time: schedule.start_time?.slice(0, 5) || '08:00',
+                end_time: schedule.end_time?.slice(0, 5) || '20:00',
+                coverage_notes: schedule.coverage_notes || ''
+            }
         };
+    }
+    
+    logAudit('ONCALL_EDIT', `Editing on-call schedule`, 'oncall_schedule');
+};
 
-        const editOnCallSchedule = (scheduleOrDay) => {
-            if (!hasPermission('oncall_schedule', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
-                return;
+const saveOnCallSchedule = async () => {
+    return await withErrorHandling(async () => {
+        saving.value = true;
+        operationProgress.value.saveOnCallSchedule = 0;
+        
+        try {
+            validateOnCallForm();
+            
+            const permissionNeeded = onCallModal.value.mode === 'add' ? 'create' : 'update';
+            if (!hasPermission('oncall_schedule', permissionNeeded)) {
+                throw new Error('Insufficient permissions');
             }
             
-            if (scheduleOrDay.date) {
-                const day = scheduleOrDay;
-                
-                if (day.schedule) {
-                    onCallModal.value = {
-                        show: true,
-                        mode: 'edit',
-                        schedule: day.schedule,
-                        form: {
-                            duty_date: day.schedule.duty_date,
-                            schedule_id: day.schedule.schedule_id,
-                            shift_type: day.schedule.shift_type || 'backup_call',
-                            primary_physician_id: day.schedule.primary_physician_id,
-                            backup_physician_id: day.schedule.backup_physician_id || '',
-                            start_time: day.schedule.start_time?.slice(0, 5) || '08:00',
-                            end_time: day.schedule.end_time?.slice(0, 5) || '20:00',
-                            coverage_notes: day.schedule.coverage_notes || ''
-                        }
-                    };
-                } else {
-                    showAddOnCallModal();
-                    onCallModal.value.form.duty_date = day.date;
-                }
-            } else {
-                const schedule = scheduleOrDay;
-                onCallModal.value = {
-                    show: true,
-                    mode: 'edit',
-                    schedule: schedule,
-                    form: {
-                        duty_date: schedule.duty_date,
-                        schedule_id: schedule.schedule_id,
-                        shift_type: schedule.shift_type || 'backup_call',
-                        primary_physician_id: schedule.primary_physician_id,
-                        backup_physician_id: schedule.backup_physician_id || '',
-                        start_time: schedule.start_time?.slice(0, 5) || '08:00',
-                        end_time: schedule.end_time?.slice(0, 5) || '20:00',
-                        coverage_notes: schedule.coverage_notes || ''
-                    }
-                };
-            }
+            operationProgress.value.saveOnCallSchedule = 30;
             
-            logAudit('ONCALL_EDIT', `Editing on-call schedule`, 'oncall_schedule');
-        };
-
-        const saveOnCallSchedule = async () => {
-            return await withErrorHandling(async () => {
-                saving.value = true;
-                operationProgress.value.saveOnCallSchedule = 0;
-                
-                try {
-                    validateOnCallForm();
-                    
-                    const permissionNeeded = onCallModal.value.mode === 'add' ? 'create' : 'update';
-                    if (!hasPermission('oncall_schedule', permissionNeeded)) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    operationProgress.value.saveOnCallSchedule = 30;
-                    
-                    const scheduleData = {
-                        duty_date: onCallModal.value.form.duty_date,
-                        schedule_id: onCallModal.value.form.schedule_id,
-                        shift_type: onCallModal.value.form.shift_type,
-                        primary_physician_id: onCallModal.value.form.primary_physician_id,
-                        backup_physician_id: onCallModal.value.form.backup_physician_id || null,
-                        start_time: onCallModal.value.form.start_time + ':00',
-                        end_time: onCallModal.value.form.end_time + ':00',
-                        coverage_notes: onCallModal.value.form.coverage_notes,
-                        updated_at: getLocalDateTime()
-                    };
-                    
-                    let result;
-                    const originalData = onCallModal.value.mode === 'edit' 
-                        ? onCallSchedule.value.find(s => s.id === onCallModal.value.schedule.id)
-                        : null;
-                    
-                    if (onCallModal.value.mode === 'add') {
-                        const { data, error } = await supabaseClient
-                            .from('oncall_schedule')
-                            .insert([{
-                                ...scheduleData,
-                                created_at: getLocalDateTime(),
-                                created_by: currentUser.value?.id
-                            }])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        result = data;
-                        onCallSchedule.value.push(result);
-                        showAdvancedToast('Success', 'On-call schedule created', 'success');
-                        
-                        // Add to undo stack
-                        pushToUndoStack(
-                            'Add On-call Schedule',
-                            { schedule: result, original: null },
-                            async (data) => {
-                                const { error } = await supabaseClient
-                                    .from('oncall_schedule')
-                                    .delete()
-                                    .eq('id', data.schedule.id);
-                                
-                                if (!error) {
-                                    const index = onCallSchedule.value.findIndex(s => s.id === data.schedule.id);
-                                    if (index !== -1) onCallSchedule.value.splice(index, 1);
-                                }
-                            },
-                            async (data) => {
-                                const { data: restored } = await supabaseClient
-                                    .from('oncall_schedule')
-                                    .insert([data.schedule])
-                                    .select()
-                                    .single();
-                                
-                                if (restored) {
-                                    onCallSchedule.value.push(restored);
-                                }
-                            }
-                        );
-                        
-                    } else {
-                        const { data, error } = await supabaseClient
-                            .from('oncall_schedule')
-                            .update(scheduleData)
-                            .eq('id', onCallModal.value.schedule.id)
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        result = data;
-                        
-                        const index = onCallSchedule.value.findIndex(s => s.id === result.id);
-                        if (index !== -1) onCallSchedule.value[index] = result;
-                        
-                        showAdvancedToast('Success', 'On-call schedule updated', 'success');
-                        
-                        // Add to undo stack
-                        pushToUndoStack(
-                            'Update On-call Schedule',
-                            { schedule: result, original: originalData },
-                            async (data) => {
-                                const { data: restored } = await supabaseClient
-                                    .from('oncall_schedule')
-                                    .update(data.original)
-                                    .eq('id', data.schedule.id)
-                                    .select()
-                                    .single();
-                                
-                                if (restored) {
-                                    const index = onCallSchedule.value.findIndex(s => s.id === restored.id);
-                                    if (index !== -1) onCallSchedule.value[index] = restored;
-                                }
-                            },
-                            async (data) => {
-                                const { data: reupdated } = await supabaseClient
-                                    .from('oncall_schedule')
-                                    .update(data.schedule)
-                                    .eq('id', data.schedule.id)
-                                    .select()
-                                    .single();
-                                
-                                if (reupdated) {
-                                    const index = onCallSchedule.value.findIndex(s => s.id === reupdated.id);
-                                    if (index !== -1) onCallSchedule.value[index] = reupdated;
-                                }
-                            }
-                        );
-                    }
-                    
-                    operationProgress.value.saveOnCallSchedule = 100;
-                    onCallModal.value.show = false;
-                    await logAudit('ONCALL_SAVE', `${onCallModal.value.mode === 'add' ? 'Created' : 'Updated'} schedule`, 'oncall_schedule', result.id, true);
-                    
-                } catch (error) {
-                    await logAudit('ONCALL_SAVE_ERROR', error.message, 'oncall_schedule', null, false);
-                    throw error;
-                } finally {
-                    saving.value = false;
-                    setTimeout(() => {
-                        delete operationProgress.value.saveOnCallSchedule;
-                    }, 1000);
-                }
-            }, 'Saving on-call schedule');
-        };
-
-        const overrideOnCall = (scheduleOrDay) => {
-            if (!hasPermission('oncall_schedule', 'override')) {
-                showAdvancedToast('Permission Denied', 'Need override permission', 'permission');
-                return;
-            }
-            
-            const date = scheduleOrDay.date || scheduleOrDay.duty_date;
-            
-            if (!confirm(`Emergency override for ${formatDate(date)}? This will replace any existing schedule.`)) return;
-            
-            const scheduleId = `EMERGENCY-${date.replace(/-/g, '')}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-            
-            onCallModal.value = {
-                show: true,
-                mode: 'add',
-                schedule: null,
-                form: {
-                    duty_date: date,
-                    schedule_id: scheduleId,
-                    shift_type: 'backup_call',
-                    primary_physician_id: '',
-                    backup_physician_id: '',
-                    start_time: '00:00',
-                    end_time: '23:59',
-                    coverage_notes: 'EMERGENCY OVERRIDE - Manual schedule entry'
-                }
+            const scheduleData = {
+                duty_date: onCallModal.value.form.duty_date,
+                schedule_id: onCallModal.value.form.schedule_id,
+                shift_type: onCallModal.value.form.shift_type,
+                primary_physician_id: onCallModal.value.form.primary_physician_id,
+                backup_physician_id: onCallModal.value.form.backup_physician_id || null,
+                start_time: onCallModal.value.form.start_time + ':00',
+                end_time: onCallModal.value.form.end_time + ':00',
+                coverage_notes: onCallModal.value.form.coverage_notes,
+                updated_at: getLocalDateTime()
             };
             
-            showAdvancedToast('Emergency Override', 'Emergency schedule override mode activated', 'warning');
-            logAudit('ONCALL_OVERRIDE', `Emergency override for ${formatDate(date)}`, 'oncall_schedule');
-        };
-
-        const deleteOnCallSchedule = async (schedule) => {
-            if (!hasPermission('oncall_schedule', 'delete')) {
-                showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
-                return;
+            // FIXED: Add ID and created fields for new records
+            if (onCallModal.value.mode === 'add') {
+                scheduleData.id = onCallModal.value.form.id || generateUUID();
+                scheduleData.created_at = getLocalDateTime();
+                scheduleData.created_by = currentUser.value?.id;
             }
             
-            if (!confirm(`Delete on-call schedule for ${formatDate(schedule.duty_date)}?`)) return;
+            let result;
+            const originalData = onCallModal.value.mode === 'edit' 
+                ? onCallSchedule.value.find(s => s.id === onCallModal.value.schedule.id)
+                : null;
             
-            return await withErrorHandling(async () => {
-                const originalIndex = onCallSchedule.value.findIndex(s => s.id === schedule.id);
-                const originalSchedule = onCallSchedule.value[originalIndex];
-                
-                const { error } = await supabaseClient
+            if (onCallModal.value.mode === 'add') {
+                const { data, error } = await supabaseClient
                     .from('oncall_schedule')
-                    .delete()
-                    .eq('id', schedule.id);
+                    .insert([scheduleData]) // FIXED: Using the complete scheduleData
+                    .select()
+                    .single();
                 
                 if (error) throw error;
-                
-                onCallSchedule.value.splice(originalIndex, 1);
+                result = data;
+                onCallSchedule.value.push(result);
+                showAdvancedToast('Success', 'On-call schedule created', 'success');
                 
                 // Add to undo stack
                 pushToUndoStack(
-                    'Delete On-call Schedule',
-                    { schedule: originalSchedule, index: originalIndex },
-                    async (data) => {
-                        const { data: restored } = await supabaseClient
-                            .from('oncall_schedule')
-                            .insert([data.schedule])
-                            .select()
-                            .single();
-                        
-                        if (restored) {
-                            onCallSchedule.value.splice(data.index, 0, restored);
-                        }
-                    },
+                    'Add On-call Schedule',
+                    { schedule: result, original: null },
                     async (data) => {
                         const { error } = await supabaseClient
                             .from('oncall_schedule')
@@ -2707,14 +2563,174 @@ const app = createApp({
                             const index = onCallSchedule.value.findIndex(s => s.id === data.schedule.id);
                             if (index !== -1) onCallSchedule.value.splice(index, 1);
                         }
+                    },
+                    async (data) => {
+                        const { data: restored } = await supabaseClient
+                            .from('oncall_schedule')
+                            .insert([data.schedule])
+                            .select()
+                            .single();
+                        
+                        if (restored) {
+                            onCallSchedule.value.push(restored);
+                        }
                     }
                 );
                 
-                showAdvancedToast('Deleted', 'On-call schedule removed', 'success');
-                await logAudit('ONCALL_DELETE', `Deleted schedule for ${formatDate(schedule.duty_date)}`, 'oncall_schedule', schedule.id, true);
+            } else {
+                const { data, error } = await supabaseClient
+                    .from('oncall_schedule')
+                    .update(scheduleData)
+                    .eq('id', onCallModal.value.schedule.id)
+                    .select()
+                    .single();
                 
-            }, 'Deleting on-call schedule');
-        };
+                if (error) throw error;
+                result = data;
+                
+                const index = onCallSchedule.value.findIndex(s => s.id === result.id);
+                if (index !== -1) onCallSchedule.value[index] = result;
+                
+                showAdvancedToast('Success', 'On-call schedule updated', 'success');
+                
+                // Add to undo stack
+                pushToUndoStack(
+                    'Update On-call Schedule',
+                    { schedule: result, original: originalData },
+                    async (data) => {
+                        const { data: restored } = await supabaseClient
+                            .from('oncall_schedule')
+                            .update(data.original)
+                            .eq('id', data.schedule.id)
+                            .select()
+                            .single();
+                        
+                        if (restored) {
+                            const index = onCallSchedule.value.findIndex(s => s.id === restored.id);
+                            if (index !== -1) onCallSchedule.value[index] = restored;
+                        }
+                    },
+                    async (data) => {
+                        const { data: reupdated } = await supabaseClient
+                            .from('oncall_schedule')
+                            .update(data.schedule)
+                            .eq('id', data.schedule.id)
+                            .select()
+                            .single();
+                        
+                        if (reupdated) {
+                            const index = onCallSchedule.value.findIndex(s => s.id === reupdated.id);
+                            if (index !== -1) onCallSchedule.value[index] = reupdated;
+                        }
+                    }
+                );
+            }
+            
+            operationProgress.value.saveOnCallSchedule = 100;
+            onCallModal.value.show = false;
+            await logAudit('ONCALL_SAVE', `${onCallModal.value.mode === 'add' ? 'Created' : 'Updated'} schedule`, 'oncall_schedule', result.id, true);
+            
+        } catch (error) {
+            await logAudit('ONCALL_SAVE_ERROR', error.message, 'oncall_schedule', null, false);
+            throw error;
+        } finally {
+            saving.value = false;
+            setTimeout(() => {
+                delete operationProgress.value.saveOnCallSchedule;
+            }, 1000);
+        }
+    }, 'Saving on-call schedule');
+};
+
+const overrideOnCall = (scheduleOrDay) => {
+    if (!hasPermission('oncall_schedule', 'override')) {
+        showAdvancedToast('Permission Denied', 'Need override permission', 'permission');
+        return;
+    }
+    
+    const date = scheduleOrDay.date || scheduleOrDay.duty_date;
+    
+    if (!confirm(`Emergency override for ${formatDate(date)}? This will replace any existing schedule.`)) return;
+    
+    const scheduleId = `EMERGENCY-${date.replace(/-/g, '')}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    
+    onCallModal.value = {
+        show: true,
+        mode: 'add',
+        schedule: null,
+        form: {
+            id: generateUUID(), // FIXED: Added proper UUID
+            duty_date: date,
+            schedule_id: scheduleId,
+            shift_type: 'backup_call',
+            primary_physician_id: '',
+            backup_physician_id: '',
+            start_time: '00:00',
+            end_time: '23:59',
+            coverage_notes: 'EMERGENCY OVERRIDE - Manual schedule entry'
+        }
+    };
+    
+    showAdvancedToast('Emergency Override', 'Emergency schedule override mode activated', 'warning');
+    logAudit('ONCALL_OVERRIDE', `Emergency override for ${formatDate(date)}`, 'oncall_schedule');
+};
+
+const deleteOnCallSchedule = async (schedule) => {
+    if (!hasPermission('oncall_schedule', 'delete')) {
+        showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
+        return;
+    }
+    
+    if (!confirm(`Delete on-call schedule for ${formatDate(schedule.duty_date)}?`)) return;
+    
+    return await withErrorHandling(async () => {
+        const originalIndex = onCallSchedule.value.findIndex(s => s.id === schedule.id);
+        const originalSchedule = onCallSchedule.value[originalIndex];
+        
+        const { error } = await supabaseClient
+            .from('oncall_schedule')
+            .delete()
+            .eq('id', schedule.id);
+        
+        if (error) throw error;
+        
+        onCallSchedule.value.splice(originalIndex, 1);
+        
+        // Add to undo stack
+        pushToUndoStack(
+            'Delete On-call Schedule',
+            { schedule: originalSchedule, index: originalIndex },
+            async (data) => {
+                const { data: restored } = await supabaseClient
+                    .from('oncall_schedule')
+                    .insert([data.schedule])
+                    .select()
+                    .single();
+                
+                if (restored) {
+                    onCallSchedule.value.splice(data.index, 0, restored);
+                }
+            },
+            async (data) => {
+                const { error } = await supabaseClient
+                    .from('oncall_schedule')
+                    .delete()
+                    .eq('id', data.schedule.id);
+                
+                if (!error) {
+                    const index = onCallSchedule.value.findIndex(s => s.id === data.schedule.id);
+                    if (index !== -1) onCallSchedule.value.splice(index, 1);
+                }
+            }
+        );
+        
+        showAdvancedToast('Deleted', 'On-call schedule removed', 'success');
+        await logAudit('ONCALL_DELETE', `Deleted schedule for ${formatDate(schedule.duty_date)}`, 'oncall_schedule', schedule.id, true);
+        
+    }, 'Deleting on-call schedule');
+};
+
+
 
         // ============ LEAVE REQUEST FUNCTIONS ============
         const showAddLeaveRequestModal = () => {
