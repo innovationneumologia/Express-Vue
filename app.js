@@ -4221,6 +4221,22 @@ const showImportExportModal = (mode = 'export', table = null) => {
         saving.value = false;
     }
 };
+        // ============ ADD THIS FUNCTION ============
+const showUserProfileModal = () => {
+    userProfileModal.value = {
+        show: true,
+        form: {
+            full_name: currentUser.value?.full_name || '',
+            email: currentUser.value?.email || '',
+            phone: currentUser.value?.phone || '+1 (555) 123-4567',
+            department: currentUser.value?.department || 'Pulmonary Medicine',
+            notifications_enabled: true,
+            leave_request_notifications: true,
+            announcement_notifications: true
+        }
+    };
+    userMenuOpen.value = false;
+};
 
         // ============ RETURN STATEMENT ============
         return {
