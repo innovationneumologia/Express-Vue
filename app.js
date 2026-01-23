@@ -534,6 +534,12 @@ const generateUUID = () => {
         return v.toString(16);
     });
 };
+        // ============ UUID VALIDATION ============
+const isValidUUID = (uuid) => {
+    if (!uuid) return true; // null is valid for optional UUID fields
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return regex.test(uuid);
+};
 
         // ============ ERROR BOUNDARY FUNCTIONS ============
         const withErrorHandling = async (operation, context, fallback = null) => {
@@ -2041,26 +2047,36 @@ const generateUUID = () => {
             return true;
         };
 
-        const validateOnCallForm = () => {
-            const form = onCallModal.value.form;
-            
-            if (!form.duty_date) {
-                throw new Error('Duty date is required');
-            }
-            
-            if (!form.primary_physician_id) {
-                throw new Error('Primary physician is required');
-            }
-            
-            const start = new Date(`${form.duty_date}T${form.start_time}`);
-            const end = new Date(`${form.duty_date}T${form.end_time}`);
-            
-            if (start >= end) {
-                throw new Error('End time must be after start time');
-            }
-            
-            return true;
-        };
+     const validateOnCallForm = () => {
+    const form = onCallModal.value.form;
+    
+    if (!form.duty_date) {
+        throw new Error('Duty date is required');
+    }
+    
+    // Check if primary_physician_id is provided (not empty string)
+    if (!form.primary_physician_id || form.primary_physician_id.trim() === '') {
+        throw new Error('Primary physician is required');
+    }
+    
+    // Validate it's a proper UUID
+    if (form.primary_physician_id && !isValidUUID(form.primary_physician_id)) {
+        throw new Error('Invalid primary physician ID format');
+    }
+    
+    if (form.backup_physician_id && form.backup_physician_id.trim() !== '' && !isValidUUID(form.backup_physician_id)) {
+        throw new Error('Invalid backup physician ID format');
+    }
+    
+    const start = new Date(`${form.duty_date}T${form.start_time}`);
+    const end = new Date(`${form.duty_date}T${form.end_time}`);
+    
+    if (start >= end) {
+        throw new Error('End time must be after start time');
+    }
+    
+    return true;
+};
 
         const validateLeaveRequestForm = () => {
             const form = leaveRequestModal.value.form;
@@ -2513,24 +2529,40 @@ const saveOnCallSchedule = async () => {
             
             operationProgress.value.saveOnCallSchedule = 30;
             
+            // CRITICAL FIX: Convert empty strings to null for UUID fields
+            const primaryPhysicianId = onCallModal.value.form.primary_physician_id || null;
+            const backupPhysicianId = onCallModal.value.form.backup_physician_id || null;
+            
+            // Validate UUID format if a value is provided
+            if (primaryPhysicianId && !isValidUUID(primaryPhysicianId)) {
+                throw new Error('Primary physician ID is not a valid UUID format');
+            }
+            
+            if (backupPhysicianId && !isValidUUID(backupPhysicianId)) {
+                throw new Error('Backup physician ID is not a valid UUID format');
+            }
+            
             const scheduleData = {
                 duty_date: onCallModal.value.form.duty_date,
                 schedule_id: onCallModal.value.form.schedule_id,
                 shift_type: onCallModal.value.form.shift_type,
-                primary_physician_id: onCallModal.value.form.primary_physician_id,
-                backup_physician_id: onCallModal.value.form.backup_physician_id || null,
+                primary_physician_id: primaryPhysicianId, // Use converted value
+                backup_physician_id: backupPhysicianId,   // Use converted value
                 start_time: onCallModal.value.form.start_time + ':00',
                 end_time: onCallModal.value.form.end_time + ':00',
-                coverage_notes: onCallModal.value.form.coverage_notes,
+                coverage_notes: onCallModal.value.form.coverage_notes || '',
                 updated_at: getLocalDateTime()
             };
             
-            // FIXED: Add ID and created fields for new records
+            // Add ID and created fields for new records
             if (onCallModal.value.mode === 'add') {
                 scheduleData.id = onCallModal.value.form.id || generateUUID();
                 scheduleData.created_at = getLocalDateTime();
                 scheduleData.created_by = currentUser.value?.id;
             }
+            
+            // Debug logging
+            console.log('Saving on-call schedule data:', scheduleData);
             
             let result;
             const originalData = onCallModal.value.mode === 'edit' 
@@ -2540,11 +2572,15 @@ const saveOnCallSchedule = async () => {
             if (onCallModal.value.mode === 'add') {
                 const { data, error } = await supabaseClient
                     .from('oncall_schedule')
-                    .insert([scheduleData]) // FIXED: Using the complete scheduleData
+                    .insert([scheduleData])
                     .select()
                     .single();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Supabase insert error:', error);
+                    throw error;
+                }
+                
                 result = data;
                 onCallSchedule.value.push(result);
                 showAdvancedToast('Success', 'On-call schedule created', 'success');
@@ -2585,7 +2621,11 @@ const saveOnCallSchedule = async () => {
                     .select()
                     .single();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Supabase update error:', error);
+                    throw error;
+                }
+                
                 result = data;
                 
                 const index = onCallSchedule.value.findIndex(s => s.id === result.id);
