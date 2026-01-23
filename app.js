@@ -292,97 +292,6 @@ const app = createApp({
                 current_residents: 0
             }
         });
-     
-        // Add this function definition INSIDE your setup() function:
-
-const editOnCallSchedule = (scheduleOrDay) => {
-    console.log('Editing on-call schedule:', scheduleOrDay);
-    
-    if (!hasPermission('oncall_schedule', 'update')) {
-        showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
-        return;
-    }
-    
-    // Check if it's a day object (from 7-day schedule) or schedule object (from table)
-    if (scheduleOrDay.date) {
-        // It's a day object from the 7-day schedule
-        const day = scheduleOrDay;
-        
-        if (day.schedule) {
-            // Edit existing schedule
-            onCallModal.value = {
-                show: true,
-                mode: 'edit',
-                schedule: day.schedule,
-                form: {
-                    duty_date: day.schedule.duty_date,
-                    schedule_id: day.schedule.schedule_id,
-                    shift_type: day.schedule.shift_type || 'backup_call',
-                    primary_physician_id: day.schedule.primary_physician_id,
-                    backup_physician_id: day.schedule.backup_physician_id || '',
-                    start_time: day.schedule.start_time?.slice(0, 5) || '08:00',
-                    end_time: day.schedule.end_time?.slice(0, 5) || '20:00',
-                    coverage_notes: day.schedule.coverage_notes || ''
-                }
-            };
-        } else {
-            // Create new schedule for this day
-            onCallModal.value = {
-                show: true,
-                mode: 'add',
-                schedule: null,
-                form: {
-                    duty_date: day.date,
-                    schedule_id: `ONCALL-${day.date.replace(/-/g, '')}-001`,
-                    shift_type: 'backup_call',
-                    primary_physician_id: '',
-                    backup_physician_id: '',
-                    start_time: '08:00',
-                    end_time: '20:00',
-                    coverage_notes: ''
-                }
-            };
-        }
-    } else {
-        // It's a schedule object from the table
-        const schedule = scheduleOrDay;
-        onCallModal.value = {
-            show: true,
-            mode: 'edit',
-            schedule: schedule,
-            form: {
-                duty_date: schedule.duty_date,
-                schedule_id: schedule.schedule_id,
-                shift_type: schedule.shift_type || 'backup_call',
-                primary_physician_id: schedule.primary_physician_id,
-                backup_physician_id: schedule.backup_physician_id || '',
-                start_time: schedule.start_time?.slice(0, 5) || '08:00',
-                end_time: schedule.end_time?.slice(0, 5) || '20:00',
-                coverage_notes: schedule.coverage_notes || ''
-            }
-        };
-    }
-    
-    logAudit('ONCALL_EDIT', `Editing on-call schedule`, 'oncall_schedule');
-};
-          const assignResidentsToUnit = (unit) => {
-        if (!hasPermission('placements', 'create')) {
-            showAdvancedToast('Permission Denied', 'Need create permission for placements', 'permission');
-            return;
-        }
-        
-        quickPlacementModal.value = {
-            show: true,
-            form: {
-                resident_id: '',
-                unit_id: unit.id,
-                duration: 4
-            }
-        };
-        
-        showAdvancedToast('Assign Residents', `Ready to assign residents to ${unit.unit_name}`, 'info');
-        logAudit('ASSIGN_RESIDENTS', `Opened assignment for ${unit.unit_name}`, 'placements', unit.id);
-    };
         
         const rotationModal = ref({
             show: false,
@@ -410,42 +319,6 @@ const editOnCallSchedule = (scheduleOrDay) => {
                 duration: 4
             }
         });
-        // Add these function definitions:
-
-const overrideOnCall = (scheduleOrDay) => {
-    if (!hasPermission('oncall_schedule', 'override')) {
-        showAdvancedToast('Permission Denied', 'Need override permission', 'permission');
-        return;
-    }
-    
-    const date = scheduleOrDay.date || scheduleOrDay.duty_date;
-    
-    if (!confirm(`Emergency override for ${formatDate(date)}? This will replace any existing schedule.`)) return;
-    
-    onCallModal.value = {
-        show: true,
-        mode: 'add',
-        schedule: null,
-        form: {
-            duty_date: date,
-            schedule_id: `EMERGENCY-${date.replace(/-/g, '')}-${Date.now().toString().slice(-4)}`,
-            shift_type: 'backup_call',
-            primary_physician_id: '',
-            backup_physician_id: '',
-            start_time: '00:00',
-            end_time: '23:59',
-            coverage_notes: 'EMERGENCY OVERRIDE - Manual schedule entry'
-        }
-    };
-    
-    showAdvancedToast('Emergency Override', 'Emergency schedule override mode activated', 'warning');
-    logAudit('ONCALL_OVERRIDE', `Emergency override for ${formatDate(date)}`, 'oncall_schedule');
-};
-
-const viewScheduleDetails = (date) => {
-    showAdvancedToast('Schedule Details', `Viewing schedule for ${formatDate(date)}`, 'info');
-    logAudit('SCHEDULE_VIEW', `Viewed schedule details for ${formatDate(date)}`, 'oncall_schedule');
-};
         
         const communicationsModal = ref({
             show: false,
@@ -875,6 +748,14 @@ const viewScheduleDetails = (date) => {
             return texts[tab] || 'Save';
         };
 
+        const formatDateShort = (dateString) => {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+        };
+
         // ============ DATA GETTERS ============
         const getPhysicianName = (physicianId) => {
             const physician = medicalStaff.value.find(staff => staff.id === physicianId);
@@ -904,94 +785,6 @@ const viewScheduleDetails = (date) => {
             return medicalStaff.value.filter(staff => 
                 staff.staff_type === 'medical_resident' && rotationIds.includes(staff.id)
             );
-        };
-
-        // ============ STAFF DETAILS FUNCTIONS ============
-        const viewStaffDetails = async (staff) => {
-            staffDetailsModal.value = {
-                show: true,
-                staff: staff,
-                activeTab: 'details',
-                stats: {
-                    completedRotations: 0,
-                    oncallShifts: 0,
-                    leaveDays: 0,
-                    supervisionCount: 0
-                },
-                activity: [],
-                rotations: [],
-                documents: []
-            };
-            
-            await loadStaffStats(staff.id);
-            await loadStaffActivity(staff.id);
-            await loadStaffRotations(staff.id);
-            await loadStaffDocuments(staff.id);
-            
-            logAudit('STAFF_VIEW', `Viewed details for ${staff.full_name}`, 'medical_staff', staff.id);
-        };
-
-        const loadStaffStats = async (staffId) => {
-            try {
-                const rotations = residentRotations.value.filter(r => r.resident_id === staffId);
-                const oncallCount = onCallSchedule.value.filter(o => o.primary_physician_id === staffId).length;
-                const leaveDays = leaveRequests.value
-                    .filter(l => l.staff_member_id === staffId && l.status === 'approved')
-                    .reduce((sum, l) => sum + (l.total_days || 0), 0);
-                
-                staffDetailsModal.value.stats = {
-                    completedRotations: rotations.filter(r => r.rotation_status === 'completed').length,
-                    oncallShifts: oncallCount,
-                    leaveDays: leaveDays,
-                    supervisionCount: rotations.filter(r => r.supervising_attending_id === staffId).length
-                };
-            } catch (error) {
-                console.error('Error loading staff stats:', error);
-            }
-        };
-
-        const loadStaffActivity = async (staffId) => {
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                
-                const { data: assignments } = await supabaseClient
-                    .from('daily_assignments')
-                    .select('*')
-                    .eq('staff_id', staffId)
-                    .eq('assignment_date', today)
-                    .limit(5);
-                
-                staffDetailsModal.value.activity = (assignments || []).map(a => ({
-                    id: a.id,
-                    description: `${a.assignment_type} at ${a.location_name}`,
-                    timestamp: a.created_at
-                }));
-            } catch (error) {
-                console.error('Error loading staff activity:', error);
-                staffDetailsModal.value.activity = [];
-            }
-        };
-
-        const loadStaffRotations = async (staffId) => {
-            try {
-                const rotations = residentRotations.value.filter(r => r.resident_id === staffId);
-                staffDetailsModal.value.rotations = rotations;
-            } catch (error) {
-                console.error('Error loading staff rotations:', error);
-                staffDetailsModal.value.rotations = [];
-            }
-        };
-
-        const loadStaffDocuments = async (staffId) => {
-            try {
-                staffDetailsModal.value.documents = [
-                    { id: 1, name: 'Medical License', type: 'license', description: 'Valid through 2025', upload_date: '2024-01-15' },
-                    { id: 2, name: 'Board Certification', type: 'certificate', description: 'Pulmonary Medicine', upload_date: '2024-02-01' }
-                ];
-            } catch (error) {
-                console.error('Error loading staff documents:', error);
-                staffDetailsModal.value.documents = [];
-            }
         };
 
         // ============ COMPUTED PROPERTIES ============
@@ -1248,14 +1041,6 @@ const viewScheduleDetails = (date) => {
             return day.status === 'covered' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
         };
 
-        const formatDateShort = (dateString) => {
-            if (!dateString) return '';
-            return new Date(dateString).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric'
-            });
-        };
-
         // ============ CARD INTERACTIONS ============
         const startDrag = (event, cardId) => {
             draggingCard.value = cardId;
@@ -1282,6 +1067,22 @@ const viewScheduleDetails = (date) => {
             showAdvancedToast('Alert Dismissed', 'Coverage alert has been dismissed', 'info');
         };
 
+        const viewUnitDetails = (unitId) => {
+            const unit = trainingUnits.value.find(u => u.id === unitId);
+            if (unit) {
+                showAdvancedToast('Unit Details', `Viewing details for ${unit.unit_name}`, 'info');
+            }
+        };
+
+        const viewScheduleDetails = (date) => {
+            showAdvancedToast('Schedule Details', `Viewing schedule for ${formatDate(date)}`, 'info');
+            logAudit('SCHEDULE_VIEW', `Viewed schedule details for ${formatDate(date)}`, 'oncall_schedule');
+        };
+
+        const viewStaffSchedule = (staff) => {
+            showAdvancedToast('Staff Schedule', `Viewing schedule for ${staff.full_name}`, 'info');
+            logAudit('STAFF_SCHEDULE_VIEW', `Viewed schedule for ${staff.full_name}`, 'medical_staff', staff.id);
+        };
 
         // ============ AUTHENTICATION ============
         const handleAdvancedLogin = async () => {
@@ -1605,6 +1406,147 @@ const viewScheduleDetails = (date) => {
             showAdvancedToast('Filters Applied', 'Audit filters updated', 'info');
         };
 
+        // ============ STAFF DETAILS FUNCTIONS ============
+        const viewStaffDetails = async (staff) => {
+            staffDetailsModal.value = {
+                show: true,
+                staff: staff,
+                activeTab: 'details',
+                stats: {
+                    completedRotations: 0,
+                    oncallShifts: 0,
+                    leaveDays: 0,
+                    supervisionCount: 0
+                },
+                activity: [],
+                rotations: [],
+                documents: []
+            };
+            
+            await loadStaffStats(staff.id);
+            await loadStaffActivity(staff.id);
+            await loadStaffRotations(staff.id);
+            await loadStaffDocuments(staff.id);
+            
+            logAudit('STAFF_VIEW', `Viewed details for ${staff.full_name}`, 'medical_staff', staff.id);
+        };
+
+        const loadStaffStats = async (staffId) => {
+            try {
+                const rotations = residentRotations.value.filter(r => r.resident_id === staffId);
+                const oncallCount = onCallSchedule.value.filter(o => o.primary_physician_id === staffId).length;
+                const leaveDays = leaveRequests.value
+                    .filter(l => l.staff_member_id === staffId && l.status === 'approved')
+                    .reduce((sum, l) => sum + (l.total_days || 0), 0);
+                
+                staffDetailsModal.value.stats = {
+                    completedRotations: rotations.filter(r => r.rotation_status === 'completed').length,
+                    oncallShifts: oncallCount,
+                    leaveDays: leaveDays,
+                    supervisionCount: rotations.filter(r => r.supervising_attending_id === staffId).length
+                };
+            } catch (error) {
+                console.error('Error loading staff stats:', error);
+            }
+        };
+
+        const loadStaffActivity = async (staffId) => {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                
+                const { data: assignments } = await supabaseClient
+                    .from('daily_assignments')
+                    .select('*')
+                    .eq('staff_id', staffId)
+                    .eq('assignment_date', today)
+                    .limit(5);
+                
+                staffDetailsModal.value.activity = (assignments || []).map(a => ({
+                    id: a.id,
+                    description: `${a.assignment_type} at ${a.location_name}`,
+                    timestamp: a.created_at
+                }));
+            } catch (error) {
+                console.error('Error loading staff activity:', error);
+                staffDetailsModal.value.activity = [];
+            }
+        };
+
+        const loadStaffRotations = async (staffId) => {
+            try {
+                const rotations = residentRotations.value.filter(r => r.resident_id === staffId);
+                staffDetailsModal.value.rotations = rotations;
+            } catch (error) {
+                console.error('Error loading staff rotations:', error);
+                staffDetailsModal.value.rotations = [];
+            }
+        };
+
+        const loadStaffDocuments = async (staffId) => {
+            try {
+                staffDetailsModal.value.documents = [
+                    { id: 1, name: 'Medical License', type: 'license', description: 'Valid through 2025', upload_date: '2024-01-15' },
+                    { id: 2, name: 'Board Certification', type: 'certificate', description: 'Pulmonary Medicine', upload_date: '2024-02-01' }
+                ];
+            } catch (error) {
+                console.error('Error loading staff documents:', error);
+                staffDetailsModal.value.documents = [];
+            }
+        };
+
+        // ============ STAFF ACTIVITY FUNCTIONS ============
+        const loadStaffDailyActivities = async (staffId) => {
+            expandedStaffId.value = expandedStaffId.value === staffId ? null : staffId;
+            
+            if (expandedStaffId.value === staffId) {
+                const today = new Date().toISOString().split('T')[0];
+                
+                try {
+                    const { data: assignments } = await supabaseClient
+                        .from('daily_assignments')
+                        .select('*')
+                        .eq('staff_id', staffId)
+                        .eq('assignment_date', today)
+                        .limit(5);
+                    
+                    staffDailyActivities.value[staffId] = [
+                        ...(assignments || []).map(a => ({
+                            type: 'assignment',
+                            title: a.assignment_type,
+                            time: `${a.start_time?.slice(0,5) || 'N/A'}-${a.end_time?.slice(0,5) || 'N/A'}`,
+                            location: a.location_name || 'Unknown'
+                        }))
+                    ];
+                } catch (error) {
+                    console.error('Error loading daily activities:', error);
+                    staffDailyActivities.value[staffId] = [];
+                }
+            }
+        };
+
+        const getTodaysSchedule = (staffId) => {
+            const today = new Date().toISOString().split('T')[0];
+            return onCallSchedule.value.find(o => 
+                o.primary_physician_id === staffId && o.duty_date === today
+            );
+        };
+
+        const getUpcomingOnCall = (staffId) => {
+            const today = new Date().toISOString().split('T')[0];
+            return onCallSchedule.value.find(o => 
+                o.primary_physician_id === staffId && o.duty_date >= today
+            );
+        };
+
+        const getActivityIcon = (type) => {
+            return type === 'oncall' ? 'fas fa-phone-alt' : 'fas fa-tasks';
+        };
+
+        const formatScheduleTime = (schedule) => {
+            if (!schedule) return '';
+            return `${schedule.start_time?.slice(0,5) || ''}-${schedule.end_time?.slice(0,5) || ''}`;
+        };
+
         // ============ MODAL FUNCTIONS ============
         const showAddMedicalStaffModal = () => {
             if (!hasPermission('medical_staff', 'create')) {
@@ -1734,6 +1676,7 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        // ============ ON-CALL SCHEDULE FUNCTIONS ============
         const showAddOnCallModal = () => {
             if (!hasPermission('oncall_schedule', 'create')) {
                 showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
@@ -1759,6 +1702,62 @@ const viewScheduleDetails = (date) => {
                     coverage_notes: ''
                 }
             };
+        };
+
+        const editOnCallSchedule = (scheduleOrDay) => {
+            if (!hasPermission('oncall_schedule', 'update')) {
+                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
+                return;
+            }
+            
+            // Check if it's a day object (from 7-day schedule) or schedule object (from table)
+            if (scheduleOrDay.date) {
+                // It's a day object from the 7-day schedule
+                const day = scheduleOrDay;
+                
+                if (day.schedule) {
+                    // Edit existing schedule
+                    onCallModal.value = {
+                        show: true,
+                        mode: 'edit',
+                        schedule: day.schedule,
+                        form: {
+                            duty_date: day.schedule.duty_date,
+                            schedule_id: day.schedule.schedule_id,
+                            shift_type: day.schedule.shift_type || 'backup_call',
+                            primary_physician_id: day.schedule.primary_physician_id,
+                            backup_physician_id: day.schedule.backup_physician_id || '',
+                            start_time: day.schedule.start_time?.slice(0, 5) || '08:00',
+                            end_time: day.schedule.end_time?.slice(0, 5) || '20:00',
+                            coverage_notes: day.schedule.coverage_notes || ''
+                        }
+                    };
+                } else {
+                    // Create new schedule for this day
+                    showAddOnCallModal();
+                    onCallModal.value.form.duty_date = day.date;
+                }
+            } else {
+                // It's a schedule object from the table
+                const schedule = scheduleOrDay;
+                onCallModal.value = {
+                    show: true,
+                    mode: 'edit',
+                    schedule: schedule,
+                    form: {
+                        duty_date: schedule.duty_date,
+                        schedule_id: schedule.schedule_id,
+                        shift_type: schedule.shift_type || 'backup_call',
+                        primary_physician_id: schedule.primary_physician_id,
+                        backup_physician_id: schedule.backup_physician_id || '',
+                        start_time: schedule.start_time?.slice(0, 5) || '08:00',
+                        end_time: schedule.end_time?.slice(0, 5) || '20:00',
+                        coverage_notes: schedule.coverage_notes || ''
+                    }
+                };
+            }
+            
+            logAudit('ONCALL_EDIT', `Editing on-call schedule`, 'oncall_schedule');
         };
 
         const saveOnCallSchedule = async () => {
@@ -1829,6 +1828,36 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        const overrideOnCall = (scheduleOrDay) => {
+            if (!hasPermission('oncall_schedule', 'override')) {
+                showAdvancedToast('Permission Denied', 'Need override permission', 'permission');
+                return;
+            }
+            
+            const date = scheduleOrDay.date || scheduleOrDay.duty_date;
+            
+            if (!confirm(`Emergency override for ${formatDate(date)}? This will replace any existing schedule.`)) return;
+            
+            onCallModal.value = {
+                show: true,
+                mode: 'add',
+                schedule: null,
+                form: {
+                    duty_date: date,
+                    schedule_id: `EMERGENCY-${date.replace(/-/g, '')}-${Date.now().toString().slice(-4)}`,
+                    shift_type: 'backup_call',
+                    primary_physician_id: '',
+                    backup_physician_id: '',
+                    start_time: '00:00',
+                    end_time: '23:59',
+                    coverage_notes: 'EMERGENCY OVERRIDE - Manual schedule entry'
+                }
+            };
+            
+            showAdvancedToast('Emergency Override', 'Emergency schedule override mode activated', 'warning');
+            logAudit('ONCALL_OVERRIDE', `Emergency override for ${formatDate(date)}`, 'oncall_schedule');
+        };
+
         const deleteOnCallSchedule = async (schedule) => {
             if (!hasPermission('oncall_schedule', 'delete')) {
                 showAdvancedToast('Permission Denied', 'Need delete permission', 'permission');
@@ -1858,6 +1887,7 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        // ============ LEAVE REQUEST FUNCTIONS ============
         const showAddLeaveRequestModal = () => {
             if (!hasPermission('leave_requests', 'create')) {
                 showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
@@ -2038,6 +2068,119 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        // ============ TRAINING UNIT FUNCTIONS ============
+        const showAddTrainingUnitModal = () => {
+            if (!hasPermission('training_units', 'create')) {
+                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
+                return;
+            }
+            
+            trainingUnitModal.value = {
+                show: true,
+                mode: 'add',
+                unit: null,
+                form: {
+                    unit_name: '',
+                    unit_code: '',
+                    department_name: 'Pulmonology',
+                    unit_description: '',
+                    unit_status: 'active',
+                    maximum_residents: 10,
+                    specialty: '',
+                    current_residents: 0
+                }
+            };
+        };
+
+        const editTrainingUnit = (unit) => {
+            if (!hasPermission('training_units', 'update')) {
+                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
+                return;
+            }
+            
+            trainingUnitModal.value = {
+                show: true,
+                mode: 'edit',
+                unit: unit,
+                form: { ...unit }
+            };
+        };
+
+        const saveTrainingUnit = async () => {
+            if (!hasPermission('training_units', trainingUnitModal.value.mode === 'add' ? 'create' : 'update')) {
+                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
+                return;
+            }
+            
+            saving.value = true;
+            try {
+                if (!trainingUnitModal.value.form.unit_name.trim()) {
+                    throw new Error('Unit name required');
+                }
+                
+                const unitData = {
+                    ...trainingUnitModal.value.form,
+                    updated_at: new Date().toISOString()
+                };
+                
+                if (trainingUnitModal.value.mode === 'add') {
+                    const { data, error } = await supabaseClient
+                        .from('training_units')
+                        .insert([{
+                            ...unitData,
+                            created_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    trainingUnits.value.unshift(data);
+                    showAdvancedToast('Success', 'Training unit added', 'success');
+                    logAudit('TRAINING_UNIT_CREATE', `Added unit: ${unitData.unit_name}`, 'training_units', data.id);
+                } else {
+                    const { data, error } = await supabaseClient
+                        .from('training_units')
+                        .update(unitData)
+                        .eq('id', trainingUnitModal.value.unit.id)
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    const index = trainingUnits.value.findIndex(u => u.id === data.id);
+                    if (index !== -1) trainingUnits.value[index] = data;
+                    showAdvancedToast('Success', 'Training unit updated', 'success');
+                    logAudit('TRAINING_UNIT_UPDATE', `Updated unit: ${unitData.unit_name}`, 'training_units', data.id);
+                }
+                
+                trainingUnitModal.value.show = false;
+            } catch (error) {
+                console.error('Error saving training unit:', error);
+                showAdvancedToast('Save Failed', error.message, 'error');
+            } finally {
+                saving.value = false;
+            }
+        };
+
+        const assignResidentsToUnit = (unit) => {
+            if (!hasPermission('placements', 'create')) {
+                showAdvancedToast('Permission Denied', 'Need create permission for placements', 'permission');
+                return;
+            }
+            
+            quickPlacementModal.value = {
+                show: true,
+                form: {
+                    resident_id: '',
+                    unit_id: unit.id,
+                    duration: 4
+                }
+            };
+            
+            showAdvancedToast('Assign Residents', `Ready to assign residents to ${unit.unit_name}`, 'info');
+            logAudit('ASSIGN_RESIDENTS', `Opened assignment for ${unit.unit_name}`, 'placements', unit.id);
+        };
+
+        // ============ ROTATION FUNCTIONS ============
         const showAddRotationModal = () => {
             if (!hasPermission('resident_rotations', 'create')) {
                 showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
@@ -2231,98 +2374,7 @@ const viewScheduleDetails = (date) => {
             }
         };
 
-        const showAddTrainingUnitModal = () => {
-            if (!hasPermission('training_units', 'create')) {
-                showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
-                return;
-            }
-            
-            trainingUnitModal.value = {
-                show: true,
-                mode: 'add',
-                unit: null,
-                form: {
-                    unit_name: '',
-                    unit_code: '',
-                    department_name: 'Pulmonology',
-                    unit_description: '',
-                    unit_status: 'active',
-                    maximum_residents: 10,
-                    specialty: '',
-                    current_residents: 0
-                }
-            };
-        };
-
-        const editTrainingUnit = (unit) => {
-            if (!hasPermission('training_units', 'update')) {
-                showAdvancedToast('Permission Denied', 'Need update permission', 'permission');
-                return;
-            }
-            
-            trainingUnitModal.value = {
-                show: true,
-                mode: 'edit',
-                unit: unit,
-                form: { ...unit }
-            };
-        };
-
-        const saveTrainingUnit = async () => {
-            if (!hasPermission('training_units', trainingUnitModal.value.mode === 'add' ? 'create' : 'update')) {
-                showAdvancedToast('Permission Denied', 'Insufficient permissions', 'permission');
-                return;
-            }
-            
-            saving.value = true;
-            try {
-                if (!trainingUnitModal.value.form.unit_name.trim()) {
-                    throw new Error('Unit name required');
-                }
-                
-                const unitData = {
-                    ...trainingUnitModal.value.form,
-                    updated_at: new Date().toISOString()
-                };
-                
-                if (trainingUnitModal.value.mode === 'add') {
-                    const { data, error } = await supabaseClient
-                        .from('training_units')
-                        .insert([{
-                            ...unitData,
-                            created_at: new Date().toISOString()
-                        }])
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    trainingUnits.value.unshift(data);
-                    showAdvancedToast('Success', 'Training unit added', 'success');
-                    logAudit('TRAINING_UNIT_CREATE', `Added unit: ${unitData.unit_name}`, 'training_units', data.id);
-                } else {
-                    const { data, error } = await supabaseClient
-                        .from('training_units')
-                        .update(unitData)
-                        .eq('id', trainingUnitModal.value.unit.id)
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    const index = trainingUnits.value.findIndex(u => u.id === data.id);
-                    if (index !== -1) trainingUnits.value[index] = data;
-                    showAdvancedToast('Success', 'Training unit updated', 'success');
-                    logAudit('TRAINING_UNIT_UPDATE', `Updated unit: ${unitData.unit_name}`, 'training_units', data.id);
-                }
-                
-                trainingUnitModal.value.show = false;
-            } catch (error) {
-                console.error('Error saving training unit:', error);
-                showAdvancedToast('Save Failed', error.message, 'error');
-            } finally {
-                saving.value = false;
-            }
-        };
-
+        // ============ QUICK PLACEMENT FUNCTIONS ============
         const showQuickPlacementModal = () => {
             if (!hasPermission('placements', 'create')) {
                 showAdvancedToast('Permission Denied', 'Need create permission for placements', 'permission');
@@ -2396,6 +2448,7 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        // ============ COMMUNICATIONS FUNCTIONS ============
         const showCommunicationsModal = () => {
             if (!hasPermission('communications', 'create')) {
                 showAdvancedToast('Permission Denied', 'Need create permission', 'permission');
@@ -2509,6 +2562,7 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        // ============ SYSTEM SETTINGS FUNCTIONS ============
         const showSystemSettingsModal = () => {
             if (!hasPermission('system', 'read')) {
                 showAdvancedToast('Permission Denied', 'Need read permission for system settings', 'permission');
@@ -2543,6 +2597,7 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        // ============ USER PROFILE FUNCTIONS ============
         const showUserProfileModal = () => {
             userProfileModal.value = {
                 show: true,
@@ -2579,6 +2634,7 @@ const viewScheduleDetails = (date) => {
             }
         };
 
+        // ============ IMPORT/EXPORT FUNCTIONS ============
         const showImportExportModal = (mode = 'export', table = null) => {
             if (mode === 'export' && !hasPermission('audit', 'export')) {
                 showAdvancedToast('Permission Denied', 'Need export permission', 'permission');
@@ -2755,14 +2811,6 @@ const viewScheduleDetails = (date) => {
             showAdvancedToast('Removed', 'Resident removed from unit', 'success');
         };
 
-        const loadStaffDailyActivities = async (staffId) => {
-            staffDailyActivities.value[staffId] = [
-                { type: 'assignment', title: 'Morning Rounds', time: '08:00-10:00', location: 'Ward A' },
-                { type: 'oncall', title: 'On-call Duty', time: '18:00-08:00', location: 'Hospital-wide' }
-            ];
-            expandedStaffId.value = expandedStaffId.value === staffId ? null : staffId;
-        };
-
         // ============ INITIALIZATION ============
         onMounted(() => {
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
@@ -2838,10 +2886,6 @@ const viewScheduleDetails = (date) => {
             rotationFilter,
             auditFilter,
             recentSearches,
-               editOnCallSchedule,          // <-- This is missing
-    editRotation,                // <-- This might also be missing
-    extendRotation,              // <-- This might also be missing
-    deleteRotation,
             
             // Computed
             filteredMedicalStaff,
@@ -2883,6 +2927,7 @@ const viewScheduleDetails = (date) => {
             getCapacityStatus,
             getCommunicationIcon,
             getCommunicationButtonText,
+            formatDateShort,
             
             // Data Getters
             getPhysicianName,
@@ -2905,7 +2950,6 @@ const viewScheduleDetails = (date) => {
             toggleUserMenu,
             markAllNotificationsAsRead,
             getDayStatus,
-            formatDateShort,
             
             // Card Interactions
             startDrag,
@@ -2916,6 +2960,7 @@ const viewScheduleDetails = (date) => {
             dismissCoverageAlert,
             viewUnitDetails,
             viewScheduleDetails,
+            viewStaffSchedule,
             
             // Authentication
             handleAdvancedLogin,
@@ -2928,6 +2973,13 @@ const viewScheduleDetails = (date) => {
             loadStaffRotations,
             loadStaffDocuments,
             
+            // Staff Activity
+            loadStaffDailyActivities,
+            getTodaysSchedule,
+            getUpcomingOnCall,
+            getActivityIcon,
+            formatScheduleTime,
+            
             // Modals
             showAddMedicalStaffModal,
             editMedicalStaff,
@@ -2935,9 +2987,10 @@ const viewScheduleDetails = (date) => {
             deleteMedicalStaff,
             
             showAddOnCallModal,
+            editOnCallSchedule,
             saveOnCallSchedule,
-            deleteOnCallSchedule,
             overrideOnCall,
+            deleteOnCallSchedule,
             
             showAddLeaveRequestModal,
             viewLeaveRequestDetails,
@@ -2948,6 +3001,7 @@ const viewScheduleDetails = (date) => {
             showAddTrainingUnitModal,
             editTrainingUnit,
             saveTrainingUnit,
+            assignResidentsToUnit,
             
             showAddRotationModal,
             editRotation,
@@ -2973,9 +3027,6 @@ const viewScheduleDetails = (date) => {
             exportAuditLogs,
             exportStaffList,
             showImportModal,
-              deleteOnCallSchedule,  // Make sure this is also defined and returned
-    extendRotation,        // Make sure this is also defined and returned
-    deleteRotation,  
             
             // Actions
             sendBulkNotifications,
@@ -2987,7 +3038,6 @@ const viewScheduleDetails = (date) => {
             togglePermission,
             handleDrop,
             removePlacement,
-            loadStaffDailyActivities,
             
             // Filters
             resetStaffFilters,
