@@ -6241,41 +6241,21 @@
             </div>
         </div>
     </div>
-        </div>
+    </div>
 
-    <!-- Load Vue.js -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
-    <!-- Load Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
-    
     <!-- Load your app -->
     <script src="app.js"></script>
     
     <!-- Safety check -->
     <script>
-        // Check if everything loaded correctly
+        // Safety check - make sure dependencies are loaded
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded. Checking dependencies...');
-            console.log('Vue loaded:', typeof Vue !== 'undefined');
-            console.log('Supabase loaded:', typeof window.supabase !== 'undefined');
-            
-            // If Supabase failed to load, provide a mock version
-            if (typeof window.supabase === 'undefined') {
-                console.warn('Supabase not loaded. Creating mock version...');
-                window.supabase = {
-                    createClient: function(url, key) {
-                        console.log('Creating mock Supabase client');
-                        return {
-                            from: () => ({ 
-                                select: () => ({ data: [], error: null }),
-                                insert: () => ({ data: [], error: null }),
-                                update: () => ({ data: [], error: null }),
-                                delete: () => ({ data: [], error: null })
-                            })
-                        };
-                    }
-                };
+            if (typeof Vue === 'undefined') {
+                console.error('Vue.js failed to load!');
+                alert('Vue.js failed to load. Please refresh the page.');
+            }
+            if (typeof supabase === 'undefined') {
+                console.warn('Supabase not loaded - using mock data');
             }
         });
     </script>
