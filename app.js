@@ -1,4 +1,3 @@
-/ app.js - Wait for page to fully load
 window.addEventListener('load', function() {
     console.log('Page fully loaded, initializing app...');
     
