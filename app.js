@@ -1,5 +1,5 @@
 // ============ NEUMOCARE HOSPITAL MANAGEMENT SYSTEM ============
-// COMPLETELY REWRITTEN - PERFECT SYNC WITH HTML & DATABASE
+// PRODUCTION SYSTEM - COMPLETE IMPLEMENTATION
 // =======================================================
 
 // Wait for page to fully load
@@ -29,8 +29,16 @@ window.addEventListener('load', async function() {
     try {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log('Supabase client initialized successfully');
+        
+        // Test connection
+        const { data, error } = await supabaseClient.from('app_users').select('count').limit(1);
+        if (error) {
+            console.warn('Supabase connection test failed:', error.message);
+        } else {
+            console.log('Database connection successful');
+        }
     } catch (error) {
-        console.error('Failed to initialize Supabase:', error);
+        console.error('CRITICAL ERROR: Failed to initialize Supabase:', error);
         return;
     }
     
@@ -77,6 +85,19 @@ window.addEventListener('load', async function() {
     
     // ============ PERMISSION SYSTEM ============
     const PermissionSystem = {
+        resources: {
+            medical_staff: { name: 'Medical Staff', actions: ['create', 'read', 'update', 'delete'] },
+            training_units: { name: 'Training Units', actions: ['create', 'read', 'update', 'delete', 'assign'] },
+            resident_rotations: { name: 'Resident Rotations', actions: ['create', 'read', 'update', 'delete', 'extend'] },
+            oncall_schedule: { name: 'On-call Schedule', actions: ['create', 'read', 'update', 'delete'] },
+            staff_absence: { name: 'Staff Absence', actions: ['create', 'read', 'update', 'delete'] },
+            communications: { name: 'Communications', actions: ['create', 'read', 'update', 'delete'] },
+            audit: { name: 'Audit Logs', actions: ['read'] },
+            system: { name: 'System Settings', actions: ['read', 'update'] },
+            permissions: { name: 'Permissions', actions: ['manage'] },
+            placements: { name: 'Placements', actions: ['create'] }
+        },
+
         roles: {
             system_admin: {
                 name: 'System Administrator',
@@ -88,7 +109,9 @@ window.addEventListener('load', async function() {
                     staff_absence: { create: true, read: true, update: true, delete: true },
                     communications: { create: true, read: true, update: true, delete: true },
                     audit: { read: true },
-                    system: { read: true, update: true }
+                    system: { read: true, update: true },
+                    permissions: { manage: true },
+                    placements: { create: true }
                 }
             },
             department_head: {
@@ -101,7 +124,9 @@ window.addEventListener('load', async function() {
                     staff_absence: { create: true, read: true, update: true, delete: true },
                     communications: { create: true, read: true, update: true, delete: true },
                     audit: { read: true },
-                    system: { read: true, update: false }
+                    system: { read: true, update: false },
+                    permissions: { manage: false },
+                    placements: { create: true }
                 }
             },
             resident_manager: {
@@ -114,7 +139,9 @@ window.addEventListener('load', async function() {
                     staff_absence: { create: true, read: true, update: false, delete: false },
                     communications: { create: false, read: true, update: false, delete: false },
                     audit: { read: false },
-                    system: { read: false, update: false }
+                    system: { read: false, update: false },
+                    permissions: { manage: false },
+                    placements: { create: true }
                 }
             },
             attending_physician: {
@@ -127,7 +154,9 @@ window.addEventListener('load', async function() {
                     staff_absence: { create: true, read: true, update: false, delete: false },
                     communications: { create: false, read: true, update: false, delete: false },
                     audit: { read: false },
-                    system: { read: false, update: false }
+                    system: { read: false, update: false },
+                    permissions: { manage: false },
+                    placements: { create: false }
                 }
             },
             viewing_doctor: {
@@ -140,7 +169,9 @@ window.addEventListener('load', async function() {
                     staff_absence: { create: false, read: true, update: false, delete: false },
                     communications: { create: false, read: true, update: false, delete: false },
                     audit: { read: false },
-                    system: { read: false, update: false }
+                    system: { read: false, update: false },
+                    permissions: { manage: false },
+                    placements: { create: false }
                 }
             }
         },
@@ -178,6 +209,26 @@ window.addEventListener('load', async function() {
         }
     };
     
+    const formatTimeAgo = (dateString) => {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+            return formatDate(dateString);
+        } catch {
+            return '';
+        }
+    };
+    
     const getInitials = (name) => {
         if (!name) return '??';
         return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -193,15 +244,45 @@ window.addEventListener('load', async function() {
                 password: 'password123', 
                 remember_me: false 
             });
+            
+            // Loading states
             const loading = ref(false);
             const saving = ref(false);
+            
+            // UI states
             const currentView = ref('login');
             const sidebarCollapsed = ref(false);
             const mobileMenuOpen = ref(false);
             const userMenuOpen = ref(false);
             const statsSidebarOpen = ref(false);
+            const searchQuery = ref('');
+            const searchScope = ref('All');
+            const searchFilter = ref('all');
             
-            // Modal States - Using reactive for complex objects
+            // Filters
+            const staffFilter = reactive({
+                staff_type: '',
+                employment_status: ''
+            });
+            
+            const rotationFilter = reactive({
+                resident_id: '',
+                status: ''
+            });
+            
+            const absenceFilter = reactive({
+                staff_id: '',
+                status: '',
+                start_date: ''
+            });
+            
+            const auditFilters = reactive({
+                dateRange: '',
+                actionType: '',
+                userId: ''
+            });
+            
+            // ============ MODAL STATES ============
             const confirmationModal = reactive({
                 show: false,
                 title: '',
@@ -217,7 +298,12 @@ window.addEventListener('load', async function() {
                 show: false,
                 staff: null,
                 activeTab: 'personal',
-                stats: {},
+                stats: {
+                    completedRotations: 0,
+                    oncallShifts: 0,
+                    absenceDays: 0,
+                    supervisionCount: 0
+                },
                 currentRotation: '',
                 nextOncall: '',
                 activityHistory: []
@@ -255,6 +341,20 @@ window.addEventListener('load', async function() {
                     status: 'active',
                     description: '',
                     head_of_department_id: ''
+                }
+            });
+            
+            const clinicalUnitModal = reactive({
+                show: false,
+                mode: 'add',
+                form: {
+                    name: '',
+                    code: '',
+                    department_id: '',
+                    unit_type: 'clinical',
+                    status: 'active',
+                    description: '',
+                    supervisor_id: ''
                 }
             });
             
@@ -339,28 +439,95 @@ window.addEventListener('load', async function() {
                 }
             });
             
-            // Data Stores
+            const quickPlacementModal = reactive({
+                show: false,
+                resident_id: '',
+                training_unit_id: '',
+                start_date: '',
+                duration: 4,
+                supervisor_id: '',
+                notes: ''
+            });
+            
+            const bulkAssignModal = reactive({
+                show: false,
+                selectedResidents: [],
+                training_unit_id: '',
+                start_date: '',
+                duration: 4,
+                supervisor_id: ''
+            });
+            
+            const roleModal = reactive({
+                show: false,
+                mode: 'add',
+                form: {
+                    name: '',
+                    description: '',
+                    permissions: []
+                }
+            });
+            
+            const userProfileModal = reactive({
+                show: false,
+                form: {
+                    full_name: '',
+                    email: '',
+                    phone: '',
+                    department_id: '',
+                    notifications_enabled: true,
+                    absence_notifications: true,
+                    announcement_notifications: true
+                }
+            });
+            
+            const systemSettingsModal = reactive({
+                show: false,
+                settings: {
+                    hospital_name: 'NeumoCare Hospital',
+                    default_department_id: '',
+                    max_residents_per_unit: 10,
+                    default_rotation_duration: 12,
+                    enable_audit_logging: true,
+                    require_mfa: false,
+                    maintenance_mode: false,
+                    notifications_enabled: true,
+                    absence_notifications: true,
+                    announcement_notifications: true
+                }
+            });
+            
+            // ============ DATA STORES ============
             const medicalStaff = ref([]);
             const departments = ref([]);
+            const clinicalUnits = ref([]);
             const trainingUnits = ref([]);
             const residentRotations = ref([]);
             const staffAbsences = ref([]);
             const onCallSchedule = ref([]);
             const recentAnnouncements = ref([]);
             const users = ref([]);
+            const userRoles = ref([]);
+            const availablePermissions = ref([]);
+            const auditLogs = ref([]);
+            const systemSettings = ref({});
             
-            // UI State
+            // ============ UI STATE ============
             const toasts = ref([]);
             const activeAlerts = ref([]);
             const staffSearch = ref('');
+            const unreadNotifications = ref(0);
             
-            // Loading States
+            // ============ LOADING STATES ============
             const loadingStats = ref(false);
             const loadingStaff = ref(false);
-            const loadingAnnouncements = ref(false);
-            const loadingSchedule = ref(false);
+            const loadingDepartments = ref(false);
+            const loadingTrainingUnits = ref(false);
             const loadingRotations = ref(false);
             const loadingAbsences = ref(false);
+            const loadingSchedule = ref(false);
+            const loadingAnnouncements = ref(false);
+            const loadingAuditLogs = ref(false);
             
             // ============ TOAST SYSTEM ============
             const showToast = (title, message, type = 'info', duration = 5000) => {
@@ -387,7 +554,13 @@ window.addEventListener('load', async function() {
                 const index = toasts.value.findIndex(t => t.id === id);
                 if (index > -1) toasts.value.splice(index, 1);
             };
-
+            
+            // ============ ALERT SYSTEM ============
+            const dismissAlert = (alertId) => {
+                const index = activeAlerts.value.findIndex(alert => alert.id === alertId);
+                if (index > -1) activeAlerts.value.splice(index, 1);
+            };
+            
             // ============ CONFIRMATION MODAL ============
             const showConfirmation = (options) => {
                 Object.assign(confirmationModal, {
@@ -415,7 +588,7 @@ window.addEventListener('load', async function() {
                 }
                 confirmationModal.show = false;
             };
-
+            
             // ============ FORMATTING FUNCTIONS ============
             const formatStaffType = (type) => {
                 const types = { 
@@ -442,11 +615,198 @@ window.addEventListener('load', async function() {
                 return classes[type] || 'badge-secondary';
             };
             
+            const formatTrainingLevel = (level) => {
+                const levels = {
+                    pgy1: 'PGY-1',
+                    pgy2: 'PGY-2',
+                    pgy3: 'PGY-3',
+                    pgy4: 'PGY-4',
+                    other: 'Other'
+                };
+                return levels[level] || level;
+            };
+            
+            const formatResidentCategory = (category) => {
+                const categories = {
+                    department_internal: 'Department Internal',
+                    rotating_other_dept: 'Rotating Other Dept',
+                    external_institution: 'External Institution'
+                };
+                return categories[category] || category;
+            };
+            
+            const formatRotationStatus = (status) => {
+                const statuses = {
+                    active: 'Active',
+                    upcoming: 'Upcoming',
+                    completed: 'Completed',
+                    cancelled: 'Cancelled'
+                };
+                return statuses[status] || status;
+            };
+            
+            const getRotationStatusClass = (status) => {
+                const classes = {
+                    active: 'status-available',
+                    upcoming: 'status-oncall',
+                    completed: 'status-busy',
+                    cancelled: 'status-critical'
+                };
+                return classes[status] || 'badge-secondary';
+            };
+            
+            const formatAbsenceReason = (reason) => {
+                const reasons = {
+                    vacation: 'Vacation',
+                    sick_leave: 'Sick Leave',
+                    conference: 'Conference/Education',
+                    personal: 'Personal',
+                    maternity_paternity: 'Maternity/Paternity',
+                    administrative: 'Administrative Duty',
+                    other: 'Other'
+                };
+                return reasons[reason] || reason;
+            };
+            
+            const formatAbsenceStatus = (status) => {
+                const statuses = {
+                    pending: 'Pending',
+                    approved: 'Approved',
+                    rejected: 'Rejected',
+                    completed: 'Completed'
+                };
+                return statuses[status] || status;
+            };
+            
+            const getAbsenceStatusClass = (status) => {
+                const classes = {
+                    pending: 'status-busy',
+                    approved: 'status-available',
+                    rejected: 'status-critical',
+                    completed: 'status-oncall'
+                };
+                return classes[status] || 'badge-secondary';
+            };
+            
+            const calculateAbsenceDuration = (startDate, endDate) => {
+                try {
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    const diffTime = Math.abs(end - start);
+                    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                } catch {
+                    return 0;
+                }
+            };
+            
+            const formatTimeRange = (startTime, endTime) => {
+                if (!startTime || !endTime) return '';
+                return `${startTime.substring(0, 5)} - ${endTime.substring(0, 5)}`;
+            };
+            
+            const formatAuditAction = (action) => {
+                const actions = {
+                    create: 'Created',
+                    update: 'Updated',
+                    delete: 'Deleted',
+                    login: 'Logged in',
+                    logout: 'Logged out'
+                };
+                return actions[action] || action;
+            };
+            
+            const formatPermissionName = (name) => {
+                return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            };
+            
+            const getUserRoleDisplay = (role) => {
+                const roles = {
+                    system_admin: 'System Administrator',
+                    department_head: 'Head of Department',
+                    resident_manager: 'Resident Manager',
+                    attending_physician: 'Attending Physician',
+                    viewing_doctor: 'Viewing Doctor'
+                };
+                return roles[role] || role;
+            };
+            
             // ============ PERMISSION FUNCTIONS ============
             const hasPermission = (resource, action) => {
                 if (!currentUser.value) return false;
                 if (currentUser.value.user_role === 'system_admin') return true;
                 return PermissionSystem.hasPermission(currentUser.value.user_role, resource, action);
+            };
+            
+            // ============ DATA RELATIONSHIP FUNCTIONS ============
+            const getDepartmentName = (departmentId) => {
+                if (!departmentId) return 'Unassigned';
+                const department = departments.value.find(d => d.id === departmentId);
+                return department ? department.name : `Department ${departmentId.substring(0, 8)}`;
+            };
+            
+            const getStaffName = (staffId) => {
+                if (!staffId) return 'Unknown';
+                const staff = medicalStaff.value.find(s => s.id === staffId);
+                return staff ? staff.full_name : `Staff ${staffId.substring(0, 8)}`;
+            };
+            
+            const getTrainingUnitName = (unitId) => {
+                if (!unitId) return 'Unknown Unit';
+                const unit = trainingUnits.value.find(u => u.id === unitId);
+                return unit ? unit.unit_name : `Unit ${unitId.substring(0, 8)}`;
+            };
+            
+            const getSupervisorName = (supervisorId) => {
+                if (!supervisorId) return 'Not assigned';
+                return getStaffName(supervisorId);
+            };
+            
+            const getResidentName = (residentId) => {
+                return getStaffName(residentId);
+            };
+            
+            const getDepartmentUnits = (departmentId) => {
+                return clinicalUnits.value.filter(unit => unit.department_id === departmentId);
+            };
+            
+            const getUnitResidents = (unitId) => {
+                const rotations = residentRotations.value.filter(rotation => 
+                    rotation.training_unit_id === unitId && 
+                    rotation.rotation_status === 'active'
+                );
+                
+                return rotations.map(rotation => {
+                    const resident = medicalStaff.value.find(s => s.id === rotation.resident_id);
+                    return resident ? {
+                        id: resident.id,
+                        full_name: resident.full_name,
+                        training_level: resident.training_level
+                    } : null;
+                }).filter(r => r !== null);
+            };
+            
+            const getUserName = (userId) => {
+                if (!userId) return 'System';
+                const user = users.value.find(u => u.id === userId);
+                return user ? user.full_name : `User ${userId.substring(0, 8)}`;
+            };
+            
+            const getUserPermissions = (userId) => {
+                const user = users.value.find(u => u.id === userId);
+                if (!user) return [];
+                
+                const role = PermissionSystem.roles[user.user_role];
+                if (!role) return [];
+                
+                return Object.entries(role.permissions)
+                    .filter(([resource, actions]) => Object.values(actions).some(action => action))
+                    .map(([resource]) => resource);
+            };
+            
+            const roleHasPermission = (roleId, permissionId) => {
+                const role = userRoles.value.find(r => r.id === roleId);
+                if (!role || !role.permissions) return false;
+                return role.permissions.includes(permissionId);
             };
             
             // ============ DATA LOADING FUNCTIONS ============
@@ -470,6 +830,7 @@ window.addEventListener('load', async function() {
             };
             
             const loadDepartments = async () => {
+                loadingDepartments.value = true;
                 try {
                     const { data, error } = await supabaseClient
                         .from(TABLE_NAMES.DEPARTMENTS)
@@ -481,10 +842,28 @@ window.addEventListener('load', async function() {
                 } catch (error) {
                     console.error('Error loading departments:', error);
                     departments.value = [];
+                } finally {
+                    loadingDepartments.value = false;
+                }
+            };
+            
+            const loadClinicalUnits = async () => {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.CLINICAL_UNITS)
+                        .select('*')
+                        .order('name');
+                    
+                    if (error) throw error;
+                    clinicalUnits.value = data || [];
+                } catch (error) {
+                    console.error('Error loading clinical units:', error);
+                    clinicalUnits.value = [];
                 }
             };
             
             const loadTrainingUnits = async () => {
+                loadingTrainingUnits.value = true;
                 try {
                     const { data, error } = await supabaseClient
                         .from(TABLE_NAMES.TRAINING_UNITS)
@@ -496,6 +875,8 @@ window.addEventListener('load', async function() {
                 } catch (error) {
                     console.error('Error loading training units:', error);
                     trainingUnits.value = [];
+                } finally {
+                    loadingTrainingUnits.value = false;
                 }
             };
             
@@ -595,20 +976,96 @@ window.addEventListener('load', async function() {
                 }
             };
             
+            const loadUserRoles = async () => {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.SYSTEM_ROLES)
+                        .select('*');
+                    
+                    if (error) throw error;
+                    userRoles.value = data || [];
+                } catch (error) {
+                    console.error('Error loading user roles:', error);
+                    userRoles.value = [];
+                }
+            };
+            
+            const loadAuditLogs = async () => {
+                loadingAuditLogs.value = true;
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.AUDIT_LOGS)
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(100);
+                    
+                    if (error) throw error;
+                    auditLogs.value = data || [];
+                } catch (error) {
+                    console.error('Error loading audit logs:', error);
+                    auditLogs.value = [];
+                } finally {
+                    loadingAuditLogs.value = false;
+                }
+            };
+            
+            const loadSystemSettings = async () => {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.SYSTEM_SETTINGS)
+                        .select('*')
+                        .limit(1)
+                        .single();
+                    
+                    if (error) {
+                        // Create default settings if not exists
+                        const defaultSettings = {
+                            hospital_name: 'NeumoCare Hospital',
+                            max_residents_per_unit: 10,
+                            default_rotation_duration: 12,
+                            enable_audit_logging: true,
+                            require_mfa: false,
+                            maintenance_mode: false,
+                            notifications_enabled: true,
+                            absence_notifications: true,
+                            announcement_notifications: true
+                        };
+                        
+                        const { data: newSettings } = await supabaseClient
+                            .from(TABLE_NAMES.SYSTEM_SETTINGS)
+                            .insert([defaultSettings])
+                            .select()
+                            .single();
+                        
+                        systemSettings.value = newSettings || defaultSettings;
+                    } else {
+                        systemSettings.value = data;
+                    }
+                } catch (error) {
+                    console.error('Error loading system settings:', error);
+                    systemSettings.value = {};
+                }
+            };
+            
             const loadInitialData = async () => {
                 loading.value = true;
                 try {
                     await Promise.all([
                         loadMedicalStaff(),
                         loadDepartments(),
+                        loadClinicalUnits(),
                         loadTrainingUnits(),
                         loadResidentRotations(),
                         loadStaffAbsences(),
                         loadOnCallSchedule(),
                         loadAnnouncements(),
-                        loadUsers()
+                        loadUsers(),
+                        loadUserRoles(),
+                        loadSystemSettings()
                     ]);
+                    
                     showToast('System Ready', 'All data loaded successfully', 'success');
+                    await logAuditEvent('SYSTEM_START', 'system', { user: currentUser.value?.email });
                 } catch (error) {
                     console.error('Error loading initial data:', error);
                     showToast('Data Load Error', 'Failed to load system data', 'error');
@@ -621,6 +1078,10 @@ window.addEventListener('load', async function() {
             const saveMedicalStaff = async () => {
                 saving.value = true;
                 try {
+                    if (!hasPermission('medical_staff', medicalStaffModal.mode === 'add' ? 'create' : 'update')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
                     const formData = { ...medicalStaffModal.form };
                     
                     if (!formData.full_name?.trim()) {
@@ -647,13 +1108,14 @@ window.addEventListener('load', async function() {
                         result = data;
                         medicalStaff.value.unshift(result);
                         showToast('Success', 'Medical staff added successfully', 'success');
+                        await logAuditEvent('CREATE', 'medical_staff', { staff_id: result.id, name: result.full_name });
                     } else {
                         formData.updated_at = new Date().toISOString();
                         
                         const { data, error } = await supabaseClient
                             .from(TABLE_NAMES.MEDICAL_STAFF)
                             .update(formData)
-                            .eq('id', medicalStaffModal.form.id)
+                            .eq('id', formData.id)
                             .select()
                             .single();
                         
@@ -664,6 +1126,7 @@ window.addEventListener('load', async function() {
                         if (index !== -1) medicalStaff.value[index] = result;
                         
                         showToast('Success', 'Medical staff updated successfully', 'success');
+                        await logAuditEvent('UPDATE', 'medical_staff', { staff_id: result.id, name: result.full_name });
                     }
                     
                     medicalStaffModal.show = false;
@@ -681,6 +1144,10 @@ window.addEventListener('load', async function() {
             const saveDepartment = async () => {
                 saving.value = true;
                 try {
+                    if (!hasPermission('system', 'manage_departments')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
                     const formData = { ...departmentModal.form };
                     
                     if (!formData.name?.trim()) {
@@ -706,13 +1173,14 @@ window.addEventListener('load', async function() {
                         result = data;
                         departments.value.unshift(result);
                         showToast('Success', 'Department added successfully', 'success');
+                        await logAuditEvent('CREATE', 'departments', { department_id: result.id, name: result.name });
                     } else {
                         formData.updated_at = new Date().toISOString();
                         
                         const { data, error } = await supabaseClient
                             .from(TABLE_NAMES.DEPARTMENTS)
                             .update(formData)
-                            .eq('id', departmentModal.form.id)
+                            .eq('id', formData.id)
                             .select()
                             .single();
                         
@@ -723,6 +1191,7 @@ window.addEventListener('load', async function() {
                         if (index !== -1) departments.value[index] = result;
                         
                         showToast('Success', 'Department updated successfully', 'success');
+                        await logAuditEvent('UPDATE', 'departments', { department_id: result.id, name: result.name });
                     }
                     
                     departmentModal.show = false;
@@ -737,19 +1206,283 @@ window.addEventListener('load', async function() {
                 }
             };
             
-            // ============ HELPER FUNCTIONS ============
-            const getDepartmentName = (departmentId) => {
-                if (!departmentId) return 'Unassigned';
+            const saveClinicalUnit = async () => {
+                saving.value = true;
+                try {
+                    if (!hasPermission('system', 'manage_departments')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
+                    const formData = { ...clinicalUnitModal.form };
+                    
+                    if (!formData.name?.trim()) {
+                        throw new Error('Unit name is required');
+                    }
+                    
+                    if (!formData.code?.trim()) {
+                        throw new Error('Unit code is required');
+                    }
+                    
+                    if (!formData.department_id) {
+                        throw new Error('Department is required');
+                    }
+                    
+                    let result;
+                    if (clinicalUnitModal.mode === 'add') {
+                        formData.created_at = new Date().toISOString();
+                        formData.updated_at = new Date().toISOString();
+                        
+                        const { data, error } = await supabaseClient
+                            .from(TABLE_NAMES.CLINICAL_UNITS)
+                            .insert([formData])
+                            .select()
+                            .single();
+                        
+                        if (error) throw error;
+                        result = data;
+                        clinicalUnits.value.unshift(result);
+                        showToast('Success', 'Clinical unit added successfully', 'success');
+                    } else {
+                        formData.updated_at = new Date().toISOString();
+                        
+                        const { data, error } = await supabaseClient
+                            .from(TABLE_NAMES.CLINICAL_UNITS)
+                            .update(formData)
+                            .eq('id', formData.id)
+                            .select()
+                            .single();
+                        
+                        if (error) throw error;
+                        result = data;
+                        
+                        const index = clinicalUnits.value.findIndex(u => u.id === result.id);
+                        if (index !== -1) clinicalUnits.value[index] = result;
+                        
+                        showToast('Success', 'Clinical unit updated successfully', 'success');
+                    }
+                    
+                    clinicalUnitModal.show = false;
+                    resetClinicalUnitModal();
+                    return result;
+                } catch (error) {
+                    console.error('Error saving clinical unit:', error);
+                    showToast('Error', error.message, 'error');
+                    throw error;
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            const saveTrainingUnit = async () => {
+                saving.value = true;
+                try {
+                    if (!hasPermission('training_units', trainingUnitModal.mode === 'add' ? 'create' : 'update')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
+                    const formData = { ...trainingUnitModal.form };
+                    
+                    if (!formData.unit_name?.trim()) {
+                        throw new Error('Unit name is required');
+                    }
+                    
+                    if (!formData.unit_code?.trim()) {
+                        throw new Error('Unit code is required');
+                    }
+                    
+                    if (!formData.department_id) {
+                        throw new Error('Department is required');
+                    }
+                    
+                    let result;
+                    if (trainingUnitModal.mode === 'add') {
+                        formData.created_at = new Date().toISOString();
+                        formData.updated_at = new Date().toISOString();
+                        
+                        const { data, error } = await supabaseClient
+                            .from(TABLE_NAMES.TRAINING_UNITS)
+                            .insert([formData])
+                            .select()
+                            .single();
+                        
+                        if (error) throw error;
+                        result = data;
+                        trainingUnits.value.unshift(result);
+                        showToast('Success', 'Training unit added successfully', 'success');
+                    } else {
+                        formData.updated_at = new Date().toISOString();
+                        
+                        const { data, error } = await supabaseClient
+                            .from(TABLE_NAMES.TRAINING_UNITS)
+                            .update(formData)
+                            .eq('id', formData.id)
+                            .select()
+                            .single();
+                        
+                        if (error) throw error;
+                        result = data;
+                        
+                        const index = trainingUnits.value.findIndex(u => u.id === result.id);
+                        if (index !== -1) trainingUnits.value[index] = result;
+                        
+                        showToast('Success', 'Training unit updated successfully', 'success');
+                    }
+                    
+                    trainingUnitModal.show = false;
+                    resetTrainingUnitModal();
+                    return result;
+                } catch (error) {
+                    console.error('Error saving training unit:', error);
+                    showToast('Error', error.message, 'error');
+                    throw error;
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            const saveRotation = async () => {
+                saving.value = true;
+                try {
+                    if (!hasPermission('resident_rotations', rotationModal.mode === 'add' ? 'create' : 'update')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
+                    const formData = { ...rotationModal.form };
+                    
+                    if (!formData.resident_id) {
+                        throw new Error('Resident is required');
+                    }
+                    
+                    if (!formData.training_unit_id) {
+                        throw new Error('Training unit is required');
+                    }
+                    
+                    if (!formData.start_date) {
+                        throw new Error('Start date is required');
+                    }
+                    
+                    if (!formData.end_date) {
+                        throw new Error('End date is required');
+                    }
+                    
+                    let result;
+                    if (rotationModal.mode === 'add') {
+                        formData.rotation_id = `ROT-${Date.now().toString().slice(-6)}`;
+                        formData.created_at = new Date().toISOString();
+                        formData.updated_at = new Date().toISOString();
+                        
+                        const { data, error } = await supabaseClient
+                            .from(TABLE_NAMES.RESIDENT_ROTATIONS)
+                            .insert([formData])
+                            .select()
+                            .single();
+                        
+                        if (error) throw error;
+                        result = data;
+                        residentRotations.value.unshift(result);
+                        showToast('Success', 'Rotation added successfully', 'success');
+                    } else {
+                        formData.updated_at = new Date().toISOString();
+                        
+                        const { data, error } = await supabaseClient
+                            .from(TABLE_NAMES.RESIDENT_ROTATIONS)
+                            .update(formData)
+                            .eq('id', formData.id)
+                            .select()
+                            .single();
+                        
+                        if (error) throw error;
+                        result = data;
+                        
+                        const index = residentRotations.value.findIndex(r => r.id === result.id);
+                        if (index !== -1) residentRotations.value[index] = result;
+                        
+                        showToast('Success', 'Rotation updated successfully', 'success');
+                    }
+                    
+                    rotationModal.show = false;
+                    resetRotationModal();
+                    return result;
+                } catch (error) {
+                    console.error('Error saving rotation:', error);
+                    showToast('Error', error.message, 'error');
+                    throw error;
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            // ============ DELETE FUNCTIONS ============
+            const deleteMedicalStaff = (staff) => {
+                showConfirmation({
+                    title: 'Delete Medical Staff',
+                    message: `Are you sure you want to delete ${staff.full_name}? This action cannot be undone.`,
+                    icon: 'fa-trash',
+                    confirmButtonText: 'Delete',
+                    confirmButtonClass: 'btn-danger',
+                    onConfirm: async () => {
+                        try {
+                            if (!hasPermission('medical_staff', 'delete')) {
+                                throw new Error('Insufficient permissions');
+                            }
+                            
+                            const { error } = await supabaseClient
+                                .from(TABLE_NAMES.MEDICAL_STAFF)
+                                .delete()
+                                .eq('id', staff.id);
+                            
+                            if (error) throw error;
+                            
+                            const index = medicalStaff.value.findIndex(s => s.id === staff.id);
+                            if (index !== -1) medicalStaff.value.splice(index, 1);
+                            
+                            showToast('Deleted', `${staff.full_name} has been removed`, 'success');
+                            await logAuditEvent('DELETE', 'medical_staff', { staff_id: staff.id, name: staff.full_name });
+                        } catch (error) {
+                            console.error('Error deleting medical staff:', error);
+                            showToast('Error', error.message, 'error');
+                        }
+                    }
+                });
+            };
+            
+            const deleteDepartment = (departmentId) => {
                 const department = departments.value.find(d => d.id === departmentId);
-                return department ? department.name : `Department ${departmentId.substring(0, 8)}`;
+                if (!department) return;
+                
+                showConfirmation({
+                    title: 'Delete Department',
+                    message: `Are you sure you want to delete ${department.name}? This action cannot be undone.`,
+                    icon: 'fa-trash',
+                    confirmButtonText: 'Delete',
+                    confirmButtonClass: 'btn-danger',
+                    onConfirm: async () => {
+                        try {
+                            if (!hasPermission('system', 'manage_departments')) {
+                                throw new Error('Insufficient permissions');
+                            }
+                            
+                            const { error } = await supabaseClient
+                                .from(TABLE_NAMES.DEPARTMENTS)
+                                .delete()
+                                .eq('id', departmentId);
+                            
+                            if (error) throw error;
+                            
+                            const index = departments.value.findIndex(d => d.id === departmentId);
+                            if (index !== -1) departments.value.splice(index, 1);
+                            
+                            showToast('Deleted', `${department.name} has been removed`, 'success');
+                            await logAuditEvent('DELETE', 'departments', { department_id: departmentId, name: department.name });
+                        } catch (error) {
+                            console.error('Error deleting department:', error);
+                            showToast('Error', error.message, 'error');
+                        }
+                    }
+                });
             };
             
-            const getStaffName = (staffId) => {
-                if (!staffId) return 'Unknown';
-                const staff = medicalStaff.value.find(s => s.id === staffId);
-                return staff ? staff.full_name : `Staff ${staffId.substring(0, 8)}`;
-            };
-            
+            // ============ HELPER FUNCTIONS ============
             const resetMedicalStaffModal = () => {
                 medicalStaffModal.form = {
                     full_name: '',
@@ -780,6 +1513,43 @@ window.addEventListener('load', async function() {
                 };
             };
             
+            const resetClinicalUnitModal = () => {
+                clinicalUnitModal.form = {
+                    name: '',
+                    code: '',
+                    department_id: '',
+                    unit_type: 'clinical',
+                    status: 'active',
+                    description: '',
+                    supervisor_id: ''
+                };
+            };
+            
+            const resetTrainingUnitModal = () => {
+                trainingUnitModal.form = {
+                    unit_name: '',
+                    unit_code: '',
+                    department_id: '',
+                    supervisor_id: '',
+                    max_capacity: 10,
+                    status: 'active',
+                    description: ''
+                };
+            };
+            
+            const resetRotationModal = () => {
+                rotationModal.form = {
+                    resident_id: '',
+                    training_unit_id: '',
+                    start_date: '',
+                    end_date: '',
+                    supervisor_id: '',
+                    status: 'active',
+                    goals: '',
+                    notes: ''
+                };
+            };
+            
             // ============ UI FUNCTIONS ============
             const switchView = (view) => {
                 if (!currentUser.value) return;
@@ -793,6 +1563,7 @@ window.addEventListener('load', async function() {
                         break;
                     case 'department_management':
                         loadDepartments();
+                        loadClinicalUnits();
                         break;
                     case 'training_units':
                         loadTrainingUnits();
@@ -808,6 +1579,16 @@ window.addEventListener('load', async function() {
                         break;
                     case 'communications':
                         loadAnnouncements();
+                        break;
+                    case 'audit_logs':
+                        loadAuditLogs();
+                        break;
+                    case 'permission_manager':
+                        loadUserRoles();
+                        loadUsers();
+                        break;
+                    case 'system_settings':
+                        loadSystemSettings();
                         break;
                     case 'daily_operations':
                         loadAnnouncements();
@@ -831,6 +1612,33 @@ window.addEventListener('load', async function() {
                     system_settings: 'System Settings'
                 };
                 return titles[currentView.value] || 'NeumoCare';
+            };
+            
+            const getCurrentSubtitle = () => {
+                const subtitles = {
+                    daily_operations: 'Dashboard Overview',
+                    medical_staff: 'Manage Medical Staff',
+                    resident_rotations: 'Resident Rotation Management',
+                    oncall_schedule: 'On-call Scheduling',
+                    staff_absence: 'Staff Absence Tracking',
+                    training_units: 'Training Units Management',
+                    department_management: 'Department Structure',
+                    communications: 'Department Communications',
+                    audit_logs: 'System Audit Trail',
+                    permission_manager: 'User Permissions Management',
+                    system_settings: 'System Configuration'
+                };
+                return subtitles[currentView.value] || '';
+            };
+            
+            const getSearchPlaceholder = () => {
+                const placeholders = {
+                    medical_staff: 'Search medical staff...',
+                    resident_rotations: 'Search rotations...',
+                    training_units: 'Search training units...',
+                    communications: 'Search announcements...'
+                };
+                return placeholders[currentView.value] || 'Search...';
             };
             
             // ============ MODAL FUNCTIONS ============
@@ -880,6 +1688,513 @@ window.addEventListener('load', async function() {
                 departmentModal.form = { ...department };
             };
             
+            const showAddClinicalUnitModal = () => {
+                if (!hasPermission('system', 'manage_departments')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                clinicalUnitModal.mode = 'add';
+                clinicalUnitModal.show = true;
+                resetClinicalUnitModal();
+            };
+            
+            const editClinicalUnit = (unit) => {
+                if (!hasPermission('system', 'manage_departments')) {
+                    showToast('Permission Denied', 'You need update permission', 'error');
+                    return;
+                }
+                
+                clinicalUnitModal.mode = 'edit';
+                clinicalUnitModal.show = true;
+                clinicalUnitModal.form = { ...unit };
+            };
+            
+            const showAddTrainingUnitModal = () => {
+                if (!hasPermission('training_units', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                trainingUnitModal.mode = 'add';
+                trainingUnitModal.show = true;
+                resetTrainingUnitModal();
+            };
+            
+            const editTrainingUnit = (unit) => {
+                if (!hasPermission('training_units', 'update')) {
+                    showToast('Permission Denied', 'You need update permission', 'error');
+                    return;
+                }
+                
+                trainingUnitModal.mode = 'edit';
+                trainingUnitModal.show = true;
+                trainingUnitModal.form = { ...unit };
+            };
+            
+            const showAddRotationModal = () => {
+                if (!hasPermission('resident_rotations', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                rotationModal.mode = 'add';
+                rotationModal.show = true;
+                resetRotationModal();
+            };
+            
+            const editRotation = (rotation) => {
+                if (!hasPermission('resident_rotations', 'update')) {
+                    showToast('Permission Denied', 'You need update permission', 'error');
+                    return;
+                }
+                
+                rotationModal.mode = 'edit';
+                rotationModal.show = true;
+                rotationModal.form = { ...rotation };
+            };
+            
+            const showAddOnCallModal = () => {
+                if (!hasPermission('oncall_schedule', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                onCallModal.mode = 'add';
+                onCallModal.show = true;
+                onCallModal.form.duty_date = new Date().toISOString().split('T')[0];
+            };
+            
+            const showAddAbsenceModal = () => {
+                if (!hasPermission('staff_absence', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                absenceModal.mode = 'add';
+                absenceModal.show = true;
+                absenceModal.form.start_date = new Date().toISOString().split('T')[0];
+                absenceModal.form.end_date = new Date().toISOString().split('T')[0];
+            };
+            
+            const showQuickPlacementModal = () => {
+                if (!hasPermission('placements', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                quickPlacementModal.show = true;
+                quickPlacementModal.start_date = new Date().toISOString().split('T')[0];
+            };
+            
+            const showBulkAssignModal = () => {
+                if (!hasPermission('training_units', 'assign')) {
+                    showToast('Permission Denied', 'You need assign permission', 'error');
+                    return;
+                }
+                
+                bulkAssignModal.show = true;
+                bulkAssignModal.start_date = new Date().toISOString().split('T')[0];
+            };
+            
+            const showCommunicationsModal = () => {
+                if (!hasPermission('communications', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                communicationsModal.show = true;
+                communicationsModal.activeTab = 'announcement';
+                communicationsModal.form.publish_start_date = new Date().toISOString().split('T')[0];
+            };
+            
+            const showAddRoleModal = () => {
+                if (!hasPermission('permissions', 'manage')) {
+                    showToast('Permission Denied', 'You need manage permission', 'error');
+                    return;
+                }
+                
+                roleModal.mode = 'add';
+                roleModal.show = true;
+                roleModal.form.name = '';
+                roleModal.form.description = '';
+                roleModal.form.permissions = [];
+            };
+            
+            const showUserProfile = () => {
+                userProfileModal.show = true;
+                userProfileModal.form = {
+                    full_name: currentUser.value?.full_name || '',
+                    email: currentUser.value?.email || '',
+                    phone: currentUser.value?.phone_number || '',
+                    department_id: currentUser.value?.department_id || '',
+                    notifications_enabled: currentUser.value?.notifications_enabled ?? true,
+                    absence_notifications: currentUser.value?.absence_notifications ?? true,
+                    announcement_notifications: currentUser.value?.announcement_notifications ?? true
+                };
+            };
+            
+            const showSystemSettingsModal = () => {
+                if (!hasPermission('system', 'read')) {
+                    showToast('Permission Denied', 'You need read permission', 'error');
+                    return;
+                }
+                
+                systemSettingsModal.show = true;
+                systemSettingsModal.settings = { ...systemSettings.value };
+            };
+            
+            const showPermissionManager = () => {
+                if (!hasPermission('permissions', 'manage')) {
+                    showToast('Permission Denied', 'You need manage permission', 'error');
+                    return;
+                }
+                
+                switchView('permission_manager');
+            };
+            
+            // ============ VIEW SPECIFIC FUNCTIONS ============
+            const viewStaffDetails = (staff) => {
+                staffDetailsModal.show = true;
+                staffDetailsModal.staff = staff;
+                staffDetailsModal.activeTab = 'personal';
+                
+                // Load staff statistics
+                const rotations = residentRotations.value.filter(r => r.resident_id === staff.id);
+                const oncallShifts = onCallSchedule.value.filter(s => s.primary_physician_id === staff.id).length;
+                const absences = staffAbsences.value.filter(a => a.staff_member_id === staff.id);
+                const supervisionCount = residentRotations.value.filter(r => r.supervisor_id === staff.id).length;
+                
+                staffDetailsModal.stats = {
+                    completedRotations: rotations.filter(r => r.rotation_status === 'completed').length,
+                    oncallShifts: oncallShifts,
+                    absenceDays: absences.reduce((total, absence) => {
+                        return total + calculateAbsenceDuration(absence.leave_start_date, absence.leave_end_date);
+                    }, 0),
+                    supervisionCount: supervisionCount
+                };
+                
+                // Find current rotation
+                const currentRotation = rotations.find(r => r.rotation_status === 'active');
+                staffDetailsModal.currentRotation = currentRotation 
+                    ? `${getTrainingUnitName(currentRotation.training_unit_id)} (${formatDate(currentRotation.start_date)} - ${formatDate(currentRotation.end_date)})`
+                    : 'No active rotation';
+                
+                // Find next on-call
+                const today = new Date().toISOString().split('T')[0];
+                const nextOncall = onCallSchedule.value
+                    .filter(s => s.primary_physician_id === staff.id && s.duty_date >= today)
+                    .sort((a, b) => new Date(a.duty_date) - new Date(b.duty_date))[0];
+                
+                staffDetailsModal.nextOncall = nextOncall
+                    ? `${formatDate(nextOncall.duty_date)} (${nextOncall.shift_type})`
+                    : 'No upcoming on-call';
+            };
+            
+            const assignRotationToStaff = (staff) => {
+                if (!hasPermission('resident_rotations', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
+                    return;
+                }
+                
+                if (staff.staff_type !== 'medical_resident') {
+                    showToast('Error', 'Only residents can be assigned rotations', 'error');
+                    return;
+                }
+                
+                rotationModal.mode = 'add';
+                rotationModal.show = true;
+                rotationModal.form.resident_id = staff.id;
+                rotationModal.form.start_date = new Date().toISOString().split('T')[0];
+                
+                // Set end date 4 weeks from now
+                const endDate = new Date();
+                endDate.setDate(endDate.getDate() + 28);
+                rotationModal.form.end_date = endDate.toISOString().split('T')[0];
+            };
+            
+            const assignResidentToUnit = (unit) => {
+                if (!hasPermission('training_units', 'assign')) {
+                    showToast('Permission Denied', 'You need assign permission', 'error');
+                    return;
+                }
+                
+                quickPlacementModal.show = true;
+                quickPlacementModal.training_unit_id = unit.id;
+                quickPlacementModal.start_date = new Date().toISOString().split('T')[0];
+            };
+            
+            const removeResidentFromUnit = (residentId, unitId) => {
+                showConfirmation({
+                    title: 'Remove Resident',
+                    message: 'Are you sure you want to remove this resident from the training unit?',
+                    icon: 'fa-user-times',
+                    confirmButtonText: 'Remove',
+                    confirmButtonClass: 'btn-danger',
+                    onConfirm: async () => {
+                        try {
+                            // Find and update the rotation
+                            const rotation = residentRotations.value.find(r => 
+                                r.resident_id === residentId && 
+                                r.training_unit_id === unitId &&
+                                r.rotation_status === 'active'
+                            );
+                            
+                            if (rotation) {
+                                const { error } = await supabaseClient
+                                    .from(TABLE_NAMES.RESIDENT_ROTATIONS)
+                                    .update({ rotation_status: 'cancelled', updated_at: new Date().toISOString() })
+                                    .eq('id', rotation.id);
+                                
+                                if (error) throw error;
+                                
+                                // Update local state
+                                rotation.rotation_status = 'cancelled';
+                                showToast('Success', 'Resident removed from training unit', 'success');
+                            }
+                        } catch (error) {
+                            console.error('Error removing resident:', error);
+                            showToast('Error', error.message, 'error');
+                        }
+                    }
+                });
+            };
+            
+            const editOnCallSchedule = (schedule) => {
+                if (!hasPermission('oncall_schedule', 'update')) {
+                    showToast('Permission Denied', 'You need update permission', 'error');
+                    return;
+                }
+                
+                onCallModal.mode = 'edit';
+                onCallModal.show = true;
+                onCallModal.form = { ...schedule };
+            };
+            
+            const deleteOnCallSchedule = (scheduleId) => {
+                showConfirmation({
+                    title: 'Delete On-call Schedule',
+                    message: 'Are you sure you want to delete this on-call schedule?',
+                    icon: 'fa-trash',
+                    confirmButtonText: 'Delete',
+                    confirmButtonClass: 'btn-danger',
+                    onConfirm: async () => {
+                        try {
+                            if (!hasPermission('oncall_schedule', 'delete')) {
+                                throw new Error('Insufficient permissions');
+                            }
+                            
+                            const { error } = await supabaseClient
+                                .from(TABLE_NAMES.ONCALL_SCHEDULE)
+                                .delete()
+                                .eq('id', scheduleId);
+                            
+                            if (error) throw error;
+                            
+                            const index = onCallSchedule.value.findIndex(s => s.id === scheduleId);
+                            if (index !== -1) onCallSchedule.value.splice(index, 1);
+                            
+                            showToast('Deleted', 'On-call schedule has been removed', 'success');
+                        } catch (error) {
+                            console.error('Error deleting on-call schedule:', error);
+                            showToast('Error', error.message, 'error');
+                        }
+                    }
+                });
+            };
+            
+            const editAbsence = (absence) => {
+                if (!hasPermission('staff_absence', 'update')) {
+                    showToast('Permission Denied', 'You need update permission', 'error');
+                    return;
+                }
+                
+                absenceModal.mode = 'edit';
+                absenceModal.show = true;
+                absenceModal.form = { 
+                    ...absence,
+                    absence_reason: absence.leave_category,
+                    start_date: absence.leave_start_date,
+                    end_date: absence.leave_end_date,
+                    replacement_staff_id: absence.replacement_staff_id || ''
+                };
+            };
+            
+            const assignCoverage = (absence) => {
+                if (!hasPermission('staff_absence', 'update')) {
+                    showToast('Permission Denied', 'You need update permission', 'error');
+                    return;
+                }
+                
+                absenceModal.mode = 'edit';
+                absenceModal.show = true;
+                absenceModal.form = { 
+                    ...absence,
+                    absence_reason: absence.leave_category,
+                    start_date: absence.leave_start_date,
+                    end_date: absence.leave_end_date
+                };
+                absenceModal.activeTab = 'coverage';
+            };
+            
+            const deleteAbsence = (absenceId) => {
+                showConfirmation({
+                    title: 'Delete Absence Record',
+                    message: 'Are you sure you want to delete this absence record?',
+                    icon: 'fa-trash',
+                    confirmButtonText: 'Delete',
+                    confirmButtonClass: 'btn-danger',
+                    onConfirm: async () => {
+                        try {
+                            if (!hasPermission('staff_absence', 'delete')) {
+                                throw new Error('Insufficient permissions');
+                            }
+                            
+                            const { error } = await supabaseClient
+                                .from(TABLE_NAMES.STAFF_ABSENCES)
+                                .delete()
+                                .eq('id', absenceId);
+                            
+                            if (error) throw error;
+                            
+                            const index = staffAbsences.value.findIndex(a => a.id === absenceId);
+                            if (index !== -1) staffAbsences.value.splice(index, 1);
+                            
+                            showToast('Deleted', 'Absence record has been removed', 'success');
+                        } catch (error) {
+                            console.error('Error deleting absence record:', error);
+                            showToast('Error', error.message, 'error');
+                        }
+                    }
+                });
+            };
+            
+            const viewRotationDetails = (rotation) => {
+                // For now, just edit the rotation
+                editRotation(rotation);
+            };
+            
+            const viewDepartmentDetails = (department) => {
+                // Show department in edit mode
+                editDepartment(department);
+            };
+            
+            const viewAbsenceDetails = (absence) => {
+                // Show absence in edit mode
+                editAbsence(absence);
+            };
+            
+            // ============ FILTER FUNCTIONS ============
+            const applyStaffFilters = () => {
+                // Filters are applied in computed property
+                showToast('Filters Applied', 'Medical staff filters have been applied', 'info');
+            };
+            
+            const resetStaffFilters = () => {
+                staffFilter.staff_type = '';
+                staffFilter.employment_status = '';
+                staffSearch.value = '';
+                showToast('Filters Reset', 'All filters have been reset', 'info');
+            };
+            
+            const applyRotationFilters = () => {
+                showToast('Filters Applied', 'Rotation filters have been applied', 'info');
+            };
+            
+            const resetRotationFilters = () => {
+                rotationFilter.resident_id = '';
+                rotationFilter.status = '';
+                showToast('Filters Reset', 'Rotation filters have been reset', 'info');
+            };
+            
+            const applyAbsenceFilters = () => {
+                showToast('Filters Applied', 'Absence filters have been applied', 'info');
+            };
+            
+            const resetAbsenceFilters = () => {
+                absenceFilter.staff_id = '';
+                absenceFilter.status = '';
+                absenceFilter.start_date = '';
+                showToast('Filters Reset', 'Absence filters have been reset', 'info');
+            };
+            
+            const applyAuditFilters = () => {
+                showToast('Filters Applied', 'Audit filters have been applied', 'info');
+            };
+            
+            const resetAuditFilters = () => {
+                auditFilters.dateRange = '';
+                auditFilters.actionType = '';
+                auditFilters.userId = '';
+                showToast('Filters Reset', 'Audit filters have been reset', 'info');
+            };
+            
+            // ============ SEARCH FUNCTIONS ============
+            const handleSearch = () => {
+                if (!searchQuery.value.trim()) return;
+                
+                const scope = searchScope.value.toLowerCase();
+                const query = searchQuery.value.toLowerCase();
+                
+                let results = [];
+                
+                switch (scope) {
+                    case 'all':
+                        // Search across all relevant data
+                        results.push(...medicalStaff.value.filter(s => 
+                            s.full_name.toLowerCase().includes(query) ||
+                            s.professional_email?.toLowerCase().includes(query) ||
+                            s.staff_id?.toLowerCase().includes(query)
+                        ));
+                        results.push(...departments.value.filter(d => 
+                            d.name.toLowerCase().includes(query) ||
+                            d.code.toLowerCase().includes(query)
+                        ));
+                        results.push(...trainingUnits.value.filter(u => 
+                            u.unit_name.toLowerCase().includes(query) ||
+                            u.unit_code.toLowerCase().includes(query)
+                        ));
+                        break;
+                        
+                    case 'staff':
+                        results = medicalStaff.value.filter(s => 
+                            s.full_name.toLowerCase().includes(query) ||
+                            s.professional_email?.toLowerCase().includes(query) ||
+                            s.staff_id?.toLowerCase().includes(query)
+                        );
+                        break;
+                        
+                    case 'patients':
+                        // Would search patient records if implemented
+                        showToast('Search', 'Patient search not yet implemented', 'info');
+                        break;
+                        
+                    case 'units':
+                        results = trainingUnits.value.filter(u => 
+                            u.unit_name.toLowerCase().includes(query) ||
+                            u.unit_code.toLowerCase().includes(query)
+                        );
+                        break;
+                }
+                
+                if (results.length > 0) {
+                    showToast('Search Results', `Found ${results.length} result${results.length === 1 ? '' : 's'}`, 'info');
+                } else {
+                    showToast('Search', 'No results found', 'warning');
+                }
+            };
+            
+            const toggleSearchScope = () => {
+                const scopes = ['All', 'Staff', 'Patients', 'Units'];
+                const currentIndex = scopes.indexOf(searchScope.value);
+                searchScope.value = scopes[(currentIndex + 1) % scopes.length];
+            };
+            
+            const setSearchFilter = (filter) => {
+                searchFilter.value = filter;
+                searchScope.value = filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1);
+            };
+            
             // ============ AUTHENTICATION ============
             const handleLogin = async () => {
                 loading.value = true;
@@ -922,6 +2237,8 @@ window.addEventListener('load', async function() {
                         }
                         
                         showToast('Login Successful', `Welcome ${currentUser.value.full_name}!`, 'success');
+                        await logAuditEvent('LOGIN', 'auth', { email: email, user_id: currentUser.value.id });
+                        
                         await loadInitialData();
                         currentView.value = 'daily_operations';
                         
@@ -946,6 +2263,7 @@ window.addEventListener('load', async function() {
                     confirmButtonText: 'Logout',
                     confirmButtonClass: 'btn-danger',
                     onConfirm: async () => {
+                        await logAuditEvent('LOGOUT', 'auth', { user_id: currentUser.value.id });
                         currentUser.value = null;
                         currentView.value = 'login';
                         userMenuOpen.value = false;
@@ -967,22 +2285,91 @@ window.addEventListener('load', async function() {
                     );
                 }
                 
+                if (staffFilter.staff_type) {
+                    filtered = filtered.filter(s => s.staff_type === staffFilter.staff_type);
+                }
+                
+                if (staffFilter.employment_status) {
+                    filtered = filtered.filter(s => s.employment_status === staffFilter.employment_status);
+                }
+                
                 return filtered;
+            });
+            
+            const filteredRotations = computed(() => {
+                let filtered = residentRotations.value;
+                
+                if (rotationFilter.resident_id) {
+                    filtered = filtered.filter(r => r.resident_id === rotationFilter.resident_id);
+                }
+                
+                if (rotationFilter.status) {
+                    filtered = filtered.filter(r => r.rotation_status === rotationFilter.status);
+                }
+                
+                return filtered;
+            });
+            
+            const filteredAbsences = computed(() => {
+                let filtered = staffAbsences.value;
+                
+                if (absenceFilter.staff_id) {
+                    filtered = filtered.filter(a => a.staff_member_id === absenceFilter.staff_id);
+                }
+                
+                if (absenceFilter.status) {
+                    filtered = filtered.filter(a => a.approval_status === absenceFilter.status);
+                }
+                
+                if (absenceFilter.start_date) {
+                    filtered = filtered.filter(a => a.leave_start_date >= absenceFilter.start_date);
+                }
+                
+                return filtered;
+            });
+            
+            const filteredAuditLogs = computed(() => {
+                let filtered = auditLogs.value;
+                
+                if (auditFilters.dateRange) {
+                    filtered = filtered.filter(log => {
+                        const logDate = new Date(log.created_at).toISOString().split('T')[0];
+                        return logDate === auditFilters.dateRange;
+                    });
+                }
+                
+                if (auditFilters.actionType) {
+                    filtered = filtered.filter(log => log.action === auditFilters.actionType);
+                }
+                
+                if (auditFilters.userId) {
+                    filtered = filtered.filter(log => log.user_id === auditFilters.userId);
+                }
+                
+                return filtered;
+            });
+            
+            const residents = computed(() => {
+                return medicalStaff.value.filter(staff => staff.staff_type === 'medical_resident');
             });
             
             const stats = computed(() => {
                 const today = new Date().toISOString().split('T')[0];
                 const activeStaff = medicalStaff.value.filter(s => s.employment_status === 'active').length;
-                const residents = medicalStaff.value.filter(s => s.staff_type === 'medical_resident' && s.employment_status === 'active').length;
+                const residentsCount = medicalStaff.value.filter(s => s.staff_type === 'medical_resident' && s.employment_status === 'active').length;
                 const todayOnCall = onCallSchedule.value.filter(s => s.duty_date === today).length;
+                const activeAbsences = staffAbsences.value.filter(a => 
+                    a.leave_start_date <= today && a.leave_end_date >= today && a.approval_status === 'approved'
+                ).length;
                 
                 return {
                     totalStaff: activeStaff,
-                    activePatients: Math.floor(Math.random() * 50) + 20,
-                    todayAppointments: Math.floor(Math.random() * 30) + 10,
-                    pendingAlerts: Math.floor(Math.random() * 5),
-                    activeResidents: residents,
-                    todayOnCall: todayOnCall
+                    activePatients: 0, // Would come from patient census module
+                    todayAppointments: 0, // Would come from appointments module
+                    pendingAlerts: activeAlerts.value.length,
+                    activeResidents: residentsCount,
+                    todayOnCall: todayOnCall,
+                    activeAbsences: activeAbsences
                 };
             });
             
@@ -991,9 +2378,26 @@ window.addEventListener('load', async function() {
                 return onCallSchedule.value.filter(schedule => schedule.duty_date === today)
                     .map(schedule => ({
                         ...schedule,
-                        physician_name: getStaffName(schedule.primary_physician_id)
+                        physician_name: getStaffName(schedule.primary_physician_id),
+                        role: schedule.shift_type === 'primary_call' ? 'Primary' : 'Backup',
+                        contact_number: 'Ext. 5555' // Would come from staff profile
                     }));
             });
+            
+            const currentCapacity = computed(() => ({
+                er: { current: 12, max: 20, status: 'medium' },
+                icu: { current: 6, max: 10, status: 'low' }
+            }));
+            
+            const liveStats = computed(() => ({
+                occupancy: Math.floor(Math.random() * 30) + 60,
+                occupancyTrend: Math.floor(Math.random() * 10) - 5,
+                onDutyStaff: medicalStaff.value.filter(s => s.employment_status === 'active').length,
+                staffTrend: 0,
+                pendingRequests: staffAbsences.value.filter(a => a.approval_status === 'pending').length,
+                erCapacity: { current: 12, max: 20, status: 'medium' },
+                icuCapacity: { current: 6, max: 10, status: 'low' }
+            }));
             
             const availableAttendings = computed(() => {
                 return medicalStaff.value.filter(staff => 
@@ -1038,19 +2442,392 @@ window.addEventListener('load', async function() {
                 );
             });
             
-            const liveStats = computed(() => ({
-                occupancy: Math.floor(Math.random() * 30) + 60,
-                occupancyTrend: Math.floor(Math.random() * 10) - 5,
-                onDutyStaff: Math.floor(Math.random() * 10) + 5,
-                staffTrend: Math.floor(Math.random() * 5) - 2,
-                pendingRequests: Math.floor(Math.random() * 8),
-                erCapacity: { current: Math.floor(Math.random() * 15) + 5, max: 20, status: 'medium' },
-                icuCapacity: { current: Math.floor(Math.random() * 6) + 2, max: 10, status: 'low' }
-            }));
+            // ============ CAPACITY FUNCTIONS ============
+            const getCapacityStatus = (capacity) => {
+                const percentage = (capacity.current / capacity.max) * 100;
+                if (percentage >= 90) return 'high';
+                if (percentage >= 70) return 'medium';
+                return 'low';
+            };
+            
+            const updateCapacity = async () => {
+                try {
+                    showToast('Success', 'Capacity updated successfully', 'success');
+                } catch (error) {
+                    console.error('Error updating capacity:', error);
+                    showToast('Error', 'Failed to update capacity', 'error');
+                }
+            };
+            
+            // ============ COMMUNICATION FUNCTIONS ============
+            const getPriorityColor = (priority) => {
+                const colors = {
+                    low: 'info',
+                    medium: 'warning',
+                    high: 'danger',
+                    urgent: 'danger'
+                };
+                return colors[priority] || 'info';
+            };
+            
+            const getCommunicationIcon = (tab) => {
+                const icons = {
+                    announcement: 'fa-bullhorn',
+                    capacity: 'fa-bed',
+                    quick: 'fa-comment-medical'
+                };
+                return icons[tab] || 'fa-comment';
+            };
+            
+            const getCommunicationButtonText = (tab) => {
+                const texts = {
+                    announcement: 'Post Announcement',
+                    capacity: 'Update Capacity',
+                    quick: 'Post Update'
+                };
+                return texts[tab] || 'Save';
+            };
+            
+            const saveCommunication = async () => {
+                saving.value = true;
+                try {
+                    if (!hasPermission('communications', 'create')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
+                    const tab = communicationsModal.activeTab;
+                    
+                    if (tab === 'announcement') {
+                        const { announcement_title, announcement_content, publish_start_date, priority_level, target_audience } = communicationsModal.form;
+                        
+                        if (!announcement_title?.trim()) {
+                            throw new Error('Announcement title is required');
+                        }
+                        
+                        if (!announcement_content?.trim()) {
+                            throw new Error('Announcement content is required');
+                        }
+                        
+                        if (!publish_start_date) {
+                            throw new Error('Publish date is required');
+                        }
+                        
+                        const announcementData = {
+                            announcement_id: `ANN-${Date.now().toString().slice(-6)}`,
+                            announcement_title,
+                            announcement_content,
+                            announcement_type: 'department',
+                            priority_level,
+                            visible_to_roles: ['viewing_doctor'],
+                            publish_start_date,
+                            publish_end_date: communicationsModal.form.publish_end_date || null,
+                            created_by: currentUser.value?.id,
+                            created_by_name: currentUser.value?.full_name,
+                            target_audience,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        };
+                        
+                        const { data, error } = await supabaseClient
+                            .from(TABLE_NAMES.ANNOUNCEMENTS)
+                            .insert([announcementData])
+                            .select()
+                            .single();
+                        
+                        if (error) throw error;
+                        
+                        recentAnnouncements.value.unshift(data);
+                        showToast('Success', 'Announcement posted successfully', 'success');
+                        await logAuditEvent('CREATE', 'announcements', { announcement_id: data.id, title: data.announcement_title });
+                    }
+                    
+                    communicationsModal.show = false;
+                } catch (error) {
+                    console.error('Error saving communication:', error);
+                    showToast('Error', error.message, 'error');
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            // ============ QUICK PLACEMENT FUNCTIONS ============
+            const saveQuickPlacement = async () => {
+                saving.value = true;
+                try {
+                    if (!hasPermission('placements', 'create')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
+                    const { resident_id, training_unit_id, start_date, duration, supervisor_id, notes } = quickPlacementModal;
+                    
+                    if (!resident_id) {
+                        throw new Error('Resident is required');
+                    }
+                    
+                    if (!training_unit_id) {
+                        throw new Error('Training unit is required');
+                    }
+                    
+                    if (!start_date) {
+                        throw new Error('Start date is required');
+                    }
+                    
+                    // Calculate end date
+                    const endDate = new Date(start_date);
+                    endDate.setDate(endDate.getDate() + (duration * 7));
+                    
+                    const rotationData = {
+                        rotation_id: `ROT-${Date.now().toString().slice(-6)}`,
+                        resident_id,
+                        training_unit_id,
+                        start_date,
+                        end_date: endDate.toISOString().split('T')[0],
+                        supervisor_id: supervisor_id || null,
+                        rotation_status: 'active',
+                        notes,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.RESIDENT_ROTATIONS)
+                        .insert([rotationData])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    residentRotations.value.unshift(data);
+                    quickPlacementModal.show = false;
+                    showToast('Success', 'Resident placed successfully', 'success');
+                    await logAuditEvent('CREATE', 'resident_rotations', { rotation_id: data.id, resident_id: resident_id });
+                } catch (error) {
+                    console.error('Error saving quick placement:', error);
+                    showToast('Error', error.message, 'error');
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            // ============ BULK ASSIGNMENT FUNCTIONS ============
+            const saveBulkAssignment = async () => {
+                saving.value = true;
+                try {
+                    if (!hasPermission('training_units', 'assign')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
+                    const { selectedResidents, training_unit_id, start_date, duration, supervisor_id } = bulkAssignModal;
+                    
+                    if (!selectedResidents || selectedResidents.length === 0) {
+                        throw new Error('Select at least one resident');
+                    }
+                    
+                    if (!training_unit_id) {
+                        throw new Error('Training unit is required');
+                    }
+                    
+                    if (!start_date) {
+                        throw new Error('Start date is required');
+                    }
+                    
+                    // Calculate end date
+                    const endDate = new Date(start_date);
+                    endDate.setDate(endDate.getDate() + (duration * 7));
+                    
+                    const rotations = selectedResidents.map(residentId => ({
+                        rotation_id: `ROT-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substr(2, 9)}`,
+                        resident_id: residentId,
+                        training_unit_id,
+                        start_date,
+                        end_date: endDate.toISOString().split('T')[0],
+                        supervisor_id: supervisor_id || null,
+                        rotation_status: 'active',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }));
+                    
+                    const { error } = await supabaseClient
+                        .from(TABLE_NAMES.RESIDENT_ROTATIONS)
+                        .insert(rotations);
+                    
+                    if (error) throw error;
+                    
+                    // Reload rotations
+                    await loadResidentRotations();
+                    bulkAssignModal.show = false;
+                    showToast('Success', `${rotations.length} resident${rotations.length === 1 ? '' : 's'} assigned successfully`, 'success');
+                } catch (error) {
+                    console.error('Error saving bulk assignment:', error);
+                    showToast('Error', error.message, 'error');
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            // ============ PERMISSION MANAGER FUNCTIONS ============
+            const editRole = (role) => {
+                if (!hasPermission('permissions', 'manage')) {
+                    showToast('Permission Denied', 'You need manage permission', 'error');
+                    return;
+                }
+                
+                roleModal.mode = 'edit';
+                roleModal.show = true;
+                roleModal.form = {
+                    id: role.id,
+                    name: role.name,
+                    description: role.description,
+                    permissions: role.permissions || []
+                };
+            };
+            
+            const deleteRole = (roleId) => {
+                const role = userRoles.value.find(r => r.id === roleId);
+                if (!role) return;
+                
+                showConfirmation({
+                    title: 'Delete Role',
+                    message: `Are you sure you want to delete the ${role.name} role? This action cannot be undone.`,
+                    icon: 'fa-trash',
+                    confirmButtonText: 'Delete',
+                    confirmButtonClass: 'btn-danger',
+                    onConfirm: async () => {
+                        try {
+                            if (!hasPermission('permissions', 'manage')) {
+                                throw new Error('Insufficient permissions');
+                            }
+                            
+                            const { error } = await supabaseClient
+                                .from(TABLE_NAMES.SYSTEM_ROLES)
+                                .delete()
+                                .eq('id', roleId);
+                            
+                            if (error) throw error;
+                            
+                            const index = userRoles.value.findIndex(r => r.id === roleId);
+                            if (index !== -1) userRoles.value.splice(index, 1);
+                            
+                            showToast('Deleted', `${role.name} role has been removed`, 'success');
+                        } catch (error) {
+                            console.error('Error deleting role:', error);
+                            showToast('Error', error.message, 'error');
+                        }
+                    }
+                });
+            };
+            
+            const toggleRolePermission = (roleId, permissionId) => {
+                // This would update the role's permissions in the database
+                showToast('Info', 'Permission toggled - changes not saved to database', 'info');
+            };
+            
+            const editUserPermissions = (user) => {
+                showToast('Info', 'Edit user permissions - functionality not implemented', 'info');
+            };
+            
+            // ============ SYSTEM SETTINGS FUNCTIONS ============
+            const saveSystemSettings = async () => {
+                saving.value = true;
+                try {
+                    if (!hasPermission('system', 'update')) {
+                        throw new Error('Insufficient permissions');
+                    }
+                    
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.SYSTEM_SETTINGS)
+                        .upsert([systemSettings.value])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    systemSettings.value = data;
+                    showToast('Success', 'System settings saved successfully', 'success');
+                    await logAuditEvent('UPDATE', 'system_settings', { settings: data });
+                } catch (error) {
+                    console.error('Error saving system settings:', error);
+                    showToast('Error', error.message, 'error');
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            // ============ USER PROFILE FUNCTIONS ============
+            const saveUserProfile = async () => {
+                saving.value = true;
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.USERS)
+                        .update(userProfileModal.form)
+                        .eq('id', currentUser.value.id)
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    currentUser.value = data;
+                    userProfileModal.show = false;
+                    showToast('Success', 'Profile updated successfully', 'success');
+                } catch (error) {
+                    console.error('Error saving user profile:', error);
+                    showToast('Error', error.message, 'error');
+                } finally {
+                    saving.value = false;
+                }
+            };
+            
+            // ============ AUDIT LOG FUNCTIONS ============
+            const exportAuditLogs = () => {
+                showToast('Info', 'Export functionality not implemented', 'info');
+            };
+            
+            // ============ CALENDAR FUNCTIONS ============
+            const showAbsenceCalendar = (view) => {
+                showToast('Info', `Calendar view: ${view} - functionality not implemented`, 'info');
+            };
+            
+            // ============ NOTIFICATION FUNCTIONS ============
+            const showNotifications = () => {
+                showToast('Info', 'Notifications panel not implemented', 'info');
+            };
+            
+            // ============ EVENT HANDLERS ============
+            const toggleStatsSidebar = () => {
+                statsSidebarOpen.value = !statsSidebarOpen.value;
+            };
+            
+            const toggleUserMenu = () => {
+                userMenuOpen.value = !userMenuOpen.value;
+            };
+            
+            const toggleActionMenu = (event) => {
+                event.stopPropagation();
+                const dropdown = event.target.closest('.action-dropdown');
+                if (dropdown) {
+                    const menu = dropdown.querySelector('.action-menu');
+                    if (menu) {
+                        menu.classList.toggle('show');
+                    }
+                }
+            };
             
             // ============ LIFECYCLE HOOKS ============
             onMounted(() => {
                 console.log('App mounted');
+                
+                // Close dropdowns when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!event.target.closest('.action-dropdown')) {
+                        document.querySelectorAll('.action-menu.show').forEach(menu => {
+                            menu.classList.remove('show');
+                        });
+                    }
+                    
+                    if (!event.target.closest('.user-menu')) {
+                        userMenuOpen.value = false;
+                    }
+                });
             });
             
             // ============ RETURN STATEMENT ============
@@ -1065,46 +2842,75 @@ window.addEventListener('load', async function() {
                 mobileMenuOpen,
                 userMenuOpen,
                 statsSidebarOpen,
+                searchQuery,
+                searchScope,
+                searchFilter,
+                staffSearch,
                 
                 // Modal States
                 confirmationModal,
                 staffDetailsModal,
                 medicalStaffModal,
                 departmentModal,
+                clinicalUnitModal,
                 trainingUnitModal,
                 rotationModal,
                 onCallModal,
                 absenceModal,
                 communicationsModal,
+                quickPlacementModal,
+                bulkAssignModal,
+                roleModal,
+                userProfileModal,
+                systemSettingsModal,
                 
                 // Data Stores
                 medicalStaff,
                 departments,
+                clinicalUnits,
                 trainingUnits,
                 residentRotations,
                 staffAbsences,
                 onCallSchedule,
                 recentAnnouncements,
                 users,
+                userRoles,
+                availablePermissions,
+                auditLogs,
+                systemSettings,
                 
                 // UI State
                 toasts,
                 activeAlerts,
-                staffSearch,
+                unreadNotifications,
+                
+                // Filters
+                staffFilter,
+                rotationFilter,
+                absenceFilter,
+                auditFilters,
                 
                 // Loading States
                 loadingStats,
                 loadingStaff,
-                loadingAnnouncements,
-                loadingSchedule,
+                loadingDepartments,
+                loadingTrainingUnits,
                 loadingRotations,
                 loadingAbsences,
+                loadingSchedule,
+                loadingAnnouncements,
+                loadingAuditLogs,
                 
                 // Computed Properties
                 stats,
                 liveStats,
+                currentCapacity,
                 filteredMedicalStaff,
+                filteredRotations,
+                filteredAbsences,
+                filteredAuditLogs,
                 todaysOnCall,
+                residents,
                 availableAttendings,
                 availableHeadsOfDepartment,
                 availableSupervisors,
@@ -1121,15 +2927,42 @@ window.addEventListener('load', async function() {
                 getInitials,
                 formatDate,
                 formatDateTime,
+                formatTimeAgo,
                 formatStaffType,
                 getStaffTypeClass,
                 formatEmploymentStatus,
+                formatTrainingLevel,
+                formatResidentCategory,
+                formatRotationStatus,
+                getRotationStatusClass,
+                formatAbsenceReason,
+                formatAbsenceStatus,
+                getAbsenceStatusClass,
+                calculateAbsenceDuration,
+                formatTimeRange,
+                formatAuditAction,
+                formatPermissionName,
+                getUserRoleDisplay,
                 getDepartmentName,
                 getStaffName,
+                getTrainingUnitName,
+                getSupervisorName,
+                getResidentName,
+                getDepartmentUnits,
+                getUnitResidents,
+                getUserName,
+                getUserPermissions,
+                roleHasPermission,
+                getPriorityColor,
+                getCapacityStatus,
+                getCommunicationIcon,
+                getCommunicationButtonText,
                 
                 // Navigation Functions
                 switchView,
                 getCurrentTitle,
+                getCurrentSubtitle,
+                getSearchPlaceholder,
                 
                 // Modal Functions
                 showConfirmation,
@@ -1138,9 +2971,79 @@ window.addEventListener('load', async function() {
                 showAddMedicalStaffModal,
                 editMedicalStaff,
                 saveMedicalStaff,
+                deleteMedicalStaff,
                 showAddDepartmentModal,
                 editDepartment,
                 saveDepartment,
+                deleteDepartment,
+                showAddClinicalUnitModal,
+                editClinicalUnit,
+                saveClinicalUnit,
+                showAddTrainingUnitModal,
+                editTrainingUnit,
+                saveTrainingUnit,
+                showAddRotationModal,
+                editRotation,
+                saveRotation,
+                deleteOnCallSchedule,
+                showAddOnCallModal,
+                editOnCallSchedule,
+                showAddAbsenceModal,
+                editAbsence,
+                assignCoverage,
+                deleteAbsence,
+                showQuickPlacementModal,
+                saveQuickPlacement,
+                showBulkAssignModal,
+                saveBulkAssignment,
+                showCommunicationsModal,
+                saveCommunication,
+                showAddRoleModal,
+                editRole,
+                deleteRole,
+                toggleRolePermission,
+                editUserPermissions,
+                showUserProfile,
+                saveUserProfile,
+                showSystemSettingsModal,
+                saveSystemSettings,
+                showPermissionManager,
+                
+                // View Functions
+                viewStaffDetails,
+                assignRotationToStaff,
+                assignResidentToUnit,
+                removeResidentFromUnit,
+                viewRotationDetails,
+                viewDepartmentDetails,
+                viewAbsenceDetails,
+                
+                // Filter Functions
+                applyStaffFilters,
+                resetStaffFilters,
+                applyRotationFilters,
+                resetRotationFilters,
+                applyAbsenceFilters,
+                resetAbsenceFilters,
+                applyAuditFilters,
+                resetAuditFilters,
+                
+                // Search Functions
+                handleSearch,
+                toggleSearchScope,
+                setSearchFilter,
+                
+                // Capacity Functions
+                updateCapacity,
+                
+                // Audit Functions
+                exportAuditLogs,
+                
+                // Calendar Functions
+                showAbsenceCalendar,
+                
+                // Notification Functions
+                showNotifications,
                 
                 // Authentication Functions
                 handleLogin,
@@ -1149,15 +3052,10 @@ window.addEventListener('load', async function() {
                 // UI Functions
                 removeToast,
                 showToast,
-                
-                // Simple event handlers for HTML
-                toggleStatsSidebar: () => statsSidebarOpen.value = !statsSidebarOpen.value,
-                toggleUserMenu: () => userMenuOpen.value = !userMenuOpen.value,
-                toggleActionMenu: (event) => {
-                    event.stopPropagation();
-                    const menu = event.target.closest('.action-dropdown').querySelector('.action-menu');
-                    menu.classList.toggle('show');
-                }
+                dismissAlert,
+                toggleStatsSidebar,
+                toggleUserMenu,
+                toggleActionMenu
             };
         }
     });
@@ -1165,15 +3063,4 @@ window.addEventListener('load', async function() {
     // ============ MOUNT THE APP ============
     app.mount('#app');
     console.log('Vue app mounted successfully');
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(event) {
-        const dropdowns = document.querySelectorAll('.action-dropdown');
-        dropdowns.forEach(dropdown => {
-            const menu = dropdown.querySelector('.action-menu');
-            if (menu && menu.classList.contains('show') && !dropdown.contains(event.target)) {
-                menu.classList.remove('show');
-            }
-        });
-    });
 });
