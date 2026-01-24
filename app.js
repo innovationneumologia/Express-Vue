@@ -2873,4 +2873,6 @@ const app = createApp({
 // Mount the Vue app
 app.mount('#app');
 console.log('Vue app mounted successfully');
+});});
+
                               
