@@ -2862,9 +2862,10 @@ const app = createApp({
             // Drag and Drop Functions
             handleDrop, removePlacement,
             
-           // Form Functions
-            onStaffTypeChange,
-                    // Toast Function
+                  // Form Functions
+        onStaffTypeChange,
+        
+        // Toast Function
         removeToast
         };
     }
@@ -2873,6 +2874,3 @@ const app = createApp({
 // Mount the Vue app
 app.mount('#app');
 console.log('Vue app mounted successfully');
-});});
-
-                              
