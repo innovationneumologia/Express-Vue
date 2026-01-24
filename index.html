@@ -134,6 +134,17 @@
         .w-100 { width: 100%; }
         .h-100 { height: 100%; }
 
+        .flex { display: flex; }
+        .grid { display: grid; }
+        .hidden { display: none; }
+        .block { display: block; }
+
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
+
         /* ============ MEDICAL PROFESSIONAL BUTTONS ============ */
         .btn {
             display: inline-flex;
@@ -1839,6 +1850,205 @@
             font-weight: 600;
         }
 
+        /* ============ ACTION DROPDOWN ============ */
+        .action-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .action-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-lg);
+            min-width: 180px;
+            z-index: 1000;
+            margin-top: 4px;
+        }
+
+        .action-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .action-menu-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background-color var(--transition-fast);
+            font-size: 13px;
+            color: var(--gray-700);
+            text-decoration: none;
+            min-height: 44px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .action-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .action-menu-item:hover {
+            background-color: var(--medical-light-blue);
+        }
+
+        .action-menu-item i {
+            width: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .action-menu-item.danger {
+            color: var(--medical-red);
+        }
+
+        .action-menu-item.danger:hover {
+            background-color: rgba(198, 40, 40, 0.1);
+        }
+
+        /* ============ TRAINING UNITS GRID ============ */
+        .training-units-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .training-unit-card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--medical-light-blue);
+            transition: all var(--transition-normal);
+            position: relative;
+        }
+
+        .training-unit-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .training-unit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .training-unit-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--medical-dark-blue);
+        }
+
+        .training-unit-capacity {
+            font-size: 14px;
+            color: var(--medical-gray);
+        }
+
+        .training-unit-residents {
+            margin-top: 16px;
+        }
+
+        .resident-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--gray-50);
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 8px;
+        }
+
+        .resident-name {
+            font-weight: 500;
+            color: var(--gray-800);
+        }
+
+        .resident-level {
+            font-size: 12px;
+            color: var(--medical-gray);
+        }
+
+        /* ============ AUDIT LOGS ============ */
+        .audit-filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: white;
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--medical-light-blue);
+        }
+
+        .audit-log-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--medical-light-blue);
+            background: white;
+        }
+
+        .audit-log-item:last-child {
+            border-bottom: none;
+        }
+
+        .audit-action {
+            font-weight: 600;
+            color: var(--medical-dark-blue);
+            margin-bottom: 4px;
+        }
+
+        .audit-details {
+            font-size: 13px;
+            color: var(--gray-600);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .audit-timestamp {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 8px;
+        }
+
+        /* ============ PERMISSION MANAGER ============ */
+        .permission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .permission-card {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            border: 1px solid var(--medical-light-blue);
+        }
+
+        .permission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .permission-role {
+            font-weight: 600;
+            color: var(--medical-dark-blue);
+        }
+
+        .permission-checkboxes {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
         /* ============ MOBILE RESPONSIVE ============ */
         @media (max-width: 1024px) {
             .sidebar {
@@ -1868,6 +2078,10 @@
             .modal-container {
                 width: 95%;
                 margin: 10px;
+            }
+
+            .training-units-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1924,6 +2138,10 @@
                 width: 80px;
                 height: 80px;
                 font-size: 24px;
+            }
+
+            .audit-filters {
+                flex-direction: column;
             }
         }
 
@@ -2160,6 +2378,14 @@
                                     <span>Audit Logs</span>
                                 </a>
                             </li>
+                            <li class="sidebar-menu-item" v-if="hasPermission('permissions', 'manage')">
+                                <a href="#" class="sidebar-menu-link" :class="{ active: currentView === 'permission_manager' }" 
+                                   @click.prevent="switchView('permission_manager'); mobileMenuOpen = false"
+                                   :aria-current="currentView === 'permission_manager' ? 'page' : null">
+                                    <i class="fas fa-user-shield"></i>
+                                    <span>Permission Manager</span>
+                                </a>
+                            </li>
                             <li class="sidebar-menu-item" v-if="hasPermission('system', 'read')">
                                 <a href="#" class="sidebar-menu-link" :class="{ active: currentView === 'system_settings' }" 
                                    @click.prevent="switchView('system_settings'); mobileMenuOpen = false"
@@ -2246,31 +2472,6 @@
                         <span class="stat-trend" :class="liveStats.icuCapacity?.status || ''">{{ liveStats.icuCapacity?.status || 'normal' }}</span>
                     </template>
                 </div>
-                
-                <div class="stat-item">
-                    <span class="stat-label">Ward Beds</span>
-                    <div v-if="loadingStats" class="skeleton skeleton-text" style="width: 80px;"></div>
-                    <template v-else>
-                        <span class="stat-value">{{ liveStats.wardCapacity?.current || 0 }}/{{ liveStats.wardCapacity?.max || 0 }}</span>
-                        <span class="stat-trend" :class="liveStats.wardCapacity?.status || ''">{{ liveStats.wardCapacity?.status || 'normal' }}</span>
-                    </template>
-                </div>
-                
-                <div class="stat-item">
-                    <span class="stat-label">Today's Admissions</span>
-                    <div v-if="loadingStats" class="skeleton skeleton-text" style="width: 30px;"></div>
-                    <template v-else>
-                        <span class="stat-value">{{ liveStats.todayAdmissions || 0 }}</span>
-                    </template>
-                </div>
-                
-                <div class="stat-item">
-                    <span class="stat-label">Avg. Stay (days)</span>
-                    <div v-if="loadingStats" class="skeleton skeleton-text" style="width: 60px;"></div>
-                    <template v-else>
-                        <span class="stat-value">{{ liveStats.avgStay ? liveStats.avgStay.toFixed(1) : '0.0' }}</span>
-                    </template>
-                </div>
             </div>
 
             <!-- Main Content -->
@@ -2312,7 +2513,7 @@
                             </div>
                         </div>
                         
-                        <div class="navbar-actions">
+                        <div class="navbar-actions" style="display: flex; align-items: center; gap: 12px;">
                             <div class="notification-badge">
                                 <button class="btn btn-icon btn-secondary" @click="showNotifications" 
                                         :aria-label="`${unreadNotifications} unread notifications`">
@@ -2328,26 +2529,29 @@
                                 <i class="fas fa-bullhorn"></i>
                             </button>
                             
-                            <div class="user-menu">
-                                <button class="user-menu-toggle" @click="toggleUserMenu" :aria-label="`${currentUser.full_name} profile menu`">
+                            <div class="user-menu" style="position: relative;">
+                                <button class="user-menu-toggle" @click="toggleUserMenu" :aria-label="`${currentUser.full_name} profile menu`" style="display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 8px; border-radius: var(--border-radius-md); transition: background var(--transition-fast); min-height: 44px;">
                                     <div class="user-avatar">{{ getInitials(currentUser.full_name) }}</div>
-                                    <i class="fas fa-chevron-down"></i>
+                                    <i class="fas fa-chevron-down" style="font-size: 12px;"></i>
                                 </button>
                                 
-                                <div class="user-menu-dropdown" v-if="userMenuOpen" role="menu" style="position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); min-width: 200px; z-index: 1000;">
-                                    <a href="#" class="user-menu-item" @click.prevent="showUserProfile" role="menuitem" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: var(--gray-700); text-decoration: none; transition: background var(--transition-fast); border-bottom: 1px solid var(--gray-100);">
+                                <div class="action-menu" v-if="userMenuOpen" style="position: absolute; right: 0; top: 100%; margin-top: 8px; min-width: 200px;">
+                                    <div class="action-menu-item" @click="showUserProfile">
                                         <i class="fas fa-user"></i>
                                         <span>Profile Settings</span>
-                                    </a>
-                                    <a href="#" class="user-menu-item" @click.prevent="showSystemSettingsModal" 
-                                       v-if="hasPermission('system', 'read')" role="menuitem" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: var(--gray-700); text-decoration: none; transition: background var(--transition-fast); border-bottom: 1px solid var(--gray-100);">
+                                    </div>
+                                    <div class="action-menu-item" @click="showSystemSettingsModal" v-if="hasPermission('system', 'read')">
                                         <i class="fas fa-cog"></i>
                                         <span>System Settings</span>
-                                    </a>
-                                    <a href="#" class="user-menu-item" @click.prevent="handleLogout" role="menuitem" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: var(--medical-red); text-decoration: none; transition: background var(--transition-fast);">
+                                    </div>
+                                    <div class="action-menu-item" @click="showPermissionManager" v-if="hasPermission('permissions', 'manage')">
+                                        <i class="fas fa-user-shield"></i>
+                                        <span>Permission Manager</span>
+                                    </div>
+                                    <div class="action-menu-item danger" @click="handleLogout">
                                         <i class="fas fa-sign-out-alt"></i>
                                         <span>Logout</span>
-                                    </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2402,6 +2606,10 @@
                                 <i class="fas fa-user-md" style="color: var(--medical-teal);"></i>
                                 Quick Placement
                             </div>
+                            <div class="quick-action-btn" @click="showAddRotationModal" v-if="hasPermission('resident_rotations', 'create')">
+                                <i class="fas fa-calendar-alt" style="color: var(--medical-blue);"></i>
+                                Add Rotation
+                            </div>
                             <div class="quick-action-btn" @click="showCommunicationsModal" v-if="hasPermission('communications', 'create')">
                                 <i class="fas fa-bullhorn" style="color: var(--medical-red);"></i>
                                 Post Announcement
@@ -2420,9 +2628,6 @@
                                         <span v-else>{{ stats.totalStaff || 0 }}</span>
                                     </div>
                                     <div class="stat-label">Total Medical Staff</div>
-                                    <span class="data-source-indicator" :class="stats.totalStaff ? 'live' : 'mock'">
-                                        {{ stats.totalStaff ? 'Live Data' : 'No Data' }}
-                                    </span>
                                 </div>
                             </div>
                             
@@ -2436,9 +2641,6 @@
                                         <span v-else>{{ stats.activePatients || 0 }}</span>
                                     </div>
                                     <div class="stat-label">Active Patients</div>
-                                    <span class="data-source-indicator" :class="stats.activePatients ? 'live' : 'mock'">
-                                        {{ stats.activePatients ? 'Live Data' : 'No Data' }}
-                                    </span>
                                 </div>
                             </div>
                             
@@ -2452,9 +2654,6 @@
                                         <span v-else>{{ stats.todayAppointments || 0 }}</span>
                                     </div>
                                     <div class="stat-label">Today's Appointments</div>
-                                    <span class="data-source-indicator" :class="stats.todayAppointments ? 'live' : 'mock'">
-                                        {{ stats.todayAppointments ? 'Live Data' : 'No Data' }}
-                                    </span>
                                 </div>
                             </div>
                             
@@ -2468,9 +2667,6 @@
                                         <span v-else>{{ stats.pendingAlerts || 0 }}</span>
                                     </div>
                                     <div class="stat-label">Pending Alerts</div>
-                                    <span class="data-source-indicator" :class="stats.pendingAlerts ? 'live' : 'mock'">
-                                        {{ stats.pendingAlerts ? 'Live Data' : 'No Data' }}
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -2501,23 +2697,18 @@
                                     </button>
                                 </div>
                                 <div v-else>
-                                    <div v-for="announcement in recentAnnouncements" :key="announcement.id" class="mb-4 p-4 border rounded-lg hover:bg-gray-50 transition">
-                                        <div class="flex justify-between items-start mb-2">
+                                    <div v-for="announcement in recentAnnouncements.slice(0, 3)" :key="announcement.id" style="margin-bottom: 16px; padding: 16px; border: 1px solid var(--medical-light-blue); border-radius: var(--border-radius-md); transition: all var(--transition-fast);" @mouseenter="this.style.backgroundColor='var(--medical-light-blue)'" @mouseleave="this.style.backgroundColor='white'">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                                             <div>
-                                                <div class="font-medium text-lg">{{ announcement.title }}</div>
-                                                <div class="text-sm text-gray-500">By: {{ announcement.author }} • {{ formatTimeAgo(announcement.created_at) }}</div>
+                                                <div style="font-weight: 600; color: var(--medical-dark-blue);">{{ announcement.title }}</div>
+                                                <div style="font-size: 12px; color: var(--medical-gray);">By: {{ announcement.author }} • {{ formatTimeAgo(announcement.created_at) }}</div>
                                             </div>
                                             <span class="badge" :class="`badge-${announcement.priority}`">
                                                 {{ announcement.priority }}
                                             </span>
                                         </div>
-                                        <p class="text-gray-700 mb-3">{{ announcement.content }}</p>
-                                        <div v-if="announcement.tags" class="flex gap-2 mb-3">
-                                            <span v-for="tag in announcement.tags.split(',')" :key="tag" class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                                                {{ tag.trim() }}
-                                            </span>
-                                        </div>
-                                        <div class="flex justify-between items-center text-sm text-gray-500">
+                                        <p style="color: var(--gray-700); margin-bottom: 12px;">{{ announcement.content }}</p>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--gray-500);">
                                             <span>Expires: {{ announcement.expires_at ? formatDateTime(announcement.expires_at) : 'Never' }}</span>
                                         </div>
                                     </div>
@@ -2558,6 +2749,7 @@
                                                 <th>Shift Time</th>
                                                 <th>Role</th>
                                                 <th>Contact</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -2568,6 +2760,23 @@
                                                     <span class="badge badge-primary">{{ schedule.role }}</span>
                                                 </td>
                                                 <td>{{ schedule.contact_number || 'N/A' }}</td>
+                                                <td>
+                                                    <div class="action-dropdown">
+                                                        <button class="btn btn-sm btn-secondary" @click="toggleActionMenu($event)" aria-label="Schedule actions">
+                                                            <i class="fas fa-ellipsis-v"></i>
+                                                        </button>
+                                                        <div class="action-menu">
+                                                            <div class="action-menu-item" @click="editOnCallSchedule(schedule)" v-if="hasPermission('oncall_schedule', 'update')">
+                                                                <i class="fas fa-edit"></i>
+                                                                <span>Edit</span>
+                                                            </div>
+                                                            <div class="action-menu-item danger" @click="deleteOnCallSchedule(schedule.id)" v-if="hasPermission('oncall_schedule', 'delete')">
+                                                                <i class="fas fa-trash"></i>
+                                                                <span>Delete</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -2603,6 +2812,15 @@
                                     <option value="attending_physician">Attending Physician</option>
                                     <option value="fellow">Fellow</option>
                                     <option value="nurse_practitioner">Nurse Practitioner</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Status</div>
+                                <select class="form-select form-select-sm" v-model="staffFilter.employment_status">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="on_leave">On Leave</option>
+                                    <option value="inactive">Inactive</option>
                                 </select>
                             </div>
                             <div class="filter-actions" style="display: flex; gap: 8px; margin-left: auto;">
@@ -2644,8 +2862,8 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="staff in filteredMedicalStaff" :key="staff.id" @click="viewStaffDetails(staff)" style="cursor: pointer;">
-                                            <td>
+                                        <tr v-for="staff in filteredMedicalStaff" :key="staff.id">
+                                            <td style="cursor: pointer;" @click="viewStaffDetails(staff)">
                                                 <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 12px;">
                                                     <div class="user-avatar" aria-hidden="true">{{ getInitials(staff.full_name) }}</div>
                                                     <div>
@@ -2662,7 +2880,7 @@
                                             <td>{{ staff.staff_id }}</td>
                                             <td>{{ getDepartmentName(staff.department_id) || 'Unassigned' }}</td>
                                             <td>
-                                                <span class="badge" :class="staff.employment_status === 'active' ? 'status-available' : 'status-busy'">
+                                                <span class="badge" :class="staff.employment_status === 'active' ? 'status-available' : staff.employment_status === 'on_leave' ? 'status-busy' : 'status-critical'">
                                                     {{ formatEmploymentStatus(staff.employment_status) }}
                                                 </span>
                                             </td>
@@ -2671,20 +2889,27 @@
                                                     <i class="fas fa-clock"></i> {{ formatTimeAgo(staff.last_activity) }}
                                                 </span>
                                             </td>
-                                            <td @click.stop>
-                                                <div class="action-dropdown" style="position: relative; display: inline-block;">
-                                                    <button class="btn btn-sm btn-secondary" aria-label="Staff actions">
+                                            <td>
+                                                <div class="action-dropdown">
+                                                    <button class="btn btn-sm btn-secondary" @click="toggleActionMenu($event)" aria-label="Staff actions">
                                                         <i class="fas fa-ellipsis-v"></i>
                                                     </button>
-                                                    <div class="action-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--gray-300); border-radius: var(--border-radius-md); box-shadow: var(--shadow-lg); min-width: 150px; z-index: 10;">
-                                                        <div class="action-menu-item" @click="viewStaffDetails(staff)" style="padding: 12px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background-color var(--transition-fast); font-size: 13px; color: var(--gray-700); min-height: 44px; border-bottom: 1px solid var(--gray-100);">
+                                                    <div class="action-menu">
+                                                        <div class="action-menu-item" @click="viewStaffDetails(staff)">
                                                             <i class="fas fa-eye"></i>
                                                             <span>View Profile</span>
                                                         </div>
-                                                        <div class="action-menu-item" @click="editMedicalStaff(staff)"
-                                                                v-if="hasPermission('medical_staff', 'update')" style="padding: 12px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background-color var(--transition-fast); font-size: 13px; color: var(--gray-700); min-height: 44px; border-bottom: 1px solid var(--gray-100);">
+                                                        <div class="action-menu-item" @click="editMedicalStaff(staff)" v-if="hasPermission('medical_staff', 'update')">
                                                             <i class="fas fa-edit"></i>
                                                             <span>Edit</span>
+                                                        </div>
+                                                        <div class="action-menu-item" @click="assignRotationToStaff(staff)" v-if="hasPermission('resident_rotations', 'create') && staff.staff_type === 'medical_resident'">
+                                                            <i class="fas fa-calendar-alt"></i>
+                                                            <span>Assign Rotation</span>
+                                                        </div>
+                                                        <div class="action-menu-item danger" @click="deleteMedicalStaff(staff.id)" v-if="hasPermission('medical_staff', 'delete')">
+                                                            <i class="fas fa-trash"></i>
+                                                            <span>Delete</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2736,7 +2961,7 @@
                                         <div class="text-sm font-medium mb-2">Associated Clinical Units:</div>
                                         <div class="flex flex-wrap gap-2">
                                             <span v-for="unit in getDepartmentUnits(department.id)" :key="unit.id" 
-                                                  class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">
+                                                  style="background: var(--medical-light-blue); color: var(--medical-blue); font-size: 12px; padding: 4px 12px; border-radius: 20px;">
                                                 {{ unit.name }}
                                             </span>
                                             <span v-if="getDepartmentUnits(department.id).length === 0" class="text-gray-500 text-sm">
@@ -2751,6 +2976,21 @@
                                             v-if="hasPermission('system', 'manage_departments')">
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
+                                    <div class="action-dropdown">
+                                        <button class="btn btn-sm btn-secondary" @click="toggleActionMenu($event)" aria-label="Department actions">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="action-menu">
+                                            <div class="action-menu-item" @click="viewDepartmentDetails(department)">
+                                                <i class="fas fa-eye"></i>
+                                                <span>View Details</span>
+                                            </div>
+                                            <div class="action-menu-item danger" @click="deleteDepartment(department.id)" v-if="hasPermission('system', 'manage_departments')">
+                                                <i class="fas fa-trash"></i>
+                                                <span>Delete</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2804,15 +3044,18 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <div class="action-dropdown" style="position: relative; display: inline-block;">
-                                                    <button class="btn btn-sm btn-secondary" aria-label="Unit actions">
+                                                <div class="action-dropdown">
+                                                    <button class="btn btn-sm btn-secondary" @click="toggleActionMenu($event)" aria-label="Unit actions">
                                                         <i class="fas fa-ellipsis-v"></i>
                                                     </button>
-                                                    <div class="action-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--gray-300); border-radius: var(--border-radius-md); box-shadow: var(--shadow-lg); min-width: 150px; z-index: 10;">
-                                                        <div class="action-menu-item" @click="editClinicalUnit(unit)"
-                                                                v-if="hasPermission('system', 'manage_departments')" style="padding: 12px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background-color var(--transition-fast); font-size: 13px; color: var(--gray-700); min-height: 44px; border-bottom: 1px solid var(--gray-100);">
+                                                    <div class="action-menu">
+                                                        <div class="action-menu-item" @click="editClinicalUnit(unit)" v-if="hasPermission('system', 'manage_departments')">
                                                             <i class="fas fa-edit"></i>
                                                             <span>Edit</span>
+                                                        </div>
+                                                        <div class="action-menu-item danger" @click="deleteClinicalUnit(unit.id)" v-if="hasPermission('system', 'manage_departments')">
+                                                            <i class="fas fa-trash"></i>
+                                                            <span>Delete</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2820,6 +3063,308 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Training Units View -->
+                    <div v-if="currentView === 'training_units'">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <div>
+                                <h2 class="section-title" style="font-size: 24px; font-weight: 600; color: var(--medical-dark-blue);">Training Units Management</h2>
+                                <p class="text-muted" style="color: var(--medical-gray);">Manage clinical training units and resident assignments</p>
+                            </div>
+                            <div class="flex gap-2" style="display: flex; gap: 8px;">
+                                <button class="btn btn-primary" @click="showAddTrainingUnitModal" v-if="hasPermission('training_units', 'create')">
+                                    <i class="fas fa-plus"></i> Add Training Unit
+                                </button>
+                                <button class="btn btn-success" @click="showBulkAssignModal" v-if="hasPermission('training_units', 'update')">
+                                    <i class="fas fa-users"></i> Bulk Assign
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Training Units Grid -->
+                        <div class="training-units-grid">
+                            <div v-for="unit in trainingUnits" :key="unit.id" class="training-unit-card">
+                                <div class="training-unit-header">
+                                    <div>
+                                        <div class="training-unit-title">{{ unit.name }}</div>
+                                        <div class="training-unit-capacity">{{ unit.current_residents }}/{{ unit.max_capacity }} residents</div>
+                                    </div>
+                                    <span class="badge" :class="unit.status === 'active' ? 'status-available' : 'status-busy'">
+                                        {{ unit.status }}
+                                    </span>
+                                </div>
+                                
+                                <div class="text-sm text-gray-600 mb-4">{{ unit.description || 'No description available' }}</div>
+                                
+                                <div class="training-unit-residents">
+                                    <div class="text-sm font-medium mb-2">Assigned Residents:</div>
+                                    <div v-if="getUnitResidents(unit.id).length === 0" class="text-sm text-gray-500 italic">
+                                        No residents assigned
+                                    </div>
+                                    <div v-else>
+                                        <div v-for="resident in getUnitResidents(unit.id)" :key="resident.id" class="resident-item">
+                                            <div>
+                                                <div class="resident-name">{{ resident.full_name }}</div>
+                                                <div class="resident-level">{{ formatTrainingLevel(resident.training_level) }}</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-danger" @click="removeResidentFromUnit(resident.id, unit.id)" v-if="hasPermission('training_units', 'update')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex gap-2 mt-4">
+                                    <button class="btn btn-sm btn-primary flex-1" @click="editTrainingUnit(unit)" v-if="hasPermission('training_units', 'update')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" @click="assignResidentToUnit(unit)" v-if="hasPermission('training_units', 'update')">
+                                        <i class="fas fa-user-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resident Rotations View -->
+                    <div v-if="currentView === 'resident_rotations'">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <div>
+                                <h2 class="section-title" style="font-size: 24px; font-weight: 600; color: var(--medical-dark-blue);">Resident Rotations</h2>
+                                <p class="text-muted" style="color: var(--medical-gray);">Manage resident rotations and assignments</p>
+                            </div>
+                            <button class="btn btn-primary" @click="showAddRotationModal" v-if="hasPermission('resident_rotations', 'create')">
+                                <i class="fas fa-plus"></i> Add Rotation
+                            </button>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="filter-bar" style="display: flex; gap: 12px; align-items: center; padding: 16px; background: white; border-radius: var(--border-radius-md); margin-bottom: 20px; flex-wrap: wrap; border: 1px solid var(--medical-light-blue);">
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Resident</div>
+                                <select class="form-select form-select-sm" v-model="rotationFilter.resident_id">
+                                    <option value="">All Residents</option>
+                                    <option v-for="resident in residents" :key="resident.id" :value="resident.id">
+                                        {{ resident.full_name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Status</div>
+                                <select class="form-select form-select-sm" v-model="rotationFilter.status">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="upcoming">Upcoming</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="filter-actions" style="display: flex; gap: 8px; margin-left: auto;">
+                                <button class="btn btn-sm btn-secondary" @click="resetRotationFilters">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                                <button class="btn btn-sm btn-primary" @click="applyRotationFilters">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Rotations Table -->
+                        <div class="card">
+                            <div v-if="loadingRotations" class="loading-overlay">
+                                <div class="loading-spinner"></div>
+                            </div>
+                            <div v-else-if="filteredRotations.length === 0" class="empty-state">
+                                <i class="fas fa-calendar-alt empty-state-icon"></i>
+                                <div class="empty-state-title">No Rotations Found</div>
+                                <div class="empty-state-description">
+                                    Try adjusting your filters or add new rotations to get started.
+                                </div>
+                                <button class="btn btn-primary mt-4" @click="showAddRotationModal" v-if="hasPermission('resident_rotations', 'create')">
+                                    <i class="fas fa-plus"></i> Add Rotation
+                                </button>
+                            </div>
+                            <div v-else class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Resident</th>
+                                            <th>Training Unit</th>
+                                            <th>Start Date</th>
+                                            <th>End Date</th>
+                                            <th>Status</th>
+                                            <th>Supervisor</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="rotation in filteredRotations" :key="rotation.id">
+                                            <td>{{ getResidentName(rotation.resident_id) }}</td>
+                                            <td>{{ getTrainingUnitName(rotation.training_unit_id) }}</td>
+                                            <td>{{ formatDate(rotation.start_date) }}</td>
+                                            <td>{{ formatDate(rotation.end_date) }}</td>
+                                            <td>
+                                                <span class="badge" :class="getRotationStatusClass(rotation.status)">
+                                                    {{ formatRotationStatus(rotation.status) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ getSupervisorName(rotation.supervisor_id) || 'Not assigned' }}</td>
+                                            <td>
+                                                <div class="action-dropdown">
+                                                    <button class="btn btn-sm btn-secondary" @click="toggleActionMenu($event)" aria-label="Rotation actions">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <div class="action-menu">
+                                                        <div class="action-menu-item" @click="viewRotationDetails(rotation)">
+                                                            <i class="fas fa-eye"></i>
+                                                            <span>View Details</span>
+                                                        </div>
+                                                        <div class="action-menu-item" @click="editRotation(rotation)" v-if="hasPermission('resident_rotations', 'update')">
+                                                            <i class="fas fa-edit"></i>
+                                                            <span>Edit</span>
+                                                        </div>
+                                                        <div class="action-menu-item danger" @click="deleteRotation(rotation.id)" v-if="hasPermission('resident_rotations', 'delete')">
+                                                            <i class="fas fa-trash"></i>
+                                                            <span>Delete</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Staff Absence View -->
+                    <div v-if="currentView === 'staff_absence'">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <div>
+                                <h2 class="section-title" style="font-size: 24px; font-weight: 600; color: var(--medical-dark-blue);">Staff Absence Management</h2>
+                                <p class="text-muted" style="color: var(--medical-gray);">Track and manage staff absences and coverage</p>
+                            </div>
+                            <button class="btn btn-primary" @click="showAddAbsenceModal" v-if="hasPermission('staff_absence', 'create')">
+                                <i class="fas fa-plus"></i> Document Absence
+                            </button>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="filter-bar" style="display: flex; gap: 12px; align-items: center; padding: 16px; background: white; border-radius: var(--border-radius-md); margin-bottom: 20px; flex-wrap: wrap; border: 1px solid var(--medical-light-blue);">
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Staff Member</div>
+                                <select class="form-select form-select-sm" v-model="absenceFilter.staff_id">
+                                    <option value="">All Staff</option>
+                                    <option v-for="staff in medicalStaff" :key="staff.id" :value="staff.id">
+                                        {{ staff.full_name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Status</div>
+                                <select class="form-select form-select-sm" v-model="absenceFilter.status">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="upcoming">Upcoming</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Date Range</div>
+                                <input type="date" class="form-control form-control-sm" v-model="absenceFilter.start_date">
+                            </div>
+                            <div class="filter-actions" style="display: flex; gap: 8px; margin-left: auto;">
+                                <button class="btn btn-sm btn-secondary" @click="resetAbsenceFilters">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                                <button class="btn btn-sm btn-primary" @click="applyAbsenceFilters">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Absence Calendar View -->
+                        <div class="card mb-6">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-calendar"></i>
+                                    Absence Calendar
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-sm btn-secondary" @click="showAbsenceCalendar('month')">Month</button>
+                                    <button class="btn btn-sm btn-secondary" @click="showAbsenceCalendar('week')">Week</button>
+                                    <button class="btn btn-sm btn-secondary" @click="showAbsenceCalendar('list')">List</button>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <div v-if="loadingAbsences" class="loading-overlay">
+                                    <div class="loading-spinner"></div>
+                                </div>
+                                <div v-else-if="filteredAbsences.length === 0" class="empty-state">
+                                    <i class="fas fa-calendar-times empty-state-icon"></i>
+                                    <div class="empty-state-title">No Absences Found</div>
+                                    <div class="empty-state-description">
+                                        No staff absences have been documented yet.
+                                    </div>
+                                </div>
+                                <div v-else class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Staff Member</th>
+                                                <th>Absence Reason</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Duration</th>
+                                                <th>Coverage</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="absence in filteredAbsences" :key="absence.id">
+                                                <td>{{ getStaffName(absence.staff_member_id) }}</td>
+                                                <td>{{ formatAbsenceReason(absence.absence_reason) }}</td>
+                                                <td>{{ formatDate(absence.start_date) }}</td>
+                                                <td>{{ formatDate(absence.end_date) }}</td>
+                                                <td>{{ calculateAbsenceDuration(absence.start_date, absence.end_date) }} days</td>
+                                                <td>{{ getStaffName(absence.replacement_staff_id) || 'No coverage' }}</td>
+                                                <td>
+                                                    <span class="badge" :class="getAbsenceStatusClass(absence.status)">
+                                                        {{ formatAbsenceStatus(absence.status) }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="action-dropdown">
+                                                        <button class="btn btn-sm btn-secondary" @click="toggleActionMenu($event)" aria-label="Absence actions">
+                                                            <i class="fas fa-ellipsis-v"></i>
+                                                        </button>
+                                                        <div class="action-menu">
+                                                            <div class="action-menu-item" @click="viewAbsenceDetails(absence)">
+                                                                <i class="fas fa-eye"></i>
+                                                                <span>View Details</span>
+                                                            </div>
+                                                            <div class="action-menu-item" @click="editAbsence(absence)" v-if="hasPermission('staff_absence', 'update')">
+                                                                <i class="fas fa-edit"></i>
+                                                                <span>Edit</span>
+                                                            </div>
+                                                            <div class="action-menu-item" @click="assignCoverage(absence)" v-if="hasPermission('staff_absence', 'update') && !absence.replacement_staff_id">
+                                                                <i class="fas fa-user-md"></i>
+                                                                <span>Assign Coverage</span>
+                                                            </div>
+                                                            <div class="action-menu-item danger" @click="deleteAbsence(absence.id)" v-if="hasPermission('staff_absence', 'delete')">
+                                                                <i class="fas fa-trash"></i>
+                                                                <span>Delete</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2848,14 +3393,14 @@
                                         </div>
                                     </div>
                                     <div class="activity-feed" style="background: white; border-radius: var(--border-radius-lg); padding: 24px;">
-                                        <div v-for="announcement in recentAnnouncements" :key="announcement.id" class="activity-item" style="display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--medical-light-blue);">
-                                            <div class="activity-icon" :class="`bg-${getPriorityColor(announcement.priority_level)}`" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; flex-shrink: 0;">
+                                        <div v-for="announcement in recentAnnouncements" :key="announcement.id" style="display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--medical-light-blue);">
+                                            <div :class="`bg-${getPriorityColor(announcement.priority_level)}`" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; flex-shrink: 0;">
                                                 <i class="fas fa-bullhorn"></i>
                                             </div>
-                                            <div class="activity-content" style="flex: 1;">
-                                                <div class="font-medium mb-1">{{ announcement.announcement_title }}</div>
-                                                <div class="activity-text" style="font-size: 14px; color: var(--gray-800); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ announcement.announcement_content }}</div>
-                                                <div class="activity-time" style="font-size: 12px; color: var(--gray-500);">
+                                            <div style="flex: 1;">
+                                                <div style="font-weight: 600; margin-bottom: 4px;">{{ announcement.announcement_title }}</div>
+                                                <div style="font-size: 14px; color: var(--gray-800); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ announcement.announcement_content }}</div>
+                                                <div style="font-size: 12px; color: var(--gray-500);">
                                                     {{ formatDateTime(announcement.publish_start_date) }} • 
                                                     <span class="badge badge-sm" :class="`badge-${getPriorityColor(announcement.priority_level)}`">
                                                         {{ announcement.priority_level }}
@@ -2911,6 +3456,259 @@
                                         <button class="btn btn-primary w-full mt-4" @click="updateCapacity" v-if="hasPermission('communications', 'update')">
                                             <i class="fas fa-save"></i> Update Capacity
                                         </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audit Logs View -->
+                    <div v-if="currentView === 'audit_logs'">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <div>
+                                <h2 class="section-title" style="font-size: 24px; font-weight: 600; color: var(--medical-dark-blue);">Audit Logs</h2>
+                                <p class="text-muted" style="color: var(--medical-gray);">System activity and user action tracking</p>
+                            </div>
+                            <button class="btn btn-primary" @click="exportAuditLogs" v-if="hasPermission('audit', 'export')">
+                                <i class="fas fa-download"></i> Export Logs
+                            </button>
+                        </div>
+
+                        <!-- Audit Filters -->
+                        <div class="audit-filters">
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Date Range</div>
+                                <input type="date" class="form-control form-control-sm" v-model="auditFilters.dateRange">
+                            </div>
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">Action Type</div>
+                                <select class="form-select form-select-sm" v-model="auditFilters.actionType">
+                                    <option value="">All Actions</option>
+                                    <option value="create">Create</option>
+                                    <option value="update">Update</option>
+                                    <option value="delete">Delete</option>
+                                    <option value="login">Login</option>
+                                    <option value="logout">Logout</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+                                <div class="filter-label" style="font-size: 12px; color: var(--medical-gray); font-weight: 500;">User</div>
+                                <select class="form-select form-select-sm" v-model="auditFilters.userId">
+                                    <option value="">All Users</option>
+                                    <option v-for="user in users" :key="user.id" :value="user.id">
+                                        {{ user.full_name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="filter-actions" style="display: flex; gap: 8px; align-items: flex-end;">
+                                <button class="btn btn-sm btn-secondary" @click="resetAuditFilters">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                                <button class="btn btn-sm btn-primary" @click="applyAuditFilters">
+                                    <i class="fas fa-filter"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Audit Logs List -->
+                        <div class="card">
+                            <div v-if="loadingAuditLogs" class="loading-overlay">
+                                <div class="loading-spinner"></div>
+                            </div>
+                            <div v-else-if="filteredAuditLogs.length === 0" class="empty-state">
+                                <i class="fas fa-history empty-state-icon"></i>
+                                <div class="empty-state-title">No Audit Logs Found</div>
+                                <div class="empty-state-description">
+                                    No audit logs match your filter criteria.
+                                </div>
+                            </div>
+                            <div v-else>
+                                <div v-for="log in filteredAuditLogs" :key="log.id" class="audit-log-item">
+                                    <div class="audit-action">{{ formatAuditAction(log.action) }}</div>
+                                    <div class="audit-details">
+                                        <span>User: {{ getUserName(log.user_id) }}</span>
+                                        <span>Module: {{ log.module }}</span>
+                                        <span>IP: {{ log.ip_address }}</span>
+                                    </div>
+                                    <div class="audit-timestamp">
+                                        <i class="fas fa-clock"></i> {{ formatDateTime(log.created_at) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Permission Manager View -->
+                    <div v-if="currentView === 'permission_manager'">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <div>
+                                <h2 class="section-title" style="font-size: 24px; font-weight: 600; color: var(--medical-dark-blue);">Permission Manager</h2>
+                                <p class="text-muted" style="color: var(--medical-gray);">Manage user permissions and access controls</p>
+                            </div>
+                            <button class="btn btn-primary" @click="showAddRoleModal" v-if="hasPermission('permissions', 'manage')">
+                                <i class="fas fa-plus"></i> Add Role
+                            </button>
+                        </div>
+
+                        <!-- Permission Grid -->
+                        <div class="permission-grid">
+                            <div v-for="role in userRoles" :key="role.id" class="permission-card">
+                                <div class="permission-header">
+                                    <div class="permission-role">{{ role.name }}</div>
+                                    <div class="flex gap-2">
+                                        <button class="btn btn-sm btn-primary" @click="editRole(role)" v-if="hasPermission('permissions', 'manage')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" @click="deleteRole(role.id)" v-if="hasPermission('permissions', 'manage') && role.name !== 'Administrator'">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="permission-checkboxes">
+                                    <div v-for="permission in availablePermissions" :key="permission.id" class="form-check">
+                                        <input type="checkbox" class="form-check-input" 
+                                               :checked="roleHasPermission(role.id, permission.id)"
+                                               @change="toggleRolePermission(role.id, permission.id)"
+                                               :id="`role-${role.id}-permission-${permission.id}`">
+                                        <label class="form-check-label" :for="`role-${role.id}-permission-${permission.id}`">
+                                            {{ formatPermissionName(permission.name) }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Permissions Table -->
+                        <div class="card mt-6">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-users"></i>
+                                    User Permissions
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Role</th>
+                                            <th>Permissions</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="user in users" :key="user.id">
+                                            <td>{{ user.full_name }}</td>
+                                            <td>{{ user.user_role }}</td>
+                                            <td>
+                                                <span class="badge badge-sm" v-for="permission in getUserPermissions(user.id)" :key="permission">
+                                                    {{ permission }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary" @click="editUserPermissions(user)" v-if="hasPermission('permissions', 'manage')">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Settings View -->
+                    <div v-if="currentView === 'system_settings'">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <div>
+                                <h2 class="section-title" style="font-size: 24px; font-weight: 600; color: var(--medical-dark-blue);">System Settings</h2>
+                                <p class="text-muted" style="color: var(--medical-gray);">Configure system preferences and behavior</p>
+                            </div>
+                            <button class="btn btn-primary" @click="saveSystemSettings">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="modal-section">
+                                    <div class="modal-section-title">
+                                        <i class="fas fa-hospital"></i>
+                                        Hospital Information
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label">Hospital Name</label>
+                                            <input type="text" class="form-control" v-model="systemSettings.hospital_name">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Default Department</label>
+                                            <select class="form-select" v-model="systemSettings.default_department_id">
+                                                <option value="">Select Default Department</option>
+                                                <option v-for="department in departments" :key="department.id" :value="department.id">
+                                                    {{ department.name }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Max Residents per Training Unit</label>
+                                            <input type="number" class="form-control" v-model="systemSettings.max_residents_per_unit" min="1" max="50">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Default Rotation Duration (weeks)</label>
+                                            <input type="number" class="form-control" v-model="systemSettings.default_rotation_duration" min="1" max="52">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="modal-section">
+                                    <div class="modal-section-title">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Security Settings
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check">
+                                            <input type="checkbox" class="form-check-input" v-model="systemSettings.enable_audit_logging">
+                                            <span class="form-check-label">Enable Audit Logging</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check">
+                                            <input type="checkbox" class="form-check-input" v-model="systemSettings.require_mfa">
+                                            <span class="form-check-label">Require MFA Authentication</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check">
+                                            <input type="checkbox" class="form-check-input" v-model="systemSettings.maintenance_mode">
+                                            <span class="form-check-label">Maintenance Mode</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="modal-section">
+                                    <div class="modal-section-title">
+                                        <i class="fas fa-bell"></i>
+                                        Notification Settings
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check">
+                                            <input type="checkbox" class="form-check-input" v-model="systemSettings.notifications_enabled">
+                                            <span class="form-check-label">Enable Email Notifications</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check">
+                                            <input type="checkbox" class="form-check-input" v-model="systemSettings.absence_notifications">
+                                            <span class="form-check-label">Staff Absence Notifications</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-check">
+                                            <input type="checkbox" class="form-check-input" v-model="systemSettings.announcement_notifications">
+                                            <span class="form-check-label">Announcement Notifications</span>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -2977,6 +3775,10 @@
                         <button class="modal-tab" :class="{ active: staffDetailsModal.activeTab === 'contact' }" 
                                 @click="staffDetailsModal.activeTab = 'contact'" role="tab" aria-selected="staffDetailsModal.activeTab === 'contact'">
                             <i class="fas fa-address-book"></i> Contact & Schedule
+                        </button>
+                        <button class="modal-tab" :class="{ active: staffDetailsModal.activeTab === 'history' }" 
+                                @click="staffDetailsModal.activeTab = 'history'" role="tab" aria-selected="staffDetailsModal.activeTab === 'history'">
+                            <i class="fas fa-history"></i> Activity History
                         </button>
                     </div>
 
@@ -3095,6 +3897,35 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Activity History Tab -->
+                    <div v-if="staffDetailsModal.activeTab === 'history'" class="modal-tab-content active" role="tabpanel">
+                        <div class="info-section">
+                            <div class="info-section-title">
+                                <i class="fas fa-history"></i>
+                                Activity History
+                            </div>
+                            <div v-if="staffDetailsModal.activityHistory.length === 0" class="empty-state">
+                                <i class="fas fa-history empty-state-icon"></i>
+                                <div class="empty-state-title">No Activity History</div>
+                                <div class="empty-state-description">
+                                    No activity history found for this staff member.
+                                </div>
+                            </div>
+                            <div v-else>
+                                <div v-for="activity in staffDetailsModal.activityHistory" :key="activity.id" class="audit-log-item">
+                                    <div class="audit-action">{{ formatAuditAction(activity.action) }}</div>
+                                    <div class="audit-details">
+                                        <span>Module: {{ activity.module }}</span>
+                                        <span>Details: {{ activity.details }}</span>
+                                    </div>
+                                    <div class="audit-timestamp">
+                                        <i class="fas fa-clock"></i> {{ formatDateTime(activity.created_at) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @click="staffDetailsModal.show = false">Close</button>
@@ -3108,7 +3939,7 @@
 
         <!-- Add/Edit Medical Staff Modal -->
         <div v-if="medicalStaffModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="medical-staff-title">
-            <div class="modal-container">
+            <div class="modal-container modal-wide">
                 <div class="modal-header">
                     <div class="modal-title" id="medical-staff-title">
                         <i class="fas fa-user-md"></i>
@@ -3119,112 +3950,148 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-id-card"></i>
-                            Basic Information
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Full Name *</label>
-                                <input type="text" class="form-control" v-model="medicalStaffModal.form.full_name" aria-required="true">
+                    <div class="modal-tabs" role="tablist">
+                        <button class="modal-tab" :class="{ active: medicalStaffModal.activeTab === 'basic' }" 
+                                @click="medicalStaffModal.activeTab = 'basic'" role="tab" aria-selected="medicalStaffModal.activeTab === 'basic'">
+                            <i class="fas fa-user"></i> Basic Information
+                        </button>
+                        <button class="modal-tab" :class="{ active: medicalStaffModal.activeTab === 'professional' }" 
+                                @click="medicalStaffModal.activeTab = 'professional'" role="tab" aria-selected="medicalStaffModal.activeTab === 'professional'">
+                            <i class="fas fa-graduation-cap"></i> Professional Details
+                        </button>
+                        <button class="modal-tab" :class="{ active: medicalStaffModal.activeTab === 'contact' }" 
+                                @click="medicalStaffModal.activeTab = 'contact'" role="tab" aria-selected="medicalStaffModal.activeTab === 'contact'">
+                            <i class="fas fa-address-book"></i> Contact Information
+                        </button>
+                    </div>
+
+                    <!-- Basic Information Tab -->
+                    <div v-if="medicalStaffModal.activeTab === 'basic'" class="modal-tab-content active" role="tabpanel">
+                        <div class="modal-section">
+                            <div class="modal-section-title">
+                                <i class="fas fa-id-card"></i>
+                                Basic Information
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Staff Type *</label>
-                                <select class="form-select" v-model="medicalStaffModal.form.staff_type" aria-required="true">
-                                    <option value="medical_resident">Medical Resident</option>
-                                    <option value="attending_physician">Attending Physician</option>
-                                    <option value="fellow">Fellow</option>
-                                    <option value="nurse_practitioner">Nurse Practitioner</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Staff ID</label>
-                                <input type="text" class="form-control" v-model="medicalStaffModal.form.staff_id">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Employment Status</label>
-                                <select class="form-select" v-model="medicalStaffModal.form.employment_status">
-                                    <option value="active">Active</option>
-                                    <option value="on_leave">On Leave</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" v-model="medicalStaffModal.form.full_name" aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Staff Type *</label>
+                                    <select class="form-select" v-model="medicalStaffModal.form.staff_type" aria-required="true">
+                                        <option value="medical_resident">Medical Resident</option>
+                                        <option value="attending_physician">Attending Physician</option>
+                                        <option value="fellow">Fellow</option>
+                                        <option value="nurse_practitioner">Nurse Practitioner</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Staff ID</label>
+                                    <input type="text" class="form-control" v-model="medicalStaffModal.form.staff_id">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Employment Status</label>
+                                    <select class="form-select" v-model="medicalStaffModal.form.employment_status">
+                                        <option value="active">Active</option>
+                                        <option value="on_leave">On Leave</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="modal-section">
-                        <div class="modal-section-title">
-                            <i class="fas fa-envelope"></i>
-                            Contact Information
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Professional Email *</label>
-                                <input type="email" class="form-control" v-model="medicalStaffModal.form.professional_email" aria-required="true">
+
+                    <!-- Professional Details Tab -->
+                    <div v-if="medicalStaffModal.activeTab === 'professional'" class="modal-tab-content active" role="tabpanel">
+                        <div class="modal-section">
+                            <div class="modal-section-title">
+                                <i class="fas fa-graduation-cap"></i>
+                                Professional Details
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Department</label>
-                                <select class="form-select" v-model="medicalStaffModal.form.department_id">
-                                    <option value="">Select Department</option>
-                                    <option v-for="department in departments" :key="department.id" :value="department.id">
-                                        {{ department.name }}
-                                    </option>
-                                </select>
+                            
+                            <div v-if="medicalStaffModal.form.staff_type === 'medical_resident'">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="form-group">
+                                        <label class="form-label">Resident Category</label>
+                                        <select class="form-select" v-model="medicalStaffModal.form.resident_category">
+                                            <option value="">Select Category</option>
+                                            <option value="department_internal">Department Internal</option>
+                                            <option value="rotating_other_dept">Rotating Other Dept</option>
+                                            <option value="external_institution">External Institution</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Training Level</label>
+                                        <select class="form-select" v-model="medicalStaffModal.form.training_level">
+                                            <option value="">Select Level</option>
+                                            <option value="pgy1">PGY-1</option>
+                                            <option value="pgy2">PGY-2</option>
+                                            <option value="pgy3">PGY-3</option>
+                                            <option value="pgy4">PGY-4</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Office Phone</label>
-                                <input type="tel" class="form-control" v-model="medicalStaffModal.form.office_phone">
+                            
+                            <div v-if="medicalStaffModal.form.staff_type === 'attending_physician'">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="form-group">
+                                        <label class="form-label">Specialization</label>
+                                        <input type="text" class="form-control" v-model="medicalStaffModal.form.specialization">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Years of Experience</label>
+                                        <input type="number" class="form-control" v-model="medicalStaffModal.form.years_experience" min="0" max="50">
+                                    </div>
+                                </div>
                             </div>
+                            
                             <div class="form-group">
-                                <label class="form-label">Mobile Phone</label>
-                                <input type="tel" class="form-control" v-model="medicalStaffModal.form.mobile_phone">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="modal-section" v-if="medicalStaffModal.form.staff_type === 'medical_resident'">
-                        <div class="modal-section-title">
-                            <i class="fas fa-graduation-cap"></i>
-                            Resident Details
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Resident Category</label>
-                                <select class="form-select" v-model="medicalStaffModal.form.resident_category">
-                                    <option value="">Select Category</option>
-                                    <option value="department_internal">Department Internal</option>
-                                    <option value="rotating_other_dept">Rotating Other Dept</option>
-                                    <option value="external_institution">External Institution</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Training Level</label>
-                                <select class="form-select" v-model="medicalStaffModal.form.training_level">
-                                    <option value="">Select Level</option>
-                                    <option value="pgy1">PGY-1</option>
-                                    <option value="pgy2">PGY-2</option>
-                                    <option value="pgy3">PGY-3</option>
-                                    <option value="pgy4">PGY-4</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                <label class="form-label">Biography</label>
+                                <textarea class="form-control" v-model="medicalStaffModal.form.biography" rows="4"></textarea>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="modal-section" v-if="medicalStaffModal.form.staff_type === 'attending_physician'">
-                        <div class="modal-section-title">
-                            <i class="fas fa-stethoscope"></i>
-                            Attending Details
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Specialization</label>
-                                <input type="text" class="form-control" v-model="medicalStaffModal.form.specialization">
+
+                    <!-- Contact Information Tab -->
+                    <div v-if="medicalStaffModal.activeTab === 'contact'" class="modal-tab-content active" role="tabpanel">
+                        <div class="modal-section">
+                            <div class="modal-section-title">
+                                <i class="fas fa-envelope"></i>
+                                Contact Information
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Years of Experience</label>
-                                <input type="number" class="form-control" v-model="medicalStaffModal.form.years_experience" min="0" max="50">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label class="form-label">Professional Email *</label>
+                                    <input type="email" class="form-control" v-model="medicalStaffModal.form.professional_email" aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Department</label>
+                                    <select class="form-select" v-model="medicalStaffModal.form.department_id">
+                                        <option value="">Select Department</option>
+                                        <option v-for="department in departments" :key="department.id" :value="department.id">
+                                            {{ department.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Office Phone</label>
+                                    <input type="tel" class="form-control" v-model="medicalStaffModal.form.office_phone">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Mobile Phone</label>
+                                    <input type="tel" class="form-control" v-model="medicalStaffModal.form.mobile_phone">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Medical License Number</label>
+                                    <input type="text" class="form-control" v-model="medicalStaffModal.form.medical_license">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date of Birth</label>
+                                    <input type="date" class="form-control" v-model="medicalStaffModal.form.date_of_birth">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3272,6 +4139,15 @@
                                     <option value="active">Active</option>
                                     <option value="inactive">Inactive</option>
                                     <option value="archived">Archived</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Head of Department</label>
+                                <select class="form-select" v-model="departmentModal.form.head_of_department_id">
+                                    <option value="">Select Head</option>
+                                    <option v-for="staff in availableHeadsOfDepartment" :key="staff.id" :value="staff.id">
+                                        {{ staff.full_name }}
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -3343,6 +4219,15 @@
                                     <option value="maintenance">Maintenance</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label class="form-label">Supervisor</label>
+                                <select class="form-select" v-model="clinicalUnitModal.form.supervisor_id">
+                                    <option value="">Select Supervisor</option>
+                                    <option v-for="staff in availableSupervisors" :key="staff.id" :value="staff.id">
+                                        {{ staff.full_name }}
+                                    </option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Description</label>
@@ -3355,6 +4240,162 @@
                     <button class="btn btn-primary" @click="saveClinicalUnit" :disabled="saving">
                         <span v-if="saving" class="loading"></span>
                         <span v-else>{{ clinicalUnitModal.mode === 'add' ? 'Add Clinical Unit' : 'Save Changes' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Training Unit Modal -->
+        <div v-if="trainingUnitModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="training-unit-title">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title" id="training-unit-title">
+                        <i class="fas fa-clinic-medical"></i>
+                        {{ trainingUnitModal.mode === 'add' ? 'Add Training Unit' : 'Edit Training Unit' }}
+                    </div>
+                    <button class="modal-close" @click="trainingUnitModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Training Unit Information
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Unit Name *</label>
+                                <input type="text" class="form-control" v-model="trainingUnitModal.form.name" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department *</label>
+                                <select class="form-select" v-model="trainingUnitModal.form.department_id" aria-required="true">
+                                    <option value="">Select Department</option>
+                                    <option v-for="department in departments" :key="department.id" :value="department.id">
+                                        {{ department.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Supervisor</label>
+                                <select class="form-select" v-model="trainingUnitModal.form.supervisor_id">
+                                    <option value="">Select Supervisor</option>
+                                    <option v-for="staff in availableAttendings" :key="staff.id" :value="staff.id">
+                                        {{ staff.full_name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Max Capacity</label>
+                                <input type="number" class="form-control" v-model="trainingUnitModal.form.max_capacity" min="1" max="50">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" v-model="trainingUnitModal.form.status">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="maintenance">Maintenance</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" v-model="trainingUnitModal.form.description" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="trainingUnitModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveTrainingUnit" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>{{ trainingUnitModal.mode === 'add' ? 'Add Training Unit' : 'Save Changes' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Rotation Modal -->
+        <div v-if="rotationModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rotation-title">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title" id="rotation-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ rotationModal.mode === 'add' ? 'Add Rotation' : 'Edit Rotation' }}
+                    </div>
+                    <button class="modal-close" @click="rotationModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-user-graduate"></i>
+                            Rotation Details
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Resident *</label>
+                                <select class="form-select" v-model="rotationModal.form.resident_id" aria-required="true">
+                                    <option value="">Select Resident</option>
+                                    <option v-for="resident in availableResidents" :key="resident.id" :value="resident.id">
+                                        {{ resident.full_name }} ({{ formatTrainingLevel(resident.training_level) }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Training Unit *</label>
+                                <select class="form-select" v-model="rotationModal.form.training_unit_id" aria-required="true">
+                                    <option value="">Select Unit</option>
+                                    <option v-for="unit in availableTrainingUnits" :key="unit.id" :value="unit.id">
+                                        {{ unit.name }} ({{ unit.current_residents }}/{{ unit.max_capacity }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" v-model="rotationModal.form.start_date" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">End Date *</label>
+                                <input type="date" class="form-control" v-model="rotationModal.form.end_date" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Supervisor</label>
+                                <select class="form-select" v-model="rotationModal.form.supervisor_id">
+                                    <option value="">Select Supervisor</option>
+                                    <option v-for="supervisor in availableSupervisors" :key="supervisor.id" :value="supervisor.id">
+                                        {{ supervisor.full_name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" v-model="rotationModal.form.status">
+                                    <option value="active">Active</option>
+                                    <option value="upcoming">Upcoming</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Rotation Goals</label>
+                            <textarea class="form-control" v-model="rotationModal.form.goals" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" v-model="rotationModal.form.notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="rotationModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveRotation" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>{{ rotationModal.mode === 'add' ? 'Add Rotation' : 'Save Changes' }}</span>
                     </button>
                 </div>
             </div>
@@ -3534,6 +4575,158 @@
                     <button class="btn btn-primary" @click="saveAbsence" :disabled="saving">
                         <span v-if="saving" class="loading"></span>
                         <span v-else>{{ absenceModal.mode === 'add' ? 'Document Absence' : 'Save Changes' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Placement Modal -->
+        <div v-if="quickPlacementModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quick-placement-title">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title" id="quick-placement-title">
+                        <i class="fas fa-user-md"></i>
+                        Quick Resident Placement
+                    </div>
+                    <button class="modal-close" @click="quickPlacementModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-user-graduate"></i>
+                            Select Resident
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Resident *</label>
+                            <select class="form-select" v-model="quickPlacementModal.resident_id" aria-required="true">
+                                <option value="">Select Resident</option>
+                                <option v-for="resident in availableResidents" :key="resident.id" :value="resident.id">
+                                    {{ resident.full_name }} ({{ resident.training_level }})
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-clinic-medical"></i>
+                            Placement Details
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Training Unit *</label>
+                                <select class="form-select" v-model="quickPlacementModal.training_unit_id" aria-required="true">
+                                    <option value="">Select Unit</option>
+                                    <option v-for="unit in availableTrainingUnits" :key="unit.id" :value="unit.id">
+                                        {{ unit.name }} ({{ unit.current_residents }}/{{ unit.max_capacity }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" v-model="quickPlacementModal.start_date" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Duration (weeks)</label>
+                                <input type="number" class="form-control" v-model="quickPlacementModal.duration" min="1" max="52" value="4">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Supervisor</label>
+                                <select class="form-select" v-model="quickPlacementModal.supervisor_id">
+                                    <option value="">Select Supervisor</option>
+                                    <option v-for="supervisor in availableSupervisors" :key="supervisor.id" :value="supervisor.id">
+                                        {{ supervisor.full_name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" v-model="quickPlacementModal.notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="quickPlacementModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveQuickPlacement" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else><i class="fas fa-check"></i> Place Resident</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Assign Modal -->
+        <div v-if="bulkAssignModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bulk-assign-title">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <div class="modal-title" id="bulk-assign-title">
+                        <i class="fas fa-users"></i>
+                        Bulk Resident Assignment
+                    </div>
+                    <button class="modal-close" @click="bulkAssignModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-user-graduate"></i>
+                            Select Residents
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Available Residents</label>
+                            <select class="form-select" v-model="bulkAssignModal.selectedResidents" multiple style="height: 200px;">
+                                <option v-for="resident in availableResidents" :key="resident.id" :value="resident.id">
+                                    {{ resident.full_name }} ({{ resident.training_level }})
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <div class="modal-section-title">
+                            <i class="fas fa-clinic-medical"></i>
+                            Assignment Details
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="form-label">Training Unit *</label>
+                                <select class="form-select" v-model="bulkAssignModal.training_unit_id" aria-required="true">
+                                    <option value="">Select Unit</option>
+                                    <option v-for="unit in availableTrainingUnits" :key="unit.id" :value="unit.id">
+                                        {{ unit.name }} ({{ unit.current_residents }}/{{ unit.max_capacity }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" v-model="bulkAssignModal.start_date" aria-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Duration (weeks)</label>
+                                <input type="number" class="form-control" v-model="bulkAssignModal.duration" min="1" max="52" value="4">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Supervisor</label>
+                                <select class="form-select" v-model="bulkAssignModal.supervisor_id">
+                                    <option value="">Select Supervisor</option>
+                                    <option v-for="supervisor in availableSupervisors" :key="supervisor.id" :value="supervisor.id">
+                                        {{ supervisor.full_name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="bulkAssignModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveBulkAssignment" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else><i class="fas fa-users"></i> Assign Residents</span>
                     </button>
                 </div>
             </div>
@@ -3733,78 +4926,57 @@
             </div>
         </div>
 
-        <!-- System Settings Modal -->
-        <div v-if="systemSettingsModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="system-settings-title">
+        <!-- Permission Role Modal -->
+        <div v-if="roleModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="role-title">
             <div class="modal-container">
                 <div class="modal-header">
-                    <div class="modal-title" id="system-settings-title">
-                        <i class="fas fa-cog"></i> System Settings
+                    <div class="modal-title" id="role-title">
+                        <i class="fas fa-user-shield"></i>
+                        {{ roleModal.mode === 'add' ? 'Add Role' : 'Edit Role' }}
                     </div>
-                    <button class="modal-close" @click="systemSettingsModal.show = false" aria-label="Close modal">
+                    <button class="modal-close" @click="roleModal.show = false" aria-label="Close modal">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="modal-section">
                         <div class="modal-section-title">
-                            <i class="fas fa-hospital"></i>
-                            Hospital Information
+                            <i class="fas fa-info-circle"></i>
+                            Role Information
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label class="form-label">Hospital Name</label>
-                                <input type="text" class="form-control" v-model="systemSettingsModal.form.hospital_name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Default Department</label>
-                                <select class="form-select" v-model="systemSettingsModal.form.default_department_id">
-                                    <option value="">Select Default Department</option>
-                                    <option v-for="department in departments" :key="department.id" :value="department.id">
-                                        {{ department.name }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Max Residents per Training Unit</label>
-                                <input type="number" class="form-control" v-model="systemSettingsModal.form.max_residents_per_unit" min="1" max="50">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Default Rotation Duration (weeks)</label>
-                                <input type="number" class="form-control" v-model="systemSettingsModal.form.default_rotation_duration" min="1" max="52">
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">Role Name *</label>
+                            <input type="text" class="form-control" v-model="roleModal.form.name" aria-required="true">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" v-model="roleModal.form.description" rows="3"></textarea>
                         </div>
                     </div>
                     
                     <div class="modal-section">
                         <div class="modal-section-title">
                             <i class="fas fa-shield-alt"></i>
-                            Security Settings
+                            Permissions
                         </div>
-                        <div class="form-group">
-                            <label class="form-check">
-                                <input type="checkbox" class="form-check-input" v-model="systemSettingsModal.form.enable_audit_logging">
-                                <span class="form-check-label">Enable Audit Logging</span>
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-check">
-                                <input type="checkbox" class="form-check-input" v-model="systemSettingsModal.form.require_mfa">
-                                <span class="form-check-label">Require MFA Authentication</span>
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-check">
-                                <input type="checkbox" class="form-check-input" v-model="systemSettingsModal.form.maintenance_mode">
-                                <span class="form-check-label">Maintenance Mode</span>
-                            </label>
+                        <div class="permission-checkboxes">
+                            <div v-for="permission in availablePermissions" :key="permission.id" class="form-check">
+                                <input type="checkbox" class="form-check-input" 
+                                       v-model="roleModal.form.permissions"
+                                       :value="permission.id"
+                                       :id="`permission-${permission.id}`">
+                                <label class="form-check-label" :for="`permission-${permission.id}`">
+                                    {{ formatPermissionName(permission.name) }}
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="systemSettingsModal.show = false">Cancel</button>
-                    <button class="btn btn-primary" @click="saveSystemSettings" :disabled="saving">
+                    <button class="btn btn-secondary" @click="roleModal.show = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveRole" :disabled="saving">
                         <span v-if="saving" class="loading"></span>
-                        <span v-else>Save Settings</span>
+                        <span v-else>{{ roleModal.mode === 'add' ? 'Add Role' : 'Save Changes' }}</span>
                     </button>
                 </div>
             </div>
@@ -3886,19 +5058,116 @@
                 </div>
             </div>
         </div>
+
+        <!-- Confirmation Modal -->
+        <div v-if="confirmationModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
+            <div class="modal-container" style="max-width: 500px;">
+                <div class="modal-header">
+                    <div class="modal-title" id="confirmation-title">
+                        <i class="fas" :class="confirmationModal.icon"></i>
+                        {{ confirmationModal.title }}
+                    </div>
+                    <button class="modal-close" @click="confirmationModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p style="text-align: center; margin: 20px 0; font-size: 16px; color: var(--gray-700);">
+                        {{ confirmationModal.message }}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="confirmationModal.show = false">Cancel</button>
+                    <button class="btn" :class="confirmationModal.confirmButtonClass" @click="confirmAction" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>{{ confirmationModal.confirmButtonText }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>        <!-- Confirmation Modal -->
+        <div v-if="confirmationModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
+            <div class="modal-container" style="max-width: 500px;">
+                <div class="modal-header">
+                    <div class="modal-title" id="confirmation-title">
+                        <i class="fas" :class="confirmationModal.icon"></i>
+                        {{ confirmationModal.title }}
+                    </div>
+                    <button class="modal-close" @click="confirmationModal.show = false" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p style="text-align: center; margin: 20px 0; font-size: 16px; color: var(--gray-700);">
+                        {{ confirmationModal.message }}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="confirmationModal.show = false">Cancel</button>
+                    <button class="btn" :class="confirmationModal.confirmButtonClass" @click="confirmAction" :disabled="saving">
+                        <span v-if="saving" class="loading"></span>
+                        <span v-else>{{ confirmationModal.confirmButtonText }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Safety check -->
+    <!-- Vue.js Application Logic -->
+    <script src="app.js"></script>
+
     <script>
-        // Safety check - make sure dependencies are loaded
+        // Close action menus when clicking outside
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof Vue === 'undefined') {
-                console.error('Vue.js failed to load!');
-                alert('Vue.js failed to load. Please refresh the page.');
-            }
-            if (typeof supabase === 'undefined') {
-                console.warn('Supabase not loaded - using mock data');
-            }
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.action-dropdown')) {
+                    document.querySelectorAll('.action-menu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
+                if (!event.target.closest('.user-menu')) {
+                    document.querySelectorAll('.user-menu .action-menu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
+            });
+
+            // Action menu toggle functionality
+            document.addEventListener('click', function(event) {
+                if (event.target.closest('.action-dropdown button')) {
+                    const dropdown = event.target.closest('.action-dropdown');
+                    const menu = dropdown.querySelector('.action-menu');
+                    const isVisible = menu.style.display === 'block';
+                    
+                    // Hide all other menus
+                    document.querySelectorAll('.action-menu').forEach(otherMenu => {
+                        if (otherMenu !== menu) {
+                            otherMenu.style.display = 'none';
+                        }
+                    });
+                    
+                    // Toggle current menu
+                    menu.style.display = isVisible ? 'none' : 'block';
+                }
+            });
+
+            // User menu toggle functionality
+            document.addEventListener('click', function(event) {
+                if (event.target.closest('.user-menu-toggle')) {
+                    const menu = event.target.closest('.user-menu').querySelector('.action-menu');
+                    const isVisible = menu.style.display === 'block';
+                    
+                    // Hide all other menus
+                    document.querySelectorAll('.user-menu .action-menu').forEach(otherMenu => {
+                        if (otherMenu !== menu) {
+                            otherMenu.style.display = 'none';
+                        }
+                    });
+                    
+                    // Toggle current menu
+                    menu.style.display = isVisible ? 'none' : 'block';
+                }
+            });
         });
     </script>
 </body>
