@@ -11,7 +11,8 @@ window.addEventListener('load', function() {
     console.log('Vue loaded successfully:', Vue.version);
     
     // Get Vue functions
-    const { createApp, ref, computed, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+
     
     // Check and set up Supabase
     if (typeof window.supabase === 'undefined') {
