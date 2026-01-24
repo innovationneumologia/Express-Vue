@@ -66,23 +66,20 @@ window.addEventListener('load', async function() {
     
     // ============ DATABASE TABLE DEFINITIONS ============
     // These match your Supabase database structure
-    const TABLE_NAMES = {
-        USERS: 'users',
-        MEDICAL_STAFF: 'medical_staff',
-        DEPARTMENTS: 'departments',
-        CLINICAL_UNITS: 'clinical_units',
-        TRAINING_UNITS: 'training_units',
-        RESIDENT_ROTATIONS: 'resident_rotations',
-        STAFF_ABSENCES: 'staff_absences',
-        ONCALL_SCHEDULE: 'oncall_schedule',
-        ANNOUNCEMENTS: 'announcements',
-        AUDIT_LOGS: 'audit_logs',
-        SYSTEM_SETTINGS: 'system_settings',
-        NOTIFICATIONS: 'notifications',
-        PERMISSIONS: 'permissions',
-        USER_ROLES: 'user_roles'
-    };
-    
+ const TABLE_NAMES = {
+    USERS: 'app_users',  // Changed from 'users'
+    MEDICAL_STAFF: 'medical_staff',
+    TRAINING_UNITS: 'training_units',
+    RESIDENT_ROTATIONS: 'resident_rotations',
+    STAFF_ABSENCES: 'leave_requests',  // Using leave_requests table
+    ONCALL_SCHEDULE: 'oncall_schedule',
+    ANNOUNCEMENTS: 'department_announcements',  // Changed from 'announcements'
+    AUDIT_LOGS: 'audit_logs',
+    SYSTEM_SETTINGS: 'system_settings',  // This table doesn't exist yet
+    NOTIFICATIONS: 'notifications',  // This table doesn't exist yet
+    DEPARTMENTS: 'departments',  // This table doesn't exist yet
+    CLINICAL_UNITS: 'clinical_units'  // This table doesn't exist yet
+};
     // ============ DATABASE INITIALIZATION ============
     async function initializeDatabase() {
         console.log('Initializing database...');
@@ -960,114 +957,135 @@ window.addEventListener('load', async function() {
                     loading.value = false;
                 }
             };
-
             const loadMedicalStaff = async () => {
-                loadingStaff.value = true;
-                try {
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.MEDICAL_STAFF)
-                        .select('*')
-                        .order('full_name');
-                    
-                    if (error) throw error;
-                    
-                    medicalStaff.value = data || [];
-                    
-                    // Update live stats
-                    liveStats.value.onDutyStaff = medicalStaff.value.filter(s => 
-                        s.employment_status === 'active').length;
-                    
-                } catch (error) {
-                    console.error('Error loading medical staff:', error);
-                    showToast('Error', 'Failed to load medical staff', 'error');
-                } finally {
-                    loadingStaff.value = false;
-                }
-            };
+    loadingStaff.value = true;
+    try {
+        const { data, error } = await supabaseClient
+            .from(TABLE_NAMES.MEDICAL_STAFF)
+            .select(`
+                *,
+                department_id,
+                specialization,
+                years_experience,
+                biography,
+                date_of_birth,
+                mobile_phone
+            `)
+            .order('full_name');
+        
+        if (error) throw error;
+        
+        medicalStaff.value = data || [];
+        
+    } catch (error) {
+        console.error('Error loading medical staff:', error);
+        showToast('Error', 'Failed to load medical staff', 'error');
+    } finally {
+        loadingStaff.value = false;
+    }
+};
 
-            const loadDepartments = async () => {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.DEPARTMENTS)
-                        .select('*')
-                        .order('name');
-                    
-                    if (error) throw error;
-                    departments.value = data || [];
-                } catch (error) {
-                    console.error('Error loading departments:', error);
-                }
-            };
+const loadDepartments = async () => {
+    try {
+        const { data, error } = await supabaseClient
+            .from(TABLE_NAMES.DEPARTMENTS)
+            .select('*')
+            .order('name');
+        
+        if (error) {
+            // If departments table doesn't exist yet, use empty array
+            console.log('Departments table not found, using empty array');
+            departments.value = [];
+            return;
+        }
+        
+        departments.value = data || [];
+    } catch (error) {
+        console.error('Error loading departments:', error);
+        departments.value = [];
+    }
+};
 
-            const loadClinicalUnits = async () => {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.CLINICAL_UNITS)
-                        .select('*')
-                        .order('name');
-                    
-                    if (error) throw error;
-                    clinicalUnits.value = data || [];
-                } catch (error) {
-                    console.error('Error loading clinical units:', error);
-                }
-            };
+const loadTrainingUnits = async () => {
+    try {
+        const { data, error } = await supabaseClient
+            .from(TABLE_NAMES.TRAINING_UNITS)
+            .select(`
+                *,
+                department_id,
+                supervisor_id,
+                max_capacity,
+                status
+            `)
+            .order('unit_name');
+        
+        if (error) throw error;
+        
+        trainingUnits.value = data || [];
+        
+        // Map field names
+        trainingUnits.value = trainingUnits.value.map(unit => ({
+            ...unit,
+            name: unit.unit_name,
+            code: unit.unit_code,
+            max_capacity: unit.max_capacity || unit.maximum_residents || 10,
+            current_residents: unit.current_residents || 0
+        }));
+        
+    } catch (error) {
+        console.error('Error loading training units:', error);
+    }
+};
 
-            const loadTrainingUnits = async () => {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.TRAINING_UNITS)
-                        .select('*')
-                        .order('name');
-                    
-                    if (error) throw error;
-                    trainingUnits.value = data || [];
-                    
-                    // Update capacity stats
-                    updateCapacityStats();
-                } catch (error) {
-                    console.error('Error loading training units:', error);
-                }
-            };
+const loadResidentRotations = async () => {
+    loadingRotations.value = true;
+    try {
+        const { data, error } = await supabaseClient
+            .from(TABLE_NAMES.RESIDENT_ROTATIONS)
+            .select(`
+                *,
+                goals,
+                notes
+            `)
+            .order('start_date', { ascending: false });
+        
+        if (error) throw error;
+        
+        residentRotations.value = data || [];
+        
+    } catch (error) {
+        console.error('Error loading resident rotations:', error);
+    } finally {
+        loadingRotations.value = false;
+    }
+};
 
-            const loadResidentRotations = async () => {
-                loadingRotations.value = true;
-                try {
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-                        .select('*')
-                        .order('start_date', { ascending: false });
-                    
-                    if (error) throw error;
-                    residentRotations.value = data || [];
-                } catch (error) {
-                    console.error('Error loading resident rotations:', error);
-                } finally {
-                    loadingRotations.value = false;
-                }
-            };
+const loadStaffAbsences = async () => {
+    loadingAbsences.value = true;
+    try {
+        const today = getLocalDateString();
+        const { data, error } = await supabaseClient
+            .from('leave_requests')  // Using leave_requests table
+            .select('*')
+            .or(`end_date.gte.${today},end_date.is.null`)
+            .order('start_date');
+        
+        if (error) {
+            console.log('Leave requests table not found, using empty array');
+            staffAbsences.value = [];
+            return;
+        }
+        
+        staffAbsences.value = data || [];
+        
+    } catch (error) {
+        console.error('Error loading staff absences:', error);
+    } finally {
+        loadingAbsences.value = false;
+    }
+};
 
-            const loadStaffAbsences = async () => {
-                loadingAbsences.value = true;
-                try {
-                    const today = getLocalDateString();
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.STAFF_ABSENCES)
-                        .select('*')
-                        .or(`end_date.gte.${today},end_date.is.null`)
-                        .order('start_date');
-                    
-                    if (error) throw error;
-                    staffAbsences.value = data || [];
-                    
-                    // Update active alerts
-                    updateActiveAlerts();
-                } catch (error) {
-                    console.error('Error loading staff absences:', error);
-                } finally {
-                    loadingAbsences.value = false;
-                }
-            };
+       
 
             const loadOnCallSchedule = async () => {
                 loadingSchedule.value = true;
