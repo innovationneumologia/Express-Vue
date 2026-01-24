@@ -1,5 +1,28 @@
 // app.js - Updated with safety checks
+// app.js - UPDATED FIRST LINES
 
+// Wait a moment for Vue to fully initialize
+setTimeout(() => {
+    // Check if Vue is available
+    if (typeof Vue === 'undefined') {
+        console.error('Vue.js is not available');
+        document.body.innerHTML = '<div style="padding: 20px; color: red;">Error: Vue.js failed to load. Please refresh the page.</div>';
+        return;
+    }
+    
+    console.log('Vue loaded successfully:', Vue.version);
+    
+    // Now Vue should be ready
+    const { createApp, ref, computed, onMounted } = Vue;
+    
+    // Continue with your existing code...
+    const PermissionSystem = {
+        // ... rest of your code
+    };
+    
+    // ... continue with the rest of your app.js
+    
+}, 100); // Wait 100ms for everything to settle
 // ============ CHECK IF SUPABASE IS LOADED ============
 if (typeof window.supabase === 'undefined') {
     console.error('Supabase not loaded! Loading it now...');
