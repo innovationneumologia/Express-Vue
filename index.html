@@ -5096,5 +5096,18 @@
 
 <!-- Load the main Vue application logic -->
 <script src="app.js"></script>
+ <!-- Safety check -->
+    <script>
+        // Safety check - make sure dependencies are loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Vue === 'undefined') {
+                console.error('Vue.js failed to load!');
+                alert('Vue.js failed to load. Please refresh the page.');
+            }
+            if (typeof supabase === 'undefined') {
+                console.warn('Supabase not loaded - using mock data');
+            }
+        });
+    </script>
 </body>
 </html>
