@@ -1,4 +1,20 @@
 // app.js - Complete Backend for NeumoCare Hospital Management System
+ app.js - Updated with safety checks
+
+// ============ CHECK IF SUPABASE IS LOADED ============
+if (typeof window.supabase === 'undefined') {
+    console.error('Supabase not loaded! Loading it now...');
+    // Dynamically load Supabase if not present
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    script.onload = () => {
+        console.log('Supabase loaded dynamically, reloading page...');
+        location.reload();
+    };
+    document.head.appendChild(script);
+    throw new Error('Supabase not loaded. Page will reload.');
+}
+
 const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
 
 // ============ SUPABASE CONFIGURATION ============
