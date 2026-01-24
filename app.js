@@ -1,5 +1,6 @@
 // ============ COMPLETE NEMO-CARE HOSPITAL MANAGEMENT SYSTEM ============
 // Main Application Logic with Full Database Integration
+// Updated to match actual database structure
 // =======================================================
 
 // Wait for page to fully load
@@ -31,10 +32,11 @@ window.addEventListener('load', async function() {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log('Supabase client initialized successfully');
         
-        // Test connection to verify database is accessible
-        const { data, error } = await supabaseClient.from('system_settings').select('count');
+        // Test connection with a simple query
+        const { data, error } = await supabaseClient.from('app_users').select('count').limit(1);
         if (error) {
-            console.warn('Supabase connection test failed, may need to create tables:', error.message);
+            console.warn('Supabase connection test failed:', error.message);
+            // Don't throw error, continue with app
         } else {
             console.log('Database connection successful');
         }
@@ -65,44 +67,47 @@ window.addEventListener('load', async function() {
     }
     
     // ============ DATABASE TABLE DEFINITIONS ============
-    // These match your Supabase database structure
- const TABLE_NAMES = {
-    USERS: 'app_users',  // Changed from 'users'
-    MEDICAL_STAFF: 'medical_staff',
-    TRAINING_UNITS: 'training_units',
-    RESIDENT_ROTATIONS: 'resident_rotations',
-    STAFF_ABSENCES: 'leave_requests',  // Using leave_requests table
-    ONCALL_SCHEDULE: 'oncall_schedule',
-    ANNOUNCEMENTS: 'department_announcements',  // Changed from 'announcements'
-    AUDIT_LOGS: 'audit_logs',
-    SYSTEM_SETTINGS: 'system_settings',  // This table doesn't exist yet
-    NOTIFICATIONS: 'notifications',  // This table doesn't exist yet
-    DEPARTMENTS: 'departments',  // This table doesn't exist yet
-    CLINICAL_UNITS: 'clinical_units'  // This table doesn't exist yet
-};
+    // Updated to match your actual database structure
+    const TABLE_NAMES = {
+        USERS: 'app_users',
+        MEDICAL_STAFF: 'medical_staff',
+        DEPARTMENTS: 'departments',
+        CLINICAL_UNITS: 'clinical_units',
+        TRAINING_UNITS: 'training_units',
+        RESIDENT_ROTATIONS: 'resident_rotations',
+        STAFF_ABSENCES: 'leave_requests',
+        ONCALL_SCHEDULE: 'oncall_schedule',
+        DAILY_ASSIGNMENTS: 'daily_assignments',
+        ANNOUNCEMENTS: 'department_announcements',
+        NOTIFICATIONS: 'notifications',
+        AUDIT_LOGS: 'audit_logs',
+        SYSTEM_AUDIT_LOG: 'system_audit_log',
+        SYSTEM_SETTINGS: 'system_settings',
+        SYSTEM_ROLES: 'system_roles',
+        SYSTEM_PERMISSIONS: 'system_permissions'
+    };
+    
     // ============ DATABASE INITIALIZATION ============
     async function initializeDatabase() {
         console.log('Initializing database...');
         
         try {
-            // Check if tables exist, if not create them
-            const { data: tables, error } = await supabaseClient
-                .from('information_schema.tables')
-                .select('table_name')
-                .eq('table_schema', 'public');
+            // Test connection with a safe query
+            const { data, error } = await supabaseClient
+                .from('app_users')
+                .select('id')
+                .limit(1);
             
             if (error) {
-                console.log('Could not check existing tables, proceeding with data loading...');
+                console.warn('Database connection test failed:', error.message);
+                // Continue anyway - some tables might not exist yet
             } else {
-                console.log('Existing tables:', tables.map(t => t.table_name));
+                console.log('Database connection test successful');
             }
-            
-            // Load initial data
-            await loadInitialData();
             
         } catch (error) {
             console.error('Database initialization error:', error);
-            throw error;
+            // Don't throw - let the app load in degraded mode
         }
     }
     
@@ -126,7 +131,22 @@ window.addEventListener('load', async function() {
                 .insert([auditLog]);
             
             if (error) {
-                console.error('Failed to log audit event:', error);
+                console.warn('Failed to log audit event:', error);
+                // Fallback to system_audit_log
+                const systemLog = {
+                    user_id: auditLog.user_id,
+                    user_role: auditLog.user_role,
+                    action_type: action,
+                    table_name: resource,
+                    ip_address: auditLog.ip_address,
+                    user_agent: auditLog.user_agent,
+                    details: auditLog.details,
+                    created_at: auditLog.created_at
+                };
+                
+                await supabaseClient
+                    .from(TABLE_NAMES.SYSTEM_AUDIT_LOG)
+                    .insert([systemLog]);
             }
         } catch (error) {
             console.error('Audit logging error:', error);
@@ -143,106 +163,83 @@ window.addEventListener('load', async function() {
         }
     }
     
-    // ============ ADVANCED PERMISSION SYSTEM ============
+    // ============ PERMISSION SYSTEM ============
     const PermissionSystem = {
         resources: {
-            medical_staff: { name: 'Medical Staff', actions: ['create', 'read', 'update', 'delete', 'export', 'import', 'notify', 'report'] },
+            medical_staff: { name: 'Medical Staff', actions: ['create', 'read', 'update', 'delete'] },
             training_units: { name: 'Training Units', actions: ['create', 'read', 'update', 'delete', 'assign'] },
             resident_rotations: { name: 'Resident Rotations', actions: ['create', 'read', 'update', 'delete', 'extend'] },
-            placements: { name: 'Placements', actions: ['create', 'read', 'update', 'delete', 'drag_drop'] },
-            daily_operations: { name: 'Daily Operations', actions: ['read', 'update', 'alert'] },
-            oncall_schedule: { name: 'On-call Schedule', actions: ['create', 'read', 'update', 'delete', 'override'] },
+            oncall_schedule: { name: 'On-call Schedule', actions: ['create', 'read', 'update', 'delete'] },
             staff_absence: { name: 'Staff Absence', actions: ['create', 'read', 'update', 'delete'] },
             communications: { name: 'Communications', actions: ['create', 'read', 'update', 'delete'] },
-            audit: { name: 'Audit Logs', actions: ['read', 'export', 'clear'] },
-            system: { name: 'System Settings', actions: ['read', 'update', 'admin', 'manage_departments'] },
-            permissions: { name: 'Permissions', actions: ['read', 'manage'] }
+            audit: { name: 'Audit Logs', actions: ['read'] },
+            system: { name: 'System Settings', actions: ['read', 'update'] }
         },
 
         roles: {
             system_admin: {
                 name: 'System Administrator',
-                level: 'full',
                 permissions: {
-                    medical_staff: { create: true, read: true, update: true, delete: true, export: true, import: true, notify: true, report: true },
+                    medical_staff: { create: true, read: true, update: true, delete: true },
                     training_units: { create: true, read: true, update: true, delete: true, assign: true },
                     resident_rotations: { create: true, read: true, update: true, delete: true, extend: true },
-                    placements: { create: true, read: true, update: true, delete: true, drag_drop: true },
-                    daily_operations: { read: true, update: true, alert: true },
-                    oncall_schedule: { create: true, read: true, update: true, delete: true, override: true },
+                    oncall_schedule: { create: true, read: true, update: true, delete: true },
                     staff_absence: { create: true, read: true, update: true, delete: true },
                     communications: { create: true, read: true, update: true, delete: true },
-                    audit: { read: true, export: true, clear: true },
-                    system: { read: true, update: true, admin: true, manage_departments: true },
-                    permissions: { read: true, manage: true }
+                    audit: { read: true },
+                    system: { read: true, update: true }
                 }
             },
             department_head: {
                 name: 'Head of Department',
-                level: 'full',
                 permissions: {
-                    medical_staff: { create: true, read: true, update: true, delete: false, export: true, import: false, notify: true, report: true },
+                    medical_staff: { create: true, read: true, update: true, delete: false },
                     training_units: { create: true, read: true, update: true, delete: false, assign: true },
                     resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
-                    placements: { create: true, read: true, update: true, delete: false, drag_drop: true },
-                    daily_operations: { read: true, update: true, alert: true },
-                    oncall_schedule: { create: true, read: true, update: true, delete: false, override: true },
+                    oncall_schedule: { create: true, read: true, update: true, delete: false },
                     staff_absence: { create: true, read: true, update: true, delete: true },
                     communications: { create: true, read: true, update: true, delete: true },
-                    audit: { read: true, export: true, clear: false },
-                    system: { read: true, update: false, admin: false, manage_departments: true },
-                    permissions: { read: false, manage: false }
+                    audit: { read: true },
+                    system: { read: true, update: false }
                 }
             },
             resident_manager: {
                 name: 'Resident Manager',
-                level: 'write',
                 permissions: {
-                    medical_staff: { create: true, read: true, update: true, delete: false, export: false, import: false, notify: false, report: false },
+                    medical_staff: { create: true, read: true, update: true, delete: false },
                     training_units: { create: true, read: true, update: true, delete: false, assign: true },
                     resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
-                    placements: { create: true, read: true, update: true, delete: false, drag_drop: true },
-                    daily_operations: { read: true, update: true, alert: false },
-                    oncall_schedule: { create: false, read: true, update: false, delete: false, override: false },
+                    oncall_schedule: { create: false, read: true, update: false, delete: false },
                     staff_absence: { create: true, read: true, update: false, delete: false },
                     communications: { create: false, read: true, update: false, delete: false },
-                    audit: { read: false, export: false, clear: false },
-                    system: { read: false, update: false, admin: false, manage_departments: false },
-                    permissions: { read: false, manage: false }
+                    audit: { read: false },
+                    system: { read: false, update: false }
                 }
             },
             attending_physician: {
                 name: 'Attending Physician',
-                level: 'limited',
                 permissions: {
-                    medical_staff: { create: false, read: true, update: false, delete: false, export: false, import: false, notify: false, report: false },
+                    medical_staff: { create: false, read: true, update: false, delete: false },
                     training_units: { create: false, read: true, update: false, delete: false, assign: false },
                     resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
-                    placements: { create: false, read: true, update: false, delete: false, drag_drop: false },
-                    daily_operations: { read: true, update: false, alert: false },
-                    oncall_schedule: { create: false, read: true, update: false, delete: false, override: false },
+                    oncall_schedule: { create: false, read: true, update: false, delete: false },
                     staff_absence: { create: true, read: true, update: false, delete: false },
                     communications: { create: false, read: true, update: false, delete: false },
-                    audit: { read: false, export: false, clear: false },
-                    system: { read: false, update: false, admin: false, manage_departments: false },
-                    permissions: { read: false, manage: false }
+                    audit: { read: false },
+                    system: { read: false, update: false }
                 }
             },
             viewing_doctor: {
                 name: 'Viewing Doctor',
-                level: 'read',
                 permissions: {
-                    medical_staff: { create: false, read: true, update: false, delete: false, export: false, import: false, notify: false, report: false },
+                    medical_staff: { create: false, read: true, update: false, delete: false },
                     training_units: { create: false, read: true, update: false, delete: false, assign: false },
                     resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
-                    placements: { create: false, read: true, update: false, delete: false, drag_drop: false },
-                    daily_operations: { read: true, update: false, alert: false },
-                    oncall_schedule: { create: false, read: true, update: false, delete: false, override: false },
+                    oncall_schedule: { create: false, read: true, update: false, delete: false },
                     staff_absence: { create: false, read: true, update: false, delete: false },
                     communications: { create: false, read: true, update: false, delete: false },
-                    audit: { read: false, export: false, clear: false },
-                    system: { read: false, update: false, admin: false, manage_departments: false },
-                    permissions: { read: false, manage: false }
+                    audit: { read: false },
+                    system: { read: false, update: false }
                 }
             }
         },
@@ -251,21 +248,6 @@ window.addEventListener('load', async function() {
             const role = this.roles[userRole];
             if (!role || !role.permissions[resource]) return false;
             return role.permissions[resource][action] === true;
-        },
-
-        getPermissionLevel(userRole, resource) {
-            const role = this.roles[userRole];
-            if (!role || !role.permissions[resource]) return 'none';
-            
-            const permissions = role.permissions[resource];
-            if (permissions.create && permissions.update && permissions.delete) return 'full';
-            if (permissions.create || permissions.update) return 'write';
-            if (permissions.read) return 'read';
-            return 'none';
-        },
-        
-        getRoleName(roleKey) {
-            return this.roles[roleKey]?.name || roleKey;
         }
     };
 
@@ -278,32 +260,8 @@ window.addEventListener('load', async function() {
         return d.toISOString().split('T')[0];
     };
     
-    const getLocalDateTime = () => {
-        const now = new Date();
-        return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
-    };
-    
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     
-    // ============ ERROR HANDLING ============
-    const withErrorHandling = async (operation, context, fallback = null) => {
-        try {
-            const result = await operation();
-            await logAuditEvent('SUCCESS', context, { operation: context });
-            return result;
-        } catch (error) {
-            console.error(`Error in ${context}:`, error);
-            await logAuditEvent('ERROR', context, { 
-                operation: context, 
-                error: error.message,
-                stack: error.stack 
-            });
-            
-            if (fallback !== null) return fallback;
-            throw error;
-        }
-    };
-
     // ============ CREATE VUE APP ============
     const app = createApp({
         setup() {
@@ -316,14 +274,9 @@ window.addEventListener('load', async function() {
             });
             const loading = ref(false);
             const saving = ref(false);
-            const savingPermissions = ref(false);
             const currentView = ref('login');
             const sidebarCollapsed = ref(false);
             const mobileMenuOpen = ref(false);
-            const statsSidebarOpen = ref(false);
-            const searchQuery = ref('');
-            const searchScope = ref('global');
-            const searchFilter = ref('all');
             const userMenuOpen = ref(false);
             
             // Confirmation Modal State
@@ -340,265 +293,40 @@ window.addEventListener('load', async function() {
             
             // Data stores
             const medicalStaff = ref([]);
+            const departments = ref([]);
+            const clinicalUnits = ref([]);
             const trainingUnits = ref([]);
             const residentRotations = ref([]);
             const staffAbsences = ref([]);
             const onCallSchedule = ref([]);
             const announcements = ref([]);
-            const auditLogs = ref([]);
-            const departments = ref([]);
-            const clinicalUnits = ref([]);
-            const userNotifications = ref([]);
-            const systemSettings = ref({});
-            const userRoles = ref([]);
-            const permissions = ref([]);
             const users = ref([]);
             
             // Modal states
-            const staffDetailsModal = ref({ 
-                show: false, 
-                staff: null, 
-                activeTab: 'personal', 
-                stats: {}, 
-                activityHistory: [],
-                currentRotation: null,
-                nextOncall: null
-            });
-            
-            const medicalStaffModal = ref({ 
-                show: false, 
-                mode: 'add', 
-                staff: null, 
-                activeTab: 'basic',
-                form: { 
-                    full_name: '', 
-                    staff_type: 'medical_resident', 
-                    staff_id: '', 
-                    employment_status: 'active',
-                    professional_email: '', 
-                    resident_category: '', 
-                    training_level: '',
-                    specialization: '',
-                    years_experience: '',
-                    biography: '',
-                    medical_license: '',
-                    date_of_birth: '',
-                    office_phone: '',
-                    mobile_phone: '',
-                    department_id: ''
-                }
-            });
-            
-            const departmentModal = ref({
-                show: false,
-                mode: 'add',
-                department: null,
-                form: {
-                    name: '',
-                    code: '',
-                    status: 'active',
-                    description: '',
-                    head_of_department_id: ''
-                }
-            });
-            
-            const clinicalUnitModal = ref({
-                show: false,
-                mode: 'add',
-                unit: null,
-                form: {
-                    name: '',
-                    code: '',
-                    department_id: '',
-                    unit_type: 'clinical',
-                    status: 'active',
-                    description: '',
-                    supervisor_id: ''
-                }
-            });
-            
-            const trainingUnitModal = ref({
-                show: false,
-                mode: 'add',
-                unit: null,
-                form: {
-                    name: '',
-                    department_id: '',
-                    supervisor_id: '',
-                    max_capacity: 10,
-                    status: 'active',
-                    description: ''
-                }
-            });
-            
-            const rotationModal = ref({
-                show: false,
-                mode: 'add',
-                rotation: null,
-                form: {
-                    resident_id: '',
-                    training_unit_id: '',
-                    start_date: '',
-                    end_date: '',
-                    supervisor_id: '',
-                    status: 'active',
-                    goals: '',
-                    notes: ''
-                }
-            });
-            
-            const onCallModal = ref({ 
-                show: false, 
-                mode: 'add', 
-                schedule: null, 
-                form: { 
-                    duty_date: '', 
-                    shift_type: 'backup_call', 
-                    start_time: '08:00', 
-                    end_time: '20:00',
-                    primary_physician_id: '', 
-                    backup_physician_id: '', 
-                    coverage_notes: '' 
-                }
-            });
-            
-            const absenceModal = ref({ 
-                show: false, 
-                mode: 'add', 
-                absence: null, 
-                form: { 
-                    staff_member_id: '', 
-                    absence_reason: '', 
-                    start_date: '', 
-                    end_date: '', 
-                    notes: '',
-                    replacement_staff_id: '',
-                    coverage_instructions: ''
-                }
-            });
-            
-            const quickPlacementModal = ref({ 
-                show: false, 
-                resident_id: '',
-                training_unit_id: '',
-                start_date: '',
-                duration: 4,
-                supervisor_id: '',
-                notes: ''
-            });
-            
-            const bulkAssignModal = ref({
-                show: false,
-                selectedResidents: [],
-                training_unit_id: '',
-                start_date: '',
-                duration: 4,
-                supervisor_id: ''
-            });
-            
-            const communicationsModal = ref({ 
-                show: false, 
-                activeTab: 'announcement',
-                form: { 
-                    announcement_title: '', 
-                    announcement_content: '', 
-                    publish_start_date: '', 
-                    publish_end_date: '', 
-                    priority_level: 'medium', 
-                    target_audience: 'all' 
-                },
-                capacity: { 
-                    er: { current: 0, max: 0, notes: '' },
-                    icu: { current: 0, max: 0, notes: '' },
-                    ward: { current: 0, max: 0, notes: '' },
-                    stepdown: { current: 0, max: 0, notes: '' },
-                    clinic: { current: 0, max: 0, notes: '' },
-                    bronch: { current: 0, max: 0, notes: '' },
-                    overall_notes: '' 
-                },
-                quickUpdate: { 
-                    message: '', 
-                    priority: 'info', 
-                    expires: '24', 
-                    tags: '' 
-                }
-            });
-            
-            const systemSettingsModal = ref({ 
-                show: false, 
-                form: { 
-                    hospital_name: 'NeumoCare Hospital', 
-                    default_department_id: '',
-                    max_residents_per_unit: 10, 
-                    default_rotation_duration: 12,
-                    enable_audit_logging: true, 
-                    require_mfa: false,
-                    maintenance_mode: false,
-                    notifications_enabled: true,
-                    absence_notifications: true,
-                    announcement_notifications: true
-                }
-            });
-            
-            const userProfileModal = ref({ 
-                show: false, 
-                form: { 
-                    full_name: '', 
-                    email: '', 
-                    phone: '', 
-                    department_id: '',
-                    notifications_enabled: true, 
-                    absence_notifications: true, 
-                    announcement_notifications: true 
-                }
-            });
-            
-            const roleModal = ref({
-                show: false,
-                mode: 'add',
-                role: null,
-                form: {
-                    name: '',
-                    description: '',
-                    permissions: []
-                }
-            });
+            const staffDetailsModal = ref({ show: false, staff: null });
+            const medicalStaffModal = ref({ show: false, mode: 'add', staff: null });
+            const departmentModal = ref({ show: false, mode: 'add', department: null });
+            const clinicalUnitModal = ref({ show: false, mode: 'add', unit: null });
+            const trainingUnitModal = ref({ show: false, mode: 'add', unit: null });
+            const rotationModal = ref({ show: false, mode: 'add', rotation: null });
+            const onCallModal = ref({ show: false, mode: 'add', schedule: null });
+            const absenceModal = ref({ show: false, mode: 'add', absence: null });
+            const communicationsModal = ref({ show: false });
+            const systemSettingsModal = ref({ show: false });
             
             // UI states
             const toasts = ref([]);
             let toastId = 0;
             const staffSearch = ref('');
-            const staffFilter = ref({ staff_type: '', employment_status: '' });
-            const rotationFilter = ref({ resident_id: '', status: '' });
-            const absenceFilter = ref({ staff_id: '', status: '', start_date: '' });
-            const auditFilters = ref({ dateRange: '', actionType: '', userId: '' });
+            const activeAlerts = ref([]);
             
-            // Live stats
-            const liveStats = ref({
-                occupancy: 0,
-                occupancyTrend: 0,
-                onDutyStaff: 0,
-                staffTrend: 0,
-                pendingRequests: 0,
-                erCapacity: { current: 0, max: 0, status: 'low' },
-                icuCapacity: { current: 0, max: 0, status: 'low' }
-            });
-            
-            const currentCapacity = ref({
-                er: { current: 0, max: 0, status: 'low' },
-                icu: { current: 0, max: 0, status: 'low' }
-            });
-            
-            const loadingStats = ref(false);
-            const loadingAnnouncements = ref(false);
-            const loadingSchedule = ref(false);
+            // Loading states
             const loadingStaff = ref(false);
+            const loadingDepartments = ref(false);
+            const loadingTrainingUnits = ref(false);
             const loadingRotations = ref(false);
             const loadingAbsences = ref(false);
-            const loadingAuditLogs = ref(false);
-            
-            // Active alerts
-            const activeAlerts = ref([]);
+            const loadingSchedule = ref(false);
             
             // ============ TOAST SYSTEM ============
             const showToast = (title, message, type = 'info', duration = 5000) => {
@@ -684,39 +412,6 @@ window.addEventListener('load', async function() {
                 }
             };
             
-            const formatTimeAgo = (date) => {
-                try { 
-                    if (!date) return 'Just now'; 
-                    const now = new Date(); 
-                    const then = new Date(date);
-                    if (isNaN(then.getTime())) return 'Just now'; 
-                    const diffMs = now - then;
-                    const diffSec = Math.floor(diffMs / 1000); 
-                    const diffMin = Math.floor(diffSec / 60);
-                    const diffHour = Math.floor(diffMin / 60); 
-                    const diffDay = Math.floor(diffHour / 24);
-                    if (diffSec < 60) return 'Just now'; 
-                    if (diffMin < 60) return `${diffMin}m ago`;
-                    if (diffHour < 24) return `${diffHour}h ago`; 
-                    if (diffDay < 7) return `${diffDay}d ago`;
-                    return formatDate(date);
-                } catch { 
-                    return 'Just now'; 
-                }
-            };
-            
-            const formatTimeRange = (start, end) => {
-                const formatTime = (time) => { 
-                    if (!time) return ''; 
-                    const [hours] = time.split(':');
-                    const hour = parseInt(hours); 
-                    return `${hour % 12 || 12}:${time.slice(3,5)} ${hour >= 12 ? 'PM' : 'AM'}`;
-                }; 
-                return `${formatTime(start)} - ${formatTime(end)}`;
-            };
-            
-            const getUserRoleDisplay = (role) => PermissionSystem.getRoleName(role);
-            
             const formatStaffType = (type) => {
                 const types = { 
                     medical_resident: 'Medical Resident', 
@@ -742,107 +437,6 @@ window.addEventListener('load', async function() {
                 return statuses[status] || status;
             };
             
-            const formatResidentCategory = (category) => {
-                const categories = {
-                    department_internal: 'Department Internal',
-                    rotating_other_dept: 'Rotating Other Dept',
-                    external_institution: 'External Institution'
-                };
-                return categories[category] || category;
-            };
-            
-            const formatTrainingLevel = (level) => {
-                const levels = {
-                    pgy1: 'PGY-1 (First Year)',
-                    pgy2: 'PGY-2 (Second Year)',
-                    pgy3: 'PGY-3 (Third Year)',
-                    pgy4: 'PGY-4 (Fourth Year)',
-                    other: 'Other'
-                };
-                return levels[level] || level;
-            };
-            
-            const formatAbsenceReason = (reason) => {
-                const reasons = {
-                    vacation: 'Vacation',
-                    sick_leave: 'Sick Leave',
-                    conference: 'Conference/Education',
-                    personal: 'Personal',
-                    maternity_paternity: 'Maternity/Paternity',
-                    administrative: 'Administrative Duty',
-                    other: 'Other'
-                };
-                return reasons[reason] || reason;
-            };
-            
-            const formatAbsenceStatus = (status) => {
-                const statuses = { active: 'Active', upcoming: 'Upcoming', completed: 'Completed' };
-                return statuses[status] || status;
-            };
-            
-            const getAbsenceStatusClass = (status) => {
-                const classes = { active: 'badge-warning', upcoming: 'badge-info', completed: 'badge-success' };
-                return classes[status] || 'badge-secondary';
-            };
-            
-            const formatRotationStatus = (status) => {
-                const statuses = { active: 'Active', upcoming: 'Upcoming', completed: 'Completed', cancelled: 'Cancelled' };
-                return statuses[status] || status;
-            };
-            
-            const getRotationStatusClass = (status) => {
-                const classes = { 
-                    active: 'badge-success', 
-                    upcoming: 'badge-info', 
-                    completed: 'badge-secondary',
-                    cancelled: 'badge-danger' 
-                };
-                return classes[status] || 'badge-secondary';
-            };
-            
-            const formatAuditAction = (action) => {
-                const actions = { 
-                    CREATE: 'Created', 
-                    UPDATE: 'Updated', 
-                    DELETE: 'Deleted',
-                    READ: 'Viewed', 
-                    LOGIN: 'Logged In', 
-                    LOGOUT: 'Logged Out' 
-                };
-                return actions[action] || action;
-            };
-            
-            const formatPermissionName = (name) => {
-                return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            };
-            
-            const getPriorityColor = (priority) => {
-                const colors = { urgent: 'danger', high: 'warning', medium: 'info', low: 'success' };
-                return colors[priority] || 'info';
-            };
-            
-            const getCapacityStatus = (capacity) => {
-                if (!capacity.max || capacity.max === 0) return 'unknown';
-                const percentage = (capacity.current / capacity.max) * 100;
-                if (percentage >= 90) return 'high'; 
-                if (percentage >= 75) return 'medium'; 
-                return 'low';
-            };
-            
-            const getCommunicationIcon = (tab) => {
-                const icons = { announcement: 'fa-bullhorn', capacity: 'fa-bed', quick: 'fa-comment-medical' };
-                return icons[tab] || 'fa-comment';
-            };
-            
-            const getCommunicationButtonText = (tab) => {
-                const texts = { 
-                    announcement: 'Publish Announcement', 
-                    capacity: 'Update Capacity', 
-                    quick: 'Post Update' 
-                };
-                return texts[tab] || 'Save';
-            };
-
             // ============ DATA RELATIONSHIP FUNCTIONS ============
             const getStaffName = (staffId) => {
                 if (!staffId) return 'Unknown Staff';
@@ -859,41 +453,9 @@ window.addEventListener('load', async function() {
             const getTrainingUnitName = (unitId) => {
                 if (!unitId) return 'Unknown Unit';
                 const unit = trainingUnits.value.find(u => u.id === unitId);
-                return unit ? unit.name : `Unit ${unitId.substring(0, 8)}`;
+                return unit ? unit.unit_name : `Unit ${unitId.substring(0, 8)}`;
             };
             
-            const getDepartmentUnits = (departmentId) => {
-                return clinicalUnits.value.filter(unit => unit.department_id === departmentId);
-            };
-            
-            const getUnitResidents = (unitId) => {
-                const rotationIds = residentRotations.value
-                    .filter(r => r.training_unit_id === unitId && (r.status === 'active' || r.status === 'upcoming'))
-                    .map(r => r.resident_id);
-                return medicalStaff.value.filter(staff => 
-                    staff.staff_type === 'medical_resident' && rotationIds.includes(staff.id));
-            };
-            
-            const getSupervisorName = (supervisorId) => {
-                if (!supervisorId) return null;
-                const supervisor = medicalStaff.value.find(s => s.id === supervisorId);
-                return supervisor ? supervisor.full_name : null;
-            };
-            
-            const getUserName = (userId) => {
-                if (!userId) return 'System';
-                const user = users.value.find(u => u.id === userId);
-                return user ? user.full_name : `User ${userId.substring(0, 8)}`;
-            };
-            
-            const calculateAbsenceDuration = (startDate, endDate) => {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                const diffTime = Math.abs(end - start);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return diffDays + 1;
-            };
-
             // ============ PERMISSION FUNCTIONS ============
             const hasPermission = (resource, action) => {
                 if (!currentUser.value) return false;
@@ -901,191 +463,124 @@ window.addEventListener('load', async function() {
                 return PermissionSystem.hasPermission(currentUser.value.user_role, resource, action);
             };
 
-            const roleHasPermission = (roleId, permissionId) => {
-                // This would check if a role has a specific permission
-                // For now, using the static permission system
-                return false;
-            };
-
-            const getUserPermissions = (userId) => {
-                const user = users.value.find(u => u.id === userId);
-                if (!user) return [];
-                
-                const role = PermissionSystem.roles[user.user_role];
-                if (!role) return [];
-                
-                const permissions = [];
-                for (const [resource, actions] of Object.entries(role.permissions)) {
-                    for (const [action, hasPerm] of Object.entries(actions)) {
-                        if (hasPerm) {
-                            permissions.push(`${resource}.${action}`);
-                        }
-                    }
-                }
-                return permissions;
-            };
-
             // ============ DATABASE OPERATIONS ============
             // ============ LOAD FUNCTIONS ============
-            const loadInitialData = async () => {
-                loading.value = true;
+            const loadMedicalStaff = async () => {
+                loadingStaff.value = true;
                 try {
-                    await Promise.all([
-                        loadMedicalStaff(),
-                        loadDepartments(),
-                        loadClinicalUnits(),
-                        loadTrainingUnits(),
-                        loadResidentRotations(),
-                        loadStaffAbsences(),
-                        loadOnCallSchedule(),
-                        loadAnnouncements(),
-                        loadAuditLogs(),
-                        loadSystemSettings(),
-                        loadUserNotifications(),
-                        loadUsers()
-                    ]);
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.MEDICAL_STAFF)
+                        .select('*')
+                        .order('full_name');
                     
-                    // Load live stats after initial data
-                    await loadLiveStats();
+                    if (error) throw error;
                     
-                    showToast('System Ready', 'All data loaded successfully', 'success');
-                    await logAuditEvent('SYSTEM_START', 'system', { user: currentUser.value?.email });
+                    medicalStaff.value = data || [];
+                    
                 } catch (error) {
-                    console.error('Error loading initial data:', error);
-                    showToast('Data Load Error', 'Failed to load system data', 'error');
+                    console.error('Error loading medical staff:', error);
+                    showToast('Error', 'Failed to load medical staff', 'error');
                 } finally {
-                    loading.value = false;
+                    loadingStaff.value = false;
                 }
             };
-            const loadMedicalStaff = async () => {
-    loadingStaff.value = true;
-    try {
-        const { data, error } = await supabaseClient
-            .from(TABLE_NAMES.MEDICAL_STAFF)
-            .select(`
-                *,
-                department_id,
-                specialization,
-                years_experience,
-                biography,
-                date_of_birth,
-                mobile_phone
-            `)
-            .order('full_name');
-        
-        if (error) throw error;
-        
-        medicalStaff.value = data || [];
-        
-    } catch (error) {
-        console.error('Error loading medical staff:', error);
-        showToast('Error', 'Failed to load medical staff', 'error');
-    } finally {
-        loadingStaff.value = false;
-    }
-};
 
-const loadDepartments = async () => {
-    try {
-        const { data, error } = await supabaseClient
-            .from(TABLE_NAMES.DEPARTMENTS)
-            .select('*')
-            .order('name');
-        
-        if (error) {
-            // If departments table doesn't exist yet, use empty array
-            console.log('Departments table not found, using empty array');
-            departments.value = [];
-            return;
-        }
-        
-        departments.value = data || [];
-    } catch (error) {
-        console.error('Error loading departments:', error);
-        departments.value = [];
-    }
-};
+            const loadDepartments = async () => {
+                loadingDepartments.value = true;
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.DEPARTMENTS)
+                        .select('*')
+                        .order('name');
+                    
+                    if (error) {
+                        console.log('Departments table error:', error);
+                        departments.value = [];
+                        return;
+                    }
+                    
+                    departments.value = data || [];
+                } catch (error) {
+                    console.error('Error loading departments:', error);
+                    departments.value = [];
+                } finally {
+                    loadingDepartments.value = false;
+                }
+            };
 
-const loadTrainingUnits = async () => {
-    try {
-        const { data, error } = await supabaseClient
-            .from(TABLE_NAMES.TRAINING_UNITS)
-            .select(`
-                *,
-                department_id,
-                supervisor_id,
-                max_capacity,
-                status
-            `)
-            .order('unit_name');
-        
-        if (error) throw error;
-        
-        trainingUnits.value = data || [];
-        
-        // Map field names
-        trainingUnits.value = trainingUnits.value.map(unit => ({
-            ...unit,
-            name: unit.unit_name,
-            code: unit.unit_code,
-            max_capacity: unit.max_capacity || unit.maximum_residents || 10,
-            current_residents: unit.current_residents || 0
-        }));
-        
-    } catch (error) {
-        console.error('Error loading training units:', error);
-    }
-};
+            const loadTrainingUnits = async () => {
+                loadingTrainingUnits.value = true;
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.TRAINING_UNITS)
+                        .select('*')
+                        .order('unit_name');
+                    
+                    if (error) {
+                        console.log('Training units error:', error);
+                        trainingUnits.value = [];
+                        return;
+                    }
+                    
+                    trainingUnits.value = data || [];
+                    
+                } catch (error) {
+                    console.error('Error loading training units:', error);
+                    trainingUnits.value = [];
+                } finally {
+                    loadingTrainingUnits.value = false;
+                }
+            };
 
-const loadResidentRotations = async () => {
-    loadingRotations.value = true;
-    try {
-        const { data, error } = await supabaseClient
-            .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-            .select(`
-                *,
-                goals,
-                notes
-            `)
-            .order('start_date', { ascending: false });
-        
-        if (error) throw error;
-        
-        residentRotations.value = data || [];
-        
-    } catch (error) {
-        console.error('Error loading resident rotations:', error);
-    } finally {
-        loadingRotations.value = false;
-    }
-};
+            const loadResidentRotations = async () => {
+                loadingRotations.value = true;
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.RESIDENT_ROTATIONS)
+                        .select('*')
+                        .order('start_date', { ascending: false });
+                    
+                    if (error) {
+                        console.log('Resident rotations error:', error);
+                        residentRotations.value = [];
+                        return;
+                    }
+                    
+                    residentRotations.value = data || [];
+                    
+                } catch (error) {
+                    console.error('Error loading resident rotations:', error);
+                    residentRotations.value = [];
+                } finally {
+                    loadingRotations.value = false;
+                }
+            };
 
-const loadStaffAbsences = async () => {
-    loadingAbsences.value = true;
-    try {
-        const today = getLocalDateString();
-        const { data, error } = await supabaseClient
-            .from('leave_requests')  // Using leave_requests table
-            .select('*')
-            .or(`end_date.gte.${today},end_date.is.null`)
-            .order('start_date');
-        
-        if (error) {
-            console.log('Leave requests table not found, using empty array');
-            staffAbsences.value = [];
-            return;
-        }
-        
-        staffAbsences.value = data || [];
-        
-    } catch (error) {
-        console.error('Error loading staff absences:', error);
-    } finally {
-        loadingAbsences.value = false;
-    }
-};
-
-       
+            const loadStaffAbsences = async () => {
+                loadingAbsences.value = true;
+                try {
+                    const today = getLocalDateString();
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAMES.STAFF_ABSENCES)
+                        .select('*')
+                        .gte('leave_end_date', today)
+                        .order('leave_start_date');
+                    
+                    if (error) {
+                        console.log('Staff absences error:', error);
+                        staffAbsences.value = [];
+                        return;
+                    }
+                    
+                    staffAbsences.value = data || [];
+                    
+                } catch (error) {
+                    console.error('Error loading staff absences:', error);
+                    staffAbsences.value = [];
+                } finally {
+                    loadingAbsences.value = false;
+                }
+            };
 
             const loadOnCallSchedule = async () => {
                 loadingSchedule.value = true;
@@ -1098,17 +593,22 @@ const loadStaffAbsences = async () => {
                         .order('duty_date')
                         .limit(7);
                     
-                    if (error) throw error;
+                    if (error) {
+                        console.log('On-call schedule error:', error);
+                        onCallSchedule.value = [];
+                        return;
+                    }
+                    
                     onCallSchedule.value = data || [];
                 } catch (error) {
                     console.error('Error loading on-call schedule:', error);
+                    onCallSchedule.value = [];
                 } finally {
                     loadingSchedule.value = false;
                 }
             };
 
             const loadAnnouncements = async () => {
-                loadingAnnouncements.value = true;
                 try {
                     const today = getLocalDateString();
                     const { data, error } = await supabaseClient
@@ -1119,70 +619,16 @@ const loadStaffAbsences = async () => {
                         .order('publish_start_date', { ascending: false })
                         .limit(10);
                     
-                    if (error) throw error;
+                    if (error) {
+                        console.log('Announcements error:', error);
+                        announcements.value = [];
+                        return;
+                    }
+                    
                     announcements.value = data || [];
                 } catch (error) {
                     console.error('Error loading announcements:', error);
-                } finally {
-                    loadingAnnouncements.value = false;
-                }
-            };
-
-            const loadAuditLogs = async () => {
-                loadingAuditLogs.value = true;
-                try {
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.AUDIT_LOGS)
-                        .select('*')
-                        .order('created_at', { ascending: false })
-                        .limit(100);
-                    
-                    if (error) throw error;
-                    auditLogs.value = data || [];
-                } catch (error) {
-                    console.error('Error loading audit logs:', error);
-                } finally {
-                    loadingAuditLogs.value = false;
-                }
-            };
-
-            const loadSystemSettings = async () => {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.SYSTEM_SETTINGS)
-                        .select('*')
-                        .single();
-                    
-                    if (error && error.code !== 'PGRST116') throw error;
-                    
-                    systemSettings.value = data || {
-                        hospital_name: 'NeumoCare Hospital',
-                        enable_audit_logging: true,
-                        notifications_enabled: true
-                    };
-                    
-                    systemSettingsModal.value.form = { ...systemSettings.value };
-                } catch (error) {
-                    console.error('Error loading system settings:', error);
-                }
-            };
-
-            const loadUserNotifications = async () => {
-                try {
-                    if (!currentUser.value) return;
-                    
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.NOTIFICATIONS)
-                        .select('*')
-                        .eq('user_id', currentUser.value.id)
-                        .eq('read', false)
-                        .order('created_at', { ascending: false })
-                        .limit(20);
-                    
-                    if (error) throw error;
-                    userNotifications.value = data || [];
-                } catch (error) {
-                    console.error('Error loading notifications:', error);
+                    announcements.value = [];
                 }
             };
 
@@ -1193,72 +639,61 @@ const loadStaffAbsences = async () => {
                         .select('*')
                         .order('full_name');
                     
-                    if (error) throw error;
+                    if (error) {
+                        console.log('Users error:', error);
+                        users.value = [];
+                        return;
+                    }
+                    
                     users.value = data || [];
                 } catch (error) {
                     console.error('Error loading users:', error);
+                    users.value = [];
                 }
             };
 
-            const loadLiveStats = async () => {
-                loadingStats.value = true;
+            const loadInitialData = async () => {
+                loading.value = true;
                 try {
-                    // Calculate occupancy based on training units
-                    const totalCapacity = trainingUnits.value.reduce((sum, unit) => sum + (unit.max_capacity || 0), 0);
-                    const currentResidents = trainingUnits.value.reduce((sum, unit) => sum + (unit.current_residents || 0), 0);
-                    const occupancy = totalCapacity > 0 ? Math.round((currentResidents / totalCapacity) * 100) : 0;
+                    // Load essential data first
+                    await Promise.all([
+                        loadMedicalStaff(),
+                        loadDepartments(),
+                        loadTrainingUnits(),
+                        loadResidentRotations(),
+                        loadStaffAbsences(),
+                        loadOnCallSchedule(),
+                        loadAnnouncements(),
+                        loadUsers()
+                    ]);
                     
-                    // Get active staff count
-                    const onDutyStaff = medicalStaff.value.filter(s => s.employment_status === 'active').length;
-                    
-                    // Get pending requests (absences without coverage)
-                    const pendingRequests = staffAbsences.value.filter(a => !a.replacement_staff_id).length;
-                    
-                    liveStats.value = {
-                        occupancy,
-                        occupancyTrend: 0, // Would need historical data to calculate
-                        onDutyStaff,
-                        staffTrend: 0, // Would need historical data
-                        pendingRequests,
-                        erCapacity: { current: 0, max: 0, status: 'low' },
-                        icuCapacity: { current: 0, max: 0, status: 'low' }
-                    };
-                    
+                    showToast('System Ready', 'All data loaded successfully', 'success');
+                    await logAuditEvent('SYSTEM_START', 'system', { user: currentUser.value?.email });
                 } catch (error) {
-                    console.error('Error loading live stats:', error);
+                    console.error('Error loading initial data:', error);
+                    showToast('Data Load Error', 'Failed to load system data', 'error');
                 } finally {
-                    loadingStats.value = false;
+                    loading.value = false;
                 }
             };
 
             // ============ SAVE FUNCTIONS ============
-            const saveMedicalStaff = async () => {
+            const saveMedicalStaff = async (formData) => {
                 saving.value = true;
                 try {
-                    const permissionNeeded = medicalStaffModal.value.mode === 'add' ? 'create' : 'update';
-                    if (!hasPermission('medical_staff', permissionNeeded)) {
+                    if (!hasPermission('medical_staff', medicalStaffModal.value.mode === 'add' ? 'create' : 'update')) {
                         throw new Error('Insufficient permissions');
                     }
                     
-                    // Validate form
-                    if (!medicalStaffModal.value.form.full_name.trim()) {
+                    if (!formData.full_name?.trim()) {
                         throw new Error('Full name is required');
-                    }
-                    
-                    if (medicalStaffModal.value.form.staff_type === 'medical_resident') {
-                        if (!medicalStaffModal.value.form.resident_category) {
-                            throw new Error('Resident category is required');
-                        }
-                        if (!medicalStaffModal.value.form.training_level) {
-                            throw new Error('Training level is required');
-                        }
                     }
                     
                     let result;
                     if (medicalStaffModal.value.mode === 'add') {
                         const staffData = {
-                            ...medicalStaffModal.value.form,
-                            staff_id: medicalStaffModal.value.form.staff_id || `MD-${Date.now().toString().slice(-6)}`,
+                            ...formData,
+                            staff_id: formData.staff_id || `MD-${Date.now().toString().slice(-6)}`,
                             created_at: new Date().toISOString(),
                             updated_at: new Date().toISOString()
                         };
@@ -1277,7 +712,7 @@ const loadStaffAbsences = async () => {
                         await logAuditEvent('CREATE', 'medical_staff', { staff_id: result.id, name: result.full_name });
                     } else {
                         const updateData = {
-                            ...medicalStaffModal.value.form,
+                            ...formData,
                             updated_at: new Date().toISOString()
                         };
                         
@@ -1300,34 +735,35 @@ const loadStaffAbsences = async () => {
                     }
                     
                     medicalStaffModal.value.show = false;
-                    await loadLiveStats(); // Refresh stats
+                    return result;
                 } catch (error) {
                     console.error('Error saving medical staff:', error);
                     showToast('Error', error.message, 'error');
+                    throw error;
                 } finally {
                     saving.value = false;
                 }
             };
 
-            const saveDepartment = async () => {
+            const saveDepartment = async (formData) => {
                 saving.value = true;
                 try {
-                    if (!hasPermission('system', 'manage_departments')) {
+                    if (!hasPermission('system', departmentModal.value.mode === 'add' ? 'create' : 'update')) {
                         throw new Error('Insufficient permissions');
                     }
                     
-                    if (!departmentModal.value.form.name.trim()) {
+                    if (!formData.name?.trim()) {
                         throw new Error('Department name is required');
                     }
                     
-                    if (!departmentModal.value.form.code.trim()) {
+                    if (!formData.code?.trim()) {
                         throw new Error('Department code is required');
                     }
                     
                     let result;
                     if (departmentModal.value.mode === 'add') {
                         const departmentData = {
-                            ...departmentModal.value.form,
+                            ...formData,
                             created_at: new Date().toISOString(),
                             updated_at: new Date().toISOString()
                         };
@@ -1346,7 +782,7 @@ const loadStaffAbsences = async () => {
                         await logAuditEvent('CREATE', 'departments', { department_id: result.id, name: result.name });
                     } else {
                         const updateData = {
-                            ...departmentModal.value.form,
+                            ...formData,
                             updated_at: new Date().toISOString()
                         };
                         
@@ -1369,35 +805,35 @@ const loadStaffAbsences = async () => {
                     }
                     
                     departmentModal.value.show = false;
+                    return result;
                 } catch (error) {
                     console.error('Error saving department:', error);
                     showToast('Error', error.message, 'error');
+                    throw error;
                 } finally {
                     saving.value = false;
                 }
             };
 
-            const saveTrainingUnit = async () => {
+            const saveTrainingUnit = async (formData) => {
                 saving.value = true;
                 try {
-                    const permissionNeeded = trainingUnitModal.value.mode === 'add' ? 'create' : 'update';
-                    if (!hasPermission('training_units', permissionNeeded)) {
+                    if (!hasPermission('training_units', trainingUnitModal.value.mode === 'add' ? 'create' : 'update')) {
                         throw new Error('Insufficient permissions');
                     }
                     
-                    if (!trainingUnitModal.value.form.name.trim()) {
+                    if (!formData.unit_name?.trim()) {
                         throw new Error('Unit name is required');
                     }
                     
-                    if (!trainingUnitModal.value.form.department_id) {
-                        throw new Error('Department is required');
+                    if (!formData.unit_code?.trim()) {
+                        throw new Error('Unit code is required');
                     }
                     
                     let result;
                     if (trainingUnitModal.value.mode === 'add') {
                         const unitData = {
-                            ...trainingUnitModal.value.form,
-                            current_residents: 0,
+                            ...formData,
                             created_at: new Date().toISOString(),
                             updated_at: new Date().toISOString()
                         };
@@ -1413,10 +849,10 @@ const loadStaffAbsences = async () => {
                         result = data;
                         trainingUnits.value.unshift(result);
                         showToast('Success', 'Training unit added successfully', 'success');
-                        await logAuditEvent('CREATE', 'training_units', { unit_id: result.id, name: result.name });
+                        await logAuditEvent('CREATE', 'training_units', { unit_id: result.id, name: result.unit_name });
                     } else {
                         const updateData = {
-                            ...trainingUnitModal.value.form,
+                            ...formData,
                             updated_at: new Date().toISOString()
                         };
                         
@@ -1435,261 +871,15 @@ const loadStaffAbsences = async () => {
                             trainingUnits.value[index] = result;
                         }
                         showToast('Success', 'Training unit updated successfully', 'success');
-                        await logAuditEvent('UPDATE', 'training_units', { unit_id: result.id, name: result.name });
+                        await logAuditEvent('UPDATE', 'training_units', { unit_id: result.id, name: result.unit_name });
                     }
                     
                     trainingUnitModal.value.show = false;
-                    await loadLiveStats(); // Refresh stats
+                    return result;
                 } catch (error) {
                     console.error('Error saving training unit:', error);
                     showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const saveRotation = async () => {
-                saving.value = true;
-                try {
-                    const permissionNeeded = rotationModal.value.mode === 'add' ? 'create' : 'update';
-                    if (!hasPermission('resident_rotations', permissionNeeded)) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    if (!rotationModal.value.form.resident_id) {
-                        throw new Error('Resident is required');
-                    }
-                    
-                    if (!rotationModal.value.form.training_unit_id) {
-                        throw new Error('Training unit is required');
-                    }
-                    
-                    if (!rotationModal.value.form.start_date || !rotationModal.value.form.end_date) {
-                        throw new Error('Start and end dates are required');
-                    }
-                    
-                    const startDate = new Date(rotationModal.value.form.start_date);
-                    const endDate = new Date(rotationModal.value.form.end_date);
-                    if (startDate >= endDate) {
-                        throw new Error('End date must be after start date');
-                    }
-                    
-                    let result;
-                    if (rotationModal.value.mode === 'add') {
-                        const rotationData = {
-                            ...rotationModal.value.form,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-                            .insert([rotationData])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        residentRotations.value.unshift(result);
-                        
-                        // Update unit resident count
-                        await updateUnitResidentCount(rotationModal.value.form.training_unit_id);
-                        
-                        showToast('Success', 'Rotation added successfully', 'success');
-                        await logAuditEvent('CREATE', 'resident_rotations', { rotation_id: result.id });
-                    } else {
-                        const updateData = {
-                            ...rotationModal.value.form,
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-                            .update(updateData)
-                            .eq('id', rotationModal.value.rotation.id)
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        const index = residentRotations.value.findIndex(r => r.id === result.id);
-                        if (index !== -1) {
-                            residentRotations.value[index] = result;
-                        }
-                        
-                        // Update unit resident count if unit changed
-                        if (rotationModal.value.rotation.training_unit_id !== rotationModal.value.form.training_unit_id) {
-                            await updateUnitResidentCount(rotationModal.value.rotation.training_unit_id);
-                            await updateUnitResidentCount(rotationModal.value.form.training_unit_id);
-                        }
-                        
-                        showToast('Success', 'Rotation updated successfully', 'success');
-                        await logAuditEvent('UPDATE', 'resident_rotations', { rotation_id: result.id });
-                    }
-                    
-                    rotationModal.value.show = false;
-                    await loadLiveStats(); // Refresh stats
-                } catch (error) {
-                    console.error('Error saving rotation:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const saveOnCallSchedule = async () => {
-                saving.value = true;
-                try {
-                    const permissionNeeded = onCallModal.value.mode === 'add' ? 'create' : 'update';
-                    if (!hasPermission('oncall_schedule', permissionNeeded)) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    if (!onCallModal.value.form.duty_date) {
-                        throw new Error('Duty date is required');
-                    }
-                    
-                    if (!onCallModal.value.form.primary_physician_id) {
-                        throw new Error('Primary physician is required');
-                    }
-                    
-                    let result;
-                    if (onCallModal.value.mode === 'add') {
-                        const scheduleData = {
-                            ...onCallModal.value.form,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.ONCALL_SCHEDULE)
-                            .insert([scheduleData])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        onCallSchedule.value.push(result);
-                        onCallSchedule.value.sort((a, b) => new Date(a.duty_date) - new Date(b.duty_date));
-                        showToast('Success', 'On-call schedule created', 'success');
-                        await logAuditEvent('CREATE', 'oncall_schedule', { schedule_id: result.id, date: result.duty_date });
-                    } else {
-                        const updateData = {
-                            ...onCallModal.value.form,
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.ONCALL_SCHEDULE)
-                            .update(updateData)
-                            .eq('id', onCallModal.value.schedule.id)
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        const index = onCallSchedule.value.findIndex(s => s.id === result.id);
-                        if (index !== -1) {
-                            onCallSchedule.value[index] = result;
-                        }
-                        showToast('Success', 'On-call schedule updated', 'success');
-                        await logAuditEvent('UPDATE', 'oncall_schedule', { schedule_id: result.id, date: result.duty_date });
-                    }
-                    
-                    onCallModal.value.show = false;
-                } catch (error) {
-                    console.error('Error saving on-call schedule:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const saveAbsence = async () => {
-                saving.value = true;
-                try {
-                    const permissionNeeded = absenceModal.value.mode === 'add' ? 'create' : 'update';
-                    if (!hasPermission('staff_absence', permissionNeeded)) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    if (!absenceModal.value.form.staff_member_id) {
-                        throw new Error('Staff member is required');
-                    }
-                    
-                    if (!absenceModal.value.form.absence_reason) {
-                        throw new Error('Absence reason is required');
-                    }
-                    
-                    if (!absenceModal.value.form.start_date || !absenceModal.value.form.end_date) {
-                        throw new Error('Start and end dates are required');
-                    }
-                    
-                    const startDate = new Date(absenceModal.value.form.start_date);
-                    const endDate = new Date(absenceModal.value.form.end_date);
-                    if (startDate > endDate) {
-                        throw new Error('Start date cannot be after end date');
-                    }
-                    
-                    const totalDays = calculateAbsenceDuration(startDate, endDate);
-                    
-                    let result;
-                    if (absenceModal.value.mode === 'add') {
-                        const absenceData = {
-                            ...absenceModal.value.form,
-                            total_days: totalDays,
-                            documented_by: currentUser.value.id,
-                            documented_by_name: currentUser.value.full_name,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.STAFF_ABSENCES)
-                            .insert([absenceData])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        staffAbsences.value.unshift(result);
-                        showToast('Success', 'Staff absence documented successfully', 'success');
-                        await logAuditEvent('CREATE', 'staff_absence', { absence_id: result.id, staff_id: result.staff_member_id });
-                    } else {
-                        const updateData = {
-                            ...absenceModal.value.form,
-                            total_days: totalDays,
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.STAFF_ABSENCES)
-                            .update(updateData)
-                            .eq('id', absenceModal.value.absence.id)
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        const index = staffAbsences.value.findIndex(a => a.id === result.id);
-                        if (index !== -1) {
-                            staffAbsences.value[index] = result;
-                        }
-                        showToast('Success', 'Staff absence updated successfully', 'success');
-                        await logAuditEvent('UPDATE', 'staff_absence', { absence_id: result.id, staff_id: result.staff_member_id });
-                    }
-                    
-                    absenceModal.value.show = false;
-                    await updateActiveAlerts();
-                } catch (error) {
-                    console.error('Error saving staff absence:', error);
-                    showToast('Error', error.message, 'error');
+                    throw error;
                 } finally {
                     saving.value = false;
                 }
@@ -1723,7 +913,6 @@ const loadStaffAbsences = async () => {
                             
                             showToast('Deleted', `${staff.full_name} has been removed`, 'success');
                             await logAuditEvent('DELETE', 'medical_staff', { staff_id: staff.id, name: staff.full_name });
-                            await loadLiveStats();
                         } catch (error) {
                             console.error('Error deleting medical staff:', error);
                             showToast('Error', error.message, 'error');
@@ -1732,196 +921,7 @@ const loadStaffAbsences = async () => {
                 });
             };
 
-            const deleteDepartment = async (department) => {
-                showConfirmation({
-                    title: 'Delete Department',
-                    message: `Are you sure you want to delete ${department.name}? This will also delete all associated clinical units.`,
-                    icon: 'fa-trash',
-                    confirmButtonText: 'Delete',
-                    confirmButtonClass: 'btn-danger',
-                    onConfirm: async () => {
-                        try {
-                            if (!hasPermission('system', 'manage_departments')) {
-                                throw new Error('Insufficient permissions');
-                            }
-                            
-                            // Check if department has associated units
-                            const associatedUnits = clinicalUnits.value.filter(u => u.department_id === department.id);
-                            if (associatedUnits.length > 0) {
-                                // Delete associated units first
-                                const { error: unitsError } = await supabaseClient
-                                    .from(TABLE_NAMES.CLINICAL_UNITS)
-                                    .delete()
-                                    .eq('department_id', department.id);
-                                
-                                if (unitsError) throw unitsError;
-                                
-                                // Remove from local state
-                                clinicalUnits.value = clinicalUnits.value.filter(u => u.department_id !== department.id);
-                            }
-                            
-                            // Delete department
-                            const { error } = await supabaseClient
-                                .from(TABLE_NAMES.DEPARTMENTS)
-                                .delete()
-                                .eq('id', department.id);
-                            
-                            if (error) throw error;
-                            
-                            const index = departments.value.findIndex(d => d.id === department.id);
-                            if (index !== -1) {
-                                departments.value.splice(index, 1);
-                            }
-                            
-                            showToast('Deleted', `${department.name} has been removed`, 'success');
-                            await logAuditEvent('DELETE', 'departments', { department_id: department.id, name: department.name });
-                        } catch (error) {
-                            console.error('Error deleting department:', error);
-                            showToast('Error', error.message, 'error');
-                        }
-                    }
-                });
-            };
-
-            const deleteRotation = async (rotation) => {
-                showConfirmation({
-                    title: 'Delete Rotation',
-                    message: `Are you sure you want to delete this rotation? This action cannot be undone.`,
-                    icon: 'fa-trash',
-                    confirmButtonText: 'Delete',
-                    confirmButtonClass: 'btn-danger',
-                    onConfirm: async () => {
-                        try {
-                            if (!hasPermission('resident_rotations', 'delete')) {
-                                throw new Error('Insufficient permissions');
-                            }
-                            
-                            const { error } = await supabaseClient
-                                .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-                                .delete()
-                                .eq('id', rotation.id);
-                            
-                            if (error) throw error;
-                            
-                            const index = residentRotations.value.findIndex(r => r.id === rotation.id);
-                            if (index !== -1) {
-                                residentRotations.value.splice(index, 1);
-                            }
-                            
-                            // Update unit resident count
-                            await updateUnitResidentCount(rotation.training_unit_id);
-                            
-                            showToast('Deleted', 'Rotation has been removed', 'success');
-                            await logAuditEvent('DELETE', 'resident_rotations', { rotation_id: rotation.id });
-                            await loadLiveStats();
-                        } catch (error) {
-                            console.error('Error deleting rotation:', error);
-                            showToast('Error', error.message, 'error');
-                        }
-                    }
-                });
-            };
-
-            // ============ HELPER FUNCTIONS ============
-            const updateUnitResidentCount = async (unitId) => {
-                try {
-                    const { count, error } = await supabaseClient
-                        .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-                        .select('*', { count: 'exact', head: true })
-                        .eq('training_unit_id', unitId)
-                        .in('status', ['active', 'upcoming']);
-                    
-                    if (error) throw error;
-                    
-                    const currentResidents = count || 0;
-                    
-                    const { error: updateError } = await supabaseClient
-                        .from(TABLE_NAMES.TRAINING_UNITS)
-                        .update({ current_residents: currentResidents, updated_at: new Date().toISOString() })
-                        .eq('id', unitId);
-                    
-                    if (updateError) throw updateError;
-                    
-                    // Update local state
-                    const unitIndex = trainingUnits.value.findIndex(u => u.id === unitId);
-                    if (unitIndex !== -1) {
-                        trainingUnits.value[unitIndex].current_residents = currentResidents;
-                    }
-                } catch (error) {
-                    console.error('Error updating unit resident count:', error);
-                }
-            };
-
-            const updateCapacityStats = () => {
-                // Calculate current capacity based on training units
-                const totalCapacity = trainingUnits.value.reduce((sum, unit) => sum + (unit.max_capacity || 0), 0);
-                const currentResidents = trainingUnits.value.reduce((sum, unit) => sum + (unit.current_residents || 0), 0);
-                
-                const occupancy = totalCapacity > 0 ? Math.round((currentResidents / totalCapacity) * 100) : 0;
-                
-                liveStats.value.occupancy = occupancy;
-                liveStats.value.erCapacity = { 
-                    current: currentResidents, 
-                    max: totalCapacity, 
-                    status: getCapacityStatus({ current: currentResidents, max: totalCapacity })
-                };
-                
-                currentCapacity.value.er = { ...liveStats.value.erCapacity };
-            };
-
-            const updateActiveAlerts = () => {
-                const alerts = [];
-                
-                // Check for understaffed units
-                trainingUnits.value.forEach(unit => {
-                    if (unit.status === 'active') {
-                        const occupancy = ((unit.current_residents || 0) / unit.max_capacity) * 100;
-                        if (occupancy < 50) {
-                            alerts.push({
-                                id: `unit-${unit.id}`,
-                                type: 'warning',
-                                message: `${unit.name} is understaffed (${unit.current_residents}/${unit.max_capacity} residents)`,
-                                priority: occupancy < 30 ? 'high' : 'medium'
-                            });
-                        }
-                    }
-                });
-                
-                // Check for absences without coverage
-                staffAbsences.value.forEach(absence => {
-                    if (!absence.replacement_staff_id && new Date(absence.start_date) <= new Date()) {
-                        alerts.push({
-                            id: `absence-${absence.id}`,
-                            type: 'danger',
-                            message: `${getStaffName(absence.staff_member_id)} is absent without coverage`,
-                            priority: 'high'
-                        });
-                    }
-                });
-                
-                activeAlerts.value = alerts;
-            };
-
-            const dismissAlert = (alertId) => {
-                activeAlerts.value = activeAlerts.value.filter(alert => alert.id !== alertId);
-            };
-
             // ============ COMPUTED PROPERTIES ============
-            const stats = computed(() => {
-                const residents = medicalStaff.value.filter(s => s.staff_type === 'medical_resident' && s.employment_status === 'active');
-                const attendings = medicalStaff.value.filter(s => s.staff_type === 'attending_physician' && s.employment_status === 'active');
-                const today = getLocalDateString();
-                
-                return {
-                    totalStaff: medicalStaff.value.length,
-                    activePatients: 0, // Would need patient data
-                    todayAppointments: 0, // Would need appointments data
-                    pendingAlerts: activeAlerts.value.length,
-                    activeResidents: residents.length,
-                    attendings: attendings.length
-                };
-            });
-
             const filteredMedicalStaff = computed(() => {
                 let filtered = medicalStaff.value;
                 
@@ -1934,128 +934,20 @@ const loadStaffAbsences = async () => {
                     );
                 }
                 
-                if (staffFilter.value.staff_type) {
-                    filtered = filtered.filter(s => s.staff_type === staffFilter.value.staff_type);
-                }
-                
-                if (staffFilter.value.employment_status) {
-                    filtered = filtered.filter(s => s.employment_status === staffFilter.value.employment_status);
-                }
-                
                 return filtered;
             });
 
-            const todaysOnCall = computed(() => {
-                const today = getLocalDateString();
-                return onCallSchedule.value.filter(o => o.duty_date === today);
-            });
-
-            const filteredRotations = computed(() => {
-                let filtered = residentRotations.value;
+            const stats = computed(() => {
+                const residents = medicalStaff.value.filter(s => s.staff_type === 'medical_resident' && s.employment_status === 'active');
+                const attendings = medicalStaff.value.filter(s => s.staff_type === 'attending_physician' && s.employment_status === 'active');
                 
-                if (rotationFilter.value.resident_id) {
-                    filtered = filtered.filter(r => r.resident_id === rotationFilter.value.resident_id);
-                }
-                
-                if (rotationFilter.value.status) {
-                    filtered = filtered.filter(r => r.status === rotationFilter.value.status);
-                }
-                
-                return filtered;
-            });
-
-            const filteredAbsences = computed(() => {
-                let filtered = staffAbsences.value;
-                
-                if (absenceFilter.value.staff_id) {
-                    filtered = filtered.filter(a => a.staff_member_id === absenceFilter.value.staff_id);
-                }
-                
-                if (absenceFilter.value.status) {
-                    filtered = filtered.filter(a => {
-                        const today = getLocalDateString();
-                        const startDate = new Date(a.start_date);
-                        const endDate = new Date(a.end_date);
-                        const todayDate = new Date(today);
-                        
-                        if (absenceFilter.value.status === 'active') {
-                            return startDate <= todayDate && endDate >= todayDate;
-                        } else if (absenceFilter.value.status === 'upcoming') {
-                            return startDate > todayDate;
-                        } else if (absenceFilter.value.status === 'completed') {
-                            return endDate < todayDate;
-                        }
-                        return true;
-                    });
-                }
-                
-                if (absenceFilter.value.start_date) {
-                    filtered = filtered.filter(a => a.start_date >= absenceFilter.value.start_date);
-                }
-                
-                return filtered;
-            });
-
-            const filteredAuditLogs = computed(() => {
-                let filtered = auditLogs.value;
-                
-                if (auditFilters.value.dateRange) {
-                    const date = new Date();
-                    if (auditFilters.value.dateRange === 'today') {
-                        const today = date.toISOString().split('T')[0];
-                        filtered = filtered.filter(log => log.created_at.startsWith(today));
-                    } else if (auditFilters.value.dateRange === 'week') {
-                        date.setDate(date.getDate() - 7);
-                        const weekAgo = date.toISOString();
-                        filtered = filtered.filter(log => log.created_at >= weekAgo);
-                    }
-                }
-                
-                if (auditFilters.value.actionType) {
-                    filtered = filtered.filter(log => log.action === auditFilters.value.actionType.toUpperCase());
-                }
-                
-                if (auditFilters.value.userId) {
-                    filtered = filtered.filter(log => log.user_id === auditFilters.value.userId);
-                }
-                
-                return filtered;
-            });
-
-            const availableResidents = computed(() => {
-                return medicalStaff.value.filter(staff => 
-                    staff.staff_type === 'medical_resident' && 
-                    staff.employment_status === 'active'
-                );
-            });
-
-            const availableTrainingUnits = computed(() => {
-                return trainingUnits.value.filter(unit => unit.status === 'active');
-            });
-
-            const availablePhysicians = computed(() => {
-                return medicalStaff.value.filter(staff => 
-                    (staff.staff_type === 'attending_physician' || staff.staff_type === 'fellow') && 
-                    staff.employment_status === 'active'
-                );
-            });
-
-            const availableSupervisors = computed(() => {
-                return medicalStaff.value.filter(staff => 
-                    (staff.staff_type === 'attending_physician') && 
-                    staff.employment_status === 'active'
-                );
-            });
-
-            const availableHeadsOfDepartment = computed(() => {
-                return medicalStaff.value.filter(staff => 
-                    staff.staff_type === 'attending_physician' && 
-                    staff.employment_status === 'active'
-                );
-            });
-
-            const unreadNotifications = computed(() => {
-                return userNotifications.value.filter(n => !n.read).length;
+                return {
+                    totalStaff: medicalStaff.value.length,
+                    activeResidents: residents.length,
+                    attendings: attendings.length,
+                    departments: departments.value.length,
+                    trainingUnits: trainingUnits.value.length
+                };
             });
 
             // ============ UI FUNCTIONS ============
@@ -2072,7 +964,6 @@ const loadStaffAbsences = async () => {
                         break;
                     case 'department_management':
                         loadDepartments();
-                        loadClinicalUnits();
                         break;
                     case 'training_units':
                         loadTrainingUnits();
@@ -2089,9 +980,6 @@ const loadStaffAbsences = async () => {
                     case 'communications':
                         loadAnnouncements();
                         break;
-                    case 'audit_logs':
-                        loadAuditLogs();
-                        break;
                 }
             };
 
@@ -2104,46 +992,9 @@ const loadStaffAbsences = async () => {
                     staff_absence: 'Staff Absence',
                     training_units: 'Training Units',
                     department_management: 'Department Management',
-                    communications: 'Communications',
-                    audit_logs: 'Audit Logs',
-                    permission_manager: 'Permission Manager',
-                    system_settings: 'System Settings'
+                    communications: 'Communications'
                 };
                 return titles[currentView.value] || 'NeumoCare';
-            };
-
-            const getCurrentSubtitle = () => {
-                const subtitles = {
-                    daily_operations: 'Real-time department dashboard',
-                    medical_staff: 'Manage medical staff with comprehensive profiles',
-                    resident_rotations: 'Manage resident training rotations and assignments',
-                    oncall_schedule: 'Manage physician on-call duties and emergency coverage',
-                    staff_absence: 'Document staff absences and manage clinical coverage',
-                    training_units: 'Manage training units and resident capacity allocation',
-                    department_management: 'Manage departments and clinical units for organizational structure',
-                    communications: 'Announcements, capacity planning, and quick updates',
-                    audit_logs: 'Track all system activities and permission changes',
-                    permission_manager: 'Manage user permissions and access controls',
-                    system_settings: 'Configure system-wide settings and preferences'
-                };
-                return subtitles[currentView.value] || 'Pulmonology Department Management System';
-            };
-
-            const toggleStatsSidebar = () => {
-                statsSidebarOpen.value = !statsSidebarOpen.value;
-            };
-
-            const toggleSearchScope = () => {
-                const scopes = ['global', 'staff', 'patients', 'units'];
-                const currentIndex = scopes.indexOf(searchScope.value);
-                searchScope.value = scopes[(currentIndex + 1) % scopes.length];
-            };
-
-            const handleSearch = () => {
-                if (!searchQuery.value.trim()) return;
-                
-                showToast('Search', `Searching for "${searchQuery.value}" in ${searchScope.value}...`, 'info');
-                // Actual search implementation would go here
             };
 
             // ============ MODAL FUNCTIONS ============
@@ -2156,25 +1007,7 @@ const loadStaffAbsences = async () => {
                 medicalStaffModal.value = {
                     show: true,
                     mode: 'add',
-                    staff: null,
-                    activeTab: 'basic',
-                    form: {
-                        full_name: '',
-                        staff_type: 'medical_resident',
-                        staff_id: `MD-${Date.now().toString().slice(-6)}`,
-                        employment_status: 'active',
-                        professional_email: '',
-                        resident_category: '',
-                        training_level: '',
-                        specialization: '',
-                        years_experience: '',
-                        biography: '',
-                        medical_license: '',
-                        date_of_birth: '',
-                        office_phone: '',
-                        mobile_phone: '',
-                        department_id: ''
-                    }
+                    staff: null
                 };
             };
 
@@ -2187,117 +1020,33 @@ const loadStaffAbsences = async () => {
                 medicalStaffModal.value = {
                     show: true,
                     mode: 'edit',
-                    staff: staff,
-                    activeTab: 'basic',
-                    form: { ...staff }
+                    staff: staff
                 };
             };
 
-            const viewStaffDetails = async (staff) => {
-                staffDetailsModal.value.staff = staff;
-                staffDetailsModal.value.show = true;
-                
-                // Load staff-specific data
-                try {
-                    // Load stats
-                    const rotations = residentRotations.value.filter(r => r.resident_id === staff.id);
-                    const completedRotations = rotations.filter(r => r.status === 'completed').length;
-                    
-                    staffDetailsModal.value.stats = {
-                        completedRotations,
-                        oncallShifts: 0, // Would need to query on-call schedule
-                        absenceDays: 0, // Would need to query absences
-                        supervisionCount: 0 // Would need to query rotations supervised
-                    };
-                    
-                    // Load current rotation
-                    const currentRotation = rotations.find(r => r.status === 'active');
-                    staffDetailsModal.value.currentRotation = currentRotation ? 
-                        `${getTrainingUnitName(currentRotation.training_unit_id)} (${formatDate(currentRotation.start_date)} - ${formatDate(currentRotation.end_date)})` : 
-                        'No active rotation';
-                    
-                    // Load next on-call
-                    const today = getLocalDateString();
-                    const nextOncall = onCallSchedule.value
-                        .filter(o => o.primary_physician_id === staff.id && o.duty_date >= today)
-                        .sort((a, b) => new Date(a.duty_date) - new Date(b.duty_date))[0];
-                    
-                    staffDetailsModal.value.nextOncall = nextOncall ? 
-                        `${formatDate(nextOncall.duty_date)} (${formatTimeRange(nextOncall.start_time, nextOncall.end_time)})` : 
-                        'No upcoming on-call';
-                        
-                } catch (error) {
-                    console.error('Error loading staff details:', error);
-                }
-            };
-
             const showAddDepartmentModal = () => {
-                if (!hasPermission('system', 'manage_departments')) {
-                    showToast('Permission Denied', 'You need manage_departments permission', 'error');
+                if (!hasPermission('system', 'create')) {
+                    showToast('Permission Denied', 'You need create permission', 'error');
                     return;
                 }
                 
                 departmentModal.value = {
                     show: true,
                     mode: 'add',
-                    department: null,
-                    form: {
-                        name: '',
-                        code: '',
-                        status: 'active',
-                        description: '',
-                        head_of_department_id: ''
-                    }
+                    department: null
                 };
             };
 
             const editDepartment = (department) => {
-                if (!hasPermission('system', 'manage_departments')) {
-                    showToast('Permission Denied', 'You need manage_departments permission', 'error');
+                if (!hasPermission('system', 'update')) {
+                    showToast('Permission Denied', 'You need update permission', 'error');
                     return;
                 }
                 
                 departmentModal.value = {
                     show: true,
                     mode: 'edit',
-                    department: department,
-                    form: { ...department }
-                };
-            };
-
-            const showAddClinicalUnitModal = () => {
-                if (!hasPermission('system', 'manage_departments')) {
-                    showToast('Permission Denied', 'You need manage_departments permission', 'error');
-                    return;
-                }
-                
-                clinicalUnitModal.value = {
-                    show: true,
-                    mode: 'add',
-                    unit: null,
-                    form: {
-                        name: '',
-                        code: '',
-                        department_id: '',
-                        unit_type: 'clinical',
-                        status: 'active',
-                        description: '',
-                        supervisor_id: ''
-                    }
-                };
-            };
-
-            const editClinicalUnit = (unit) => {
-                if (!hasPermission('system', 'manage_departments')) {
-                    showToast('Permission Denied', 'You need manage_departments permission', 'error');
-                    return;
-                }
-                
-                clinicalUnitModal.value = {
-                    show: true,
-                    mode: 'edit',
-                    unit: unit,
-                    form: { ...unit }
+                    department: department
                 };
             };
 
@@ -2310,15 +1059,7 @@ const loadStaffAbsences = async () => {
                 trainingUnitModal.value = {
                     show: true,
                     mode: 'add',
-                    unit: null,
-                    form: {
-                        name: '',
-                        department_id: '',
-                        supervisor_id: '',
-                        max_capacity: 10,
-                        status: 'active',
-                        description: ''
-                    }
+                    unit: null
                 };
             };
 
@@ -2331,615 +1072,8 @@ const loadStaffAbsences = async () => {
                 trainingUnitModal.value = {
                     show: true,
                     mode: 'edit',
-                    unit: unit,
-                    form: { ...unit }
+                    unit: unit
                 };
-            };
-
-            const showAddRotationModal = () => {
-                if (!hasPermission('resident_rotations', 'create')) {
-                    showToast('Permission Denied', 'You need create permission', 'error');
-                    return;
-                }
-                
-                const startDate = new Date();
-                const endDate = new Date();
-                endDate.setDate(endDate.getDate() + 30);
-                
-                rotationModal.value = {
-                    show: true,
-                    mode: 'add',
-                    rotation: null,
-                    form: {
-                        resident_id: '',
-                        training_unit_id: '',
-                        start_date: getLocalDateString(startDate),
-                        end_date: getLocalDateString(endDate),
-                        supervisor_id: '',
-                        status: 'active',
-                        goals: '',
-                        notes: ''
-                    }
-                };
-            };
-
-            const editRotation = (rotation) => {
-                if (!hasPermission('resident_rotations', 'update')) {
-                    showToast('Permission Denied', 'You need update permission', 'error');
-                    return;
-                }
-                
-                rotationModal.value = {
-                    show: true,
-                    mode: 'edit',
-                    rotation: rotation,
-                    form: { ...rotation }
-                };
-            };
-
-            const showAddOnCallModal = () => {
-                if (!hasPermission('oncall_schedule', 'create')) {
-                    showToast('Permission Denied', 'You need create permission', 'error');
-                    return;
-                }
-                
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                
-                onCallModal.value = {
-                    show: true,
-                    mode: 'add',
-                    schedule: null,
-                    form: {
-                        duty_date: getLocalDateString(tomorrow),
-                        shift_type: 'backup_call',
-                        start_time: '08:00',
-                        end_time: '20:00',
-                        primary_physician_id: '',
-                        backup_physician_id: '',
-                        coverage_notes: ''
-                    }
-                };
-            };
-
-            const editOnCallSchedule = (schedule) => {
-                if (!hasPermission('oncall_schedule', 'update')) {
-                    showToast('Permission Denied', 'You need update permission', 'error');
-                    return;
-                }
-                
-                onCallModal.value = {
-                    show: true,
-                    mode: 'edit',
-                    schedule: schedule,
-                    form: {
-                        duty_date: schedule.duty_date,
-                        shift_type: schedule.shift_type || 'backup_call',
-                        start_time: schedule.start_time?.slice(0, 5) || '08:00',
-                        end_time: schedule.end_time?.slice(0, 5) || '20:00',
-                        primary_physician_id: schedule.primary_physician_id,
-                        backup_physician_id: schedule.backup_physician_id || '',
-                        coverage_notes: schedule.coverage_notes || ''
-                    }
-                };
-            };
-
-            const showAddAbsenceModal = () => {
-                if (!hasPermission('staff_absence', 'create')) {
-                    showToast('Permission Denied', 'You need create permission', 'error');
-                    return;
-                }
-                
-                const startDate = new Date();
-                const endDate = new Date();
-                endDate.setDate(endDate.getDate() + 7);
-                
-                absenceModal.value = {
-                    show: true,
-                    mode: 'add',
-                    absence: null,
-                    form: {
-                        staff_member_id: '',
-                        absence_reason: '',
-                        start_date: getLocalDateString(startDate),
-                        end_date: getLocalDateString(endDate),
-                        notes: '',
-                        replacement_staff_id: '',
-                        coverage_instructions: ''
-                    }
-                };
-            };
-
-            const editAbsence = (absence) => {
-                if (!hasPermission('staff_absence', 'update')) {
-                    showToast('Permission Denied', 'You need update permission', 'error');
-                    return;
-                }
-                
-                absenceModal.value = {
-                    show: true,
-                    mode: 'edit',
-                    absence: absence,
-                    form: { ...absence }
-                };
-            };
-
-            const showQuickPlacementModal = () => {
-                if (!hasPermission('placements', 'create')) {
-                    showToast('Permission Denied', 'You need create permission', 'error');
-                    return;
-                }
-                
-                const startDate = new Date();
-                
-                quickPlacementModal.value = {
-                    show: true,
-                    resident_id: '',
-                    training_unit_id: '',
-                    start_date: getLocalDateString(startDate),
-                    duration: 4,
-                    supervisor_id: '',
-                    notes: ''
-                };
-            };
-
-            const saveQuickPlacement = async () => {
-                saving.value = true;
-                try {
-                    if (!hasPermission('placements', 'create')) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    if (!quickPlacementModal.value.resident_id) {
-                        throw new Error('Resident is required');
-                    }
-                    
-                    if (!quickPlacementModal.value.training_unit_id) {
-                        throw new Error('Training unit is required');
-                    }
-                    
-                    if (!quickPlacementModal.value.start_date) {
-                        throw new Error('Start date is required');
-                    }
-                    
-                    const startDate = new Date(quickPlacementModal.value.start_date);
-                    const endDate = new Date(startDate);
-                    endDate.setDate(endDate.getDate() + (quickPlacementModal.value.duration * 7));
-                    
-                    const rotationData = {
-                        resident_id: quickPlacementModal.value.resident_id,
-                        training_unit_id: quickPlacementModal.value.training_unit_id,
-                        start_date: getLocalDateString(startDate),
-                        end_date: getLocalDateString(endDate),
-                        supervisor_id: quickPlacementModal.value.supervisor_id || null,
-                        status: 'active',
-                        notes: quickPlacementModal.value.notes,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    };
-                    
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-                        .insert([rotationData])
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    residentRotations.value.unshift(data);
-                    await updateUnitResidentCount(quickPlacementModal.value.training_unit_id);
-                    
-                    showToast('Success', 'Resident placed successfully', 'success');
-                    await logAuditEvent('CREATE', 'placements', { rotation_id: data.id });
-                    
-                    quickPlacementModal.value.show = false;
-                    await loadLiveStats();
-                } catch (error) {
-                    console.error('Error saving quick placement:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const showBulkAssignModal = () => {
-                if (!hasPermission('training_units', 'update')) {
-                    showToast('Permission Denied', 'You need update permission', 'error');
-                    return;
-                }
-                
-                bulkAssignModal.value = {
-                    show: true,
-                    selectedResidents: [],
-                    training_unit_id: '',
-                    start_date: getLocalDateString(),
-                    duration: 4,
-                    supervisor_id: ''
-                };
-            };
-
-            const saveBulkAssignment = async () => {
-                saving.value = true;
-                try {
-                    if (!hasPermission('training_units', 'update')) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    if (bulkAssignModal.value.selectedResidents.length === 0) {
-                        throw new Error('Please select at least one resident');
-                    }
-                    
-                    if (!bulkAssignModal.value.training_unit_id) {
-                        throw new Error('Training unit is required');
-                    }
-                    
-                    if (!bulkAssignModal.value.start_date) {
-                        throw new Error('Start date is required');
-                    }
-                    
-                    const startDate = new Date(bulkAssignModal.value.start_date);
-                    const endDate = new Date(startDate);
-                    endDate.setDate(endDate.getDate() + (bulkAssignModal.value.duration * 7));
-                    
-                    const rotations = bulkAssignModal.value.selectedResidents.map(residentId => ({
-                        resident_id: residentId,
-                        training_unit_id: bulkAssignModal.value.training_unit_id,
-                        start_date: getLocalDateString(startDate),
-                        end_date: getLocalDateString(endDate),
-                        supervisor_id: bulkAssignModal.value.supervisor_id || null,
-                        status: 'active',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }));
-                    
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.RESIDENT_ROTATIONS)
-                        .insert(rotations)
-                        .select();
-                    
-                    if (error) throw error;
-                    
-                    data.forEach(rotation => {
-                        residentRotations.value.unshift(rotation);
-                    });
-                    
-                    await updateUnitResidentCount(bulkAssignModal.value.training_unit_id);
-                    
-                    showToast('Success', `${data.length} residents assigned successfully`, 'success');
-                    await logAuditEvent('BULK_CREATE', 'resident_rotations', { count: data.length, unit_id: bulkAssignModal.value.training_unit_id });
-                    
-                    bulkAssignModal.value.show = false;
-                    await loadLiveStats();
-                } catch (error) {
-                    console.error('Error saving bulk assignment:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const showCommunicationsModal = () => {
-                if (!hasPermission('communications', 'create')) {
-                    showToast('Permission Denied', 'You need create permission', 'error');
-                    return;
-                }
-                
-                const today = getLocalDateString();
-                
-                communicationsModal.value = {
-                    show: true,
-                    activeTab: 'announcement',
-                    form: {
-                        announcement_title: '',
-                        announcement_content: '',
-                        publish_start_date: today,
-                        publish_end_date: '',
-                        priority_level: 'medium',
-                        target_audience: 'all'
-                    },
-                    capacity: {
-                        er: { current: currentCapacity.value.er.current, max: currentCapacity.value.er.max, notes: '' },
-                        icu: { current: currentCapacity.value.icu.current, max: currentCapacity.value.icu.max, notes: '' },
-                        ward: { current: 0, max: 0, notes: '' },
-                        stepdown: { current: 0, max: 0, notes: '' },
-                        clinic: { current: 0, max: 0, notes: '' },
-                        bronch: { current: 0, max: 0, notes: '' },
-                        overall_notes: ''
-                    },
-                    quickUpdate: {
-                        message: '',
-                        priority: 'info',
-                        expires: '24',
-                        tags: ''
-                    }
-                };
-            };
-
-            const saveCommunication = async () => {
-                saving.value = true;
-                try {
-                    if (!hasPermission('communications', 'create')) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    if (communicationsModal.value.activeTab === 'announcement') {
-                        if (!communicationsModal.value.form.announcement_title.trim()) {
-                            throw new Error('Announcement title is required');
-                        }
-                        
-                        if (!communicationsModal.value.form.announcement_content.trim()) {
-                            throw new Error('Announcement content is required');
-                        }
-                        
-                        if (!communicationsModal.value.form.publish_start_date) {
-                            throw new Error('Publish date is required');
-                        }
-                        
-                        const announcementData = {
-                            ...communicationsModal.value.form,
-                            created_by: currentUser.value.id,
-                            created_by_name: currentUser.value.full_name,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.ANNOUNCEMENTS)
-                            .insert([announcementData])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        announcements.value.unshift(data);
-                        showToast('Success', 'Announcement published successfully', 'success');
-                        await logAuditEvent('CREATE', 'communications', { announcement_id: data.id, title: data.announcement_title });
-                        
-                    } else if (communicationsModal.value.activeTab === 'capacity') {
-                        // Update capacity in system settings or a dedicated table
-                        currentCapacity.value.er = { 
-                            ...communicationsModal.value.capacity.er,
-                            status: getCapacityStatus(communicationsModal.value.capacity.er)
-                        };
-                        
-                        currentCapacity.value.icu = { 
-                            ...communicationsModal.value.capacity.icu,
-                            status: getCapacityStatus(communicationsModal.value.capacity.icu)
-                        };
-                        
-                        showToast('Success', 'Capacity information updated', 'success');
-                        await logAuditEvent('UPDATE', 'communications', { type: 'capacity_update' });
-                        
-                    } else if (communicationsModal.value.activeTab === 'quick') {
-                        if (!communicationsModal.value.quickUpdate.message.trim()) {
-                            throw new Error('Message is required');
-                        }
-                        
-                        // Create a quick announcement
-                        const quickAnnouncement = {
-                            announcement_title: 'Quick Update',
-                            announcement_content: communicationsModal.value.quickUpdate.message,
-                            publish_start_date: getLocalDateString(),
-                            publish_end_date: getLocalDateString(new Date(Date.now() + parseInt(communicationsModal.value.quickUpdate.expires) * 60 * 60 * 1000)),
-                            priority_level: communicationsModal.value.quickUpdate.priority,
-                            target_audience: 'all',
-                            created_by: currentUser.value.id,
-                            created_by_name: currentUser.value.full_name,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.ANNOUNCEMENTS)
-                            .insert([quickAnnouncement])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        announcements.value.unshift(data);
-                        showToast('Success', 'Quick update posted', 'success');
-                        await logAuditEvent('CREATE', 'communications', { announcement_id: data.id, type: 'quick_update' });
-                    }
-                    
-                    communicationsModal.value.show = false;
-                } catch (error) {
-                    console.error('Error saving communication:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const showSystemSettingsModal = () => {
-                if (!hasPermission('system', 'read')) {
-                    showToast('Permission Denied', 'You need read permission', 'error');
-                    return;
-                }
-                
-                systemSettingsModal.value = {
-                    show: true,
-                    form: { ...systemSettings.value }
-                };
-            };
-
-            const saveSystemSettings = async () => {
-                saving.value = true;
-                try {
-                    if (!hasPermission('system', 'update')) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.SYSTEM_SETTINGS)
-                        .upsert([systemSettingsModal.value.form])
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    systemSettings.value = data;
-                    showToast('Success', 'System settings saved successfully', 'success');
-                    await logAuditEvent('UPDATE', 'system', { settings_updated: true });
-                    
-                    systemSettingsModal.value.show = false;
-                } catch (error) {
-                    console.error('Error saving system settings:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const showUserProfile = () => {
-                userProfileModal.value = {
-                    show: true,
-                    form: {
-                        full_name: currentUser.value.full_name,
-                        email: currentUser.value.email,
-                        phone: currentUser.value.phone || '',
-                        department_id: currentUser.value.department_id || '',
-                        notifications_enabled: currentUser.value.notifications_enabled !== false,
-                        absence_notifications: currentUser.value.absence_notifications !== false,
-                        announcement_notifications: currentUser.value.announcement_notifications !== false
-                    }
-                };
-                userMenuOpen.value = false;
-            };
-
-            const saveUserProfile = async () => {
-                saving.value = true;
-                try {
-                    const updateData = {
-                        ...userProfileModal.value.form,
-                        updated_at: new Date().toISOString()
-                    };
-                    
-                    const { data, error } = await supabaseClient
-                        .from(TABLE_NAMES.USERS)
-                        .update(updateData)
-                        .eq('id', currentUser.value.id)
-                        .select()
-                        .single();
-                    
-                    if (error) throw error;
-                    
-                    currentUser.value = { ...currentUser.value, ...data };
-                    showToast('Success', 'Profile updated successfully', 'success');
-                    await logAuditEvent('UPDATE', 'user_profile', { user_id: currentUser.value.id });
-                    
-                    userProfileModal.value.show = false;
-                } catch (error) {
-                    console.error('Error saving user profile:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
-            };
-
-            const showPermissionManager = () => {
-                if (!hasPermission('permissions', 'read')) {
-                    showToast('Permission Denied', 'You need read permission', 'error');
-                    return;
-                }
-                
-                currentView.value = 'permission_manager';
-            };
-
-            const showAddRoleModal = () => {
-                if (!hasPermission('permissions', 'manage')) {
-                    showToast('Permission Denied', 'You need manage permission', 'error');
-                    return;
-                }
-                
-                roleModal.value = {
-                    show: true,
-                    mode: 'add',
-                    role: null,
-                    form: {
-                        name: '',
-                        description: '',
-                        permissions: []
-                    }
-                };
-            };
-
-            const editRole = (role) => {
-                if (!hasPermission('permissions', 'manage')) {
-                    showToast('Permission Denied', 'You need manage permission', 'error');
-                    return;
-                }
-                
-                roleModal.value = {
-                    show: true,
-                    mode: 'edit',
-                    role: role,
-                    form: { ...role }
-                };
-            };
-
-            const saveRole = async () => {
-                saving.value = true;
-                try {
-                    if (!hasPermission('permissions', 'manage')) {
-                        throw new Error('Insufficient permissions');
-                    }
-                    
-                    if (!roleModal.value.form.name.trim()) {
-                        throw new Error('Role name is required');
-                    }
-                    
-                    let result;
-                    if (roleModal.value.mode === 'add') {
-                        const roleData = {
-                            ...roleModal.value.form,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.USER_ROLES)
-                            .insert([roleData])
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        userRoles.value.push(result);
-                        showToast('Success', 'Role added successfully', 'success');
-                        await logAuditEvent('CREATE', 'permissions', { role_id: result.id, name: result.name });
-                    } else {
-                        const updateData = {
-                            ...roleModal.value.form,
-                            updated_at: new Date().toISOString()
-                        };
-                        
-                        const { data, error } = await supabaseClient
-                            .from(TABLE_NAMES.USER_ROLES)
-                            .update(updateData)
-                            .eq('id', roleModal.value.role.id)
-                            .select()
-                            .single();
-                        
-                        if (error) throw error;
-                        
-                        result = data;
-                        const index = userRoles.value.findIndex(r => r.id === result.id);
-                        if (index !== -1) {
-                            userRoles.value[index] = result;
-                        }
-                        showToast('Success', 'Role updated successfully', 'success');
-                        await logAuditEvent('UPDATE', 'permissions', { role_id: result.id, name: result.name });
-                    }
-                    
-                    roleModal.value.show = false;
-                } catch (error) {
-                    console.error('Error saving role:', error);
-                    showToast('Error', error.message, 'error');
-                } finally {
-                    saving.value = false;
-                }
             };
 
             // ============ AUTHENTICATION ============
@@ -2955,18 +1089,38 @@ const loadStaffAbsences = async () => {
                     
                     // For development: Use demo credentials
                     if (email === 'admin@neumocare.org' && password === 'password123') {
-                        currentUser.value = {
-                            id: '1',
-                            email: email,
-                            full_name: 'System Administrator',
-                            user_role: 'system_admin',
-                            phone: '+1 (555) 123-4567',
-                            department_id: '1',
-                            account_status: 'active',
-                            notifications_enabled: true,
-                            absence_notifications: true,
-                            announcement_notifications: true
-                        };
+                        // Try to get user from database
+                        const { data: users, error } = await supabaseClient
+                            .from(TABLE_NAMES.USERS)
+                            .select('*')
+                            .eq('email', email)
+                            .limit(1);
+                        
+                        if (error) {
+                            console.warn('Could not fetch user from database:', error);
+                            // Create demo user
+                            currentUser.value = {
+                                id: '11111111-1111-1111-1111-111111111111',
+                                email: email,
+                                full_name: 'System Administrator',
+                                user_role: 'system_admin',
+                                department: 'Administration',
+                                account_status: 'active'
+                            };
+                        } else if (users && users.length > 0) {
+                            // Use existing user
+                            currentUser.value = users[0];
+                        } else {
+                            // Create demo user
+                            currentUser.value = {
+                                id: '11111111-1111-1111-1111-111111111111',
+                                email: email,
+                                full_name: 'System Administrator',
+                                user_role: 'system_admin',
+                                department: 'Administration',
+                                account_status: 'active'
+                            };
+                        }
                         
                         showToast('Login Successful', `Welcome ${currentUser.value.full_name}!`, 'success');
                         await logAuditEvent('LOGIN', 'auth', { email: email });
@@ -2982,7 +1136,6 @@ const loadStaffAbsences = async () => {
                 } catch (error) {
                     console.error('Login error:', error);
                     showToast('Login Failed', error.message, 'error');
-                    await logAuditEvent('LOGIN_FAILED', 'auth', { email: loginForm.value.email, error: error.message });
                 } finally {
                     loading.value = false;
                     loginForm.value.password = '';
@@ -3008,17 +1161,7 @@ const loadStaffAbsences = async () => {
 
             // ============ LIFECYCLE HOOKS ============
             onMounted(() => {
-                // Start live stats refresh interval
-                const statsInterval = setInterval(async () => {
-                    if (currentUser.value && currentView.value === 'daily_operations') {
-                        await loadLiveStats();
-                    }
-                }, 30000);
-                
-                // Cleanup on unmount
-                onUnmounted(() => {
-                    clearInterval(statsInterval);
-                });
+                console.log('App mounted');
             });
 
             // ============ RETURN STATEMENT ============
@@ -3031,10 +1174,6 @@ const loadStaffAbsences = async () => {
                 currentView,
                 sidebarCollapsed,
                 mobileMenuOpen,
-                statsSidebarOpen,
-                searchQuery,
-                searchScope,
-                searchFilter,
                 userMenuOpen,
                 
                 // Modal States
@@ -3047,104 +1186,54 @@ const loadStaffAbsences = async () => {
                 rotationModal,
                 onCallModal,
                 absenceModal,
-                quickPlacementModal,
-                bulkAssignModal,
                 communicationsModal,
                 systemSettingsModal,
-                userProfileModal,
-                roleModal,
                 
                 // Data Stores
                 medicalStaff,
+                departments,
+                clinicalUnits,
                 trainingUnits,
                 residentRotations,
                 staffAbsences,
                 onCallSchedule,
                 announcements,
-                auditLogs,
-                departments,
-                clinicalUnits,
-                userNotifications,
-                systemSettings,
-                userRoles,
                 users,
                 
                 // UI State
                 toasts,
                 staffSearch,
-                staffFilter,
-                rotationFilter,
-                absenceFilter,
-                auditFilters,
-                liveStats,
-                currentCapacity,
-                loadingStats,
-                loadingAnnouncements,
-                loadingSchedule,
+                activeAlerts,
+                
+                // Loading States
                 loadingStaff,
+                loadingDepartments,
+                loadingTrainingUnits,
                 loadingRotations,
                 loadingAbsences,
-                loadingAuditLogs,
-                activeAlerts,
+                loadingSchedule,
                 
                 // Computed Properties
                 stats,
                 filteredMedicalStaff,
-                todaysOnCall,
-                filteredRotations,
-                filteredAbsences,
-                filteredAuditLogs,
-                availableResidents,
-                availableTrainingUnits,
-                availablePhysicians,
-                availableSupervisors,
-                availableHeadsOfDepartment,
-                unreadNotifications,
                 
                 // Core Functions
                 hasPermission,
-                roleHasPermission,
-                getUserPermissions,
                 
                 // Utility Functions
                 getInitials,
                 formatDate,
                 formatDateTime,
-                formatTimeAgo,
-                formatTimeRange,
-                getUserRoleDisplay,
                 formatStaffType,
                 getStaffTypeClass,
                 formatEmploymentStatus,
-                formatResidentCategory,
-                formatTrainingLevel,
-                formatAbsenceReason,
-                formatAbsenceStatus,
-                getAbsenceStatusClass,
-                formatRotationStatus,
-                getRotationStatusClass,
-                formatAuditAction,
-                formatPermissionName,
-                getPriorityColor,
-                getCapacityStatus,
-                getCommunicationIcon,
-                getCommunicationButtonText,
                 getStaffName,
                 getDepartmentName,
                 getTrainingUnitName,
-                getDepartmentUnits,
-                getUnitResidents,
-                getSupervisorName,
-                getUserName,
-                calculateAbsenceDuration,
                 
                 // Navigation Functions
                 switchView,
                 getCurrentTitle,
-                getCurrentSubtitle,
-                toggleStatsSidebar,
-                toggleSearchScope,
-                handleSearch,
                 
                 // Modal Functions
                 showConfirmation,
@@ -3152,43 +1241,14 @@ const loadStaffAbsences = async () => {
                 cancelConfirmation,
                 showAddMedicalStaffModal,
                 editMedicalStaff,
-                viewStaffDetails,
                 saveMedicalStaff,
                 deleteMedicalStaff,
                 showAddDepartmentModal,
                 editDepartment,
                 saveDepartment,
-                deleteDepartment,
-                showAddClinicalUnitModal,
-                editClinicalUnit,
-                saveClinicalUnit,
                 showAddTrainingUnitModal,
                 editTrainingUnit,
                 saveTrainingUnit,
-                showAddRotationModal,
-                editRotation,
-                saveRotation,
-                deleteRotation,
-                showAddOnCallModal,
-                editOnCallSchedule,
-                saveOnCallSchedule,
-                showAddAbsenceModal,
-                editAbsence,
-                saveAbsence,
-                showQuickPlacementModal,
-                saveQuickPlacement,
-                showBulkAssignModal,
-                saveBulkAssignment,
-                showCommunicationsModal,
-                saveCommunication,
-                showSystemSettingsModal,
-                saveSystemSettings,
-                showUserProfile,
-                saveUserProfile,
-                showPermissionManager,
-                showAddRoleModal,
-                editRole,
-                saveRole,
                 
                 // Authentication Functions
                 handleLogin,
@@ -3196,8 +1256,7 @@ const loadStaffAbsences = async () => {
                 
                 // UI Functions
                 removeToast,
-                dismissAlert,
-                toggleUserMenu
+                showToast
             };
         }
     });
