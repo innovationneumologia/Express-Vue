@@ -2862,7 +2862,7 @@ const app = createApp({
             // Drag and Drop Functions
             handleDrop, removePlacement,
             
-            // Form Functions
+           // Form Functions
             onStaffTypeChange,
             
             // Toast Function
@@ -2872,4 +2872,9 @@ const app = createApp({
 });
 
 // Mount the application
-app.mount('#app');
+try {
+    app.mount('#app');
+    console.log('Vue app mounted successfully');
+} catch (error) {
+    console.error('Failed to mount Vue app:', error);
+}
