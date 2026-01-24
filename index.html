@@ -5060,34 +5060,6 @@
             </div>
         </div>
 
-        <!-- Confirmation Modal -->
-        <div v-if="confirmationModal.show" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
-            <div class="modal-container" style="max-width: 500px;">
-                <div class="modal-header">
-                    <div class="modal-title" id="confirmation-title">
-                        <i class="fas" :class="confirmationModal.icon"></i>
-                        {{ confirmationModal.title }}
-                    </div>
-                    <button class="modal-close" @click="confirmationModal.show = false" aria-label="Close modal">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p style="text-align: center; margin: 20px 0; font-size: 16px; color: var(--gray-700);">
-                        {{ confirmationModal.message }}
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="confirmationModal.show = false">Cancel</button>
-                    <button class="btn" :class="confirmationModal.confirmButtonClass" @click="confirmAction" :disabled="saving">
-                        <span v-if="saving" class="loading"></span>
-                        <span v-else>{{ confirmationModal.confirmButtonText }}</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        </div> <!-- Closing tag for the main app div -->
-
     <!-- Confirmation Modal -->
     <div v-if="confirmationModal.show" class="modal-overlay" role="dialog" aria-modal="true" 
          aria-labelledby="confirmation-title" aria-describedby="confirmation-message">
