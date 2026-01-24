@@ -63,43 +63,6 @@ window.addEventListener('load', function() {
         };
     }
 
-    // ============ SUPABASE CONFIGURATION ============
-    const SUPABASE_URL = 'https://vssmguzuvekkecbmwcjw.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzc21ndXp1dmVra2VjYm13Y2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI4NTIsImV4cCI6MjA4NDE2ODg1Mn0.8qPFsMEn4n5hDfxhgXvq2lQarts8OlL8hWiRYXb-vXw';
-
-    // Initialize Supabase client with safety check
-    let supabaseClient;
-    try {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: false,
-                storage: window.localStorage
-            }
-        });
-        console.log('Supabase client initialized successfully');
-    } catch (error) {
-        console.error('Failed to initialize Supabase client:', error);
-        // Fallback to mock mode if Supabase fails
-        supabaseClient = {
-            from: () => ({
-                select: () => Promise.resolve({ data: [], error: null }),
-                insert: () => Promise.resolve({ data: [], error: null }),
-                update: () => Promise.resolve({ data: [], error: null }),
-                delete: () => Promise.resolve({ data: [], error: null }),
-                eq: () => ({ 
-                    select: () => Promise.resolve({ data: [], error: null }),
-                    single: () => Promise.resolve({ data: null, error: null })
-                })
-            }),
-            auth: {
-                getSession: () => Promise.resolve({ data: { session: null }, error: null })
-            }
-        };
-        console.warn('Running in mock mode - Supabase not available');
-    }
-
 // ============ ADVANCED PERMISSION SYSTEM ============
 const PermissionSystem = {
     resources: {
