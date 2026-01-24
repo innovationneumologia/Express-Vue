@@ -2864,12 +2864,13 @@ const app = createApp({
             
            // Form Functions
             onStaffTypeChange,
-                              // Toast Function
+                    // Toast Function
         removeToast
         };
-    });
-
-    // Mount the Vue app
-    app.mount('#app');
-    console.log('Vue app mounted successfully');
+    }
 });
+
+// Mount the Vue app
+app.mount('#app');
+console.log('Vue app mounted successfully');
+                              
