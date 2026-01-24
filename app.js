@@ -1,8 +1,7 @@
-// app.js - Updated with safety checks
-// app.js - UPDATED FIRST LINES
-
-// Wait a moment for Vue to fully initialize
-setTimeout(() => {
+// app.js - Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded, checking dependencies...');
+    
     // Check if Vue is available
     if (typeof Vue === 'undefined') {
         console.error('Vue.js is not available');
@@ -12,67 +11,73 @@ setTimeout(() => {
     
     console.log('Vue loaded successfully:', Vue.version);
     
-    // Now Vue should be ready
+    // Get Vue functions
     const { createApp, ref, computed, onMounted } = Vue;
     
-    // Continue with your existing code...
-    const PermissionSystem = {
-        // ... rest of your code
-    };
-    
-    // ... continue with the rest of your app.js
-    
-}, 100); // Wait 100ms for everything to settle
-// ============ CHECK IF SUPABASE IS LOADED ============
-if (typeof window.supabase === 'undefined') {
-    console.error('Supabase not loaded! Loading it now...');
-    // Dynamically load Supabase if not present
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-    script.onload = () => {
-        console.log('Supabase loaded dynamically, reloading page...');
-        location.reload();
-    };
-    document.head.appendChild(script);
-    throw new Error('Supabase not loaded. Page will reload.');
-}
+    // ============ CHECK IF SUPABASE IS LOADED ============
+    if (typeof window.supabase === 'undefined') {
+        console.warn('Supabase not loaded - using mock data');
+        // Create a mock Supabase client for demo purposes
+        window.supabase = {
+            createClient: function(url, key) {
+                console.log('Creating mock Supabase client for demo');
+                return {
+                    from: () => ({ 
+                        select: () => Promise.resolve({ data: [], error: null }),
+                        insert: () => Promise.resolve({ data: [], error: null }),
+                        update: () => Promise.resolve({ data: [], error: null }),
+                        delete: () => Promise.resolve({ data: [], error: null }),
+                        eq: () => ({ 
+                            select: () => Promise.resolve({ data: [], error: null }),
+                            single: () => Promise.resolve({ data: null, error: null })
+                        })
+                    }),
+                    auth: {
+                        signIn: () => Promise.resolve({ data: { user: null }, error: null }),
+                        signOut: () => Promise.resolve({ error: null }),
+                        getSession: () => Promise.resolve({ data: { session: null }, error: null })
+                    }
+                };
+            }
+        };
+    }
 
-// ============ SUPABASE CONFIGURATION ============
-const SUPABASE_URL = 'https://vssmguzuvekkecbmwcjw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzc21ndXp1dmVra2VjYm13Y2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI4NTIsImV4cCI6MjA4NDE2ODg1Mn0.8qPFsMEn4n5hDfxhgXvq2lQarts8OlL8hWiRYXb-vXw';
+    // ============ SUPABASE CONFIGURATION ============
+    const SUPABASE_URL = 'https://vssmguzuvekkecbmwcjw.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzc21ndXp1dmVra2VjYm13Y2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI4NTIsImV4cCI6MjA4NDE2ODg1Mn0.8qPFsMEn4n5hDfxhgXvq2lQarts8OlL8hWiRYXb-vXw';
 
-// Initialize Supabase client with safety check
-let supabaseClient;
-try {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: false,
-            storage: window.localStorage
-        }
-    });
-    console.log('Supabase client initialized successfully');
-} catch (error) {
-    console.error('Failed to initialize Supabase client:', error);
-    // Fallback to mock mode if Supabase fails
-    supabaseClient = {
-        from: () => ({
-            select: () => Promise.resolve({ data: [], error: null }),
-            insert: () => Promise.resolve({ data: [], error: null }),
-            update: () => Promise.resolve({ data: [], error: null }),
-            delete: () => Promise.resolve({ data: [], error: null }),
-            eq: () => ({ 
+    // Initialize Supabase client with safety check
+    let supabaseClient;
+    try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: false,
+                storage: window.localStorage
+            }
+        });
+        console.log('Supabase client initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize Supabase client:', error);
+        // Fallback to mock mode if Supabase fails
+        supabaseClient = {
+            from: () => ({
                 select: () => Promise.resolve({ data: [], error: null }),
-                single: () => Promise.resolve({ data: null, error: null })
-            })
-        }),
-        auth: {
-            getSession: () => Promise.resolve({ data: { session: null }, error: null })
-        }
-    };
-    console.warn('Running in mock mode - Supabase not available');
-}
+                insert: () => Promise.resolve({ data: [], error: null }),
+                update: () => Promise.resolve({ data: [], error: null }),
+                delete: () => Promise.resolve({ data: [], error: null }),
+                eq: () => ({ 
+                    select: () => Promise.resolve({ data: [], error: null }),
+                    single: () => Promise.resolve({ data: null, error: null })
+                })
+            }),
+            auth: {
+                getSession: () => Promise.resolve({ data: { session: null }, error: null })
+            }
+        };
+        console.warn('Running in mock mode - Supabase not available');
+    }
 
 // ============ ADVANCED PERMISSION SYSTEM ============
 const PermissionSystem = {
