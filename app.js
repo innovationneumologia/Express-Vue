@@ -2864,17 +2864,12 @@ const app = createApp({
             
            // Form Functions
             onStaffTypeChange,
-                        // Toast Function
+                              // Toast Function
         removeToast
         };
-    }
-    
-    // Mount the application INSIDE the event listener
-    try {
-        app.mount('#app');
-        console.log('Vue app mounted successfully');
-    } catch (error) {
-        console.error('Failed to mount Vue app:', error);
-    }
-}); // This closes the window.addEventListener
-  
+    });
+
+    // Mount the Vue app
+    app.mount('#app');
+    console.log('Vue app mounted successfully');
+});
