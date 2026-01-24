@@ -2864,12 +2864,11 @@ const app = createApp({
             
            // Form Functions
             onStaffTypeChange,
-            
-            // Toast Function
-            removeToast
+                // Toast Function
+    removeToast
         };
     }
-});
+});});
 
 // Mount the application
 try {
@@ -2878,3 +2877,5 @@ try {
 } catch (error) {
     console.error('Failed to mount Vue app:', error);
 }
+            
+           
