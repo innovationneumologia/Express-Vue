@@ -308,7 +308,11 @@ window.addEventListener('load', async function() {
         // ============ CREATE VUE APP WITH ERROR BOUNDARY ============
         const app = createApp({
             setup() {
-                try {
+                        try {
+            // ============ ADD THIS SAFETY CHECK ============
+            if (!window.confirmationModalLoaded) {
+                window.confirmationModalLoaded = true;
+            }
                     // ============ REACTIVE STATE ============
                     const currentUser = ref(null);
                     const loginForm = reactive({ 
