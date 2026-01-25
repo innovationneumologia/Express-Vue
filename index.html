@@ -60,6 +60,14 @@
             --transition-normal: 250ms;
             --transition-slow: 350ms;
         }
+        /* ADD THIS AT THE TOP OF YOUR STYLES */
+[v-cloak] {
+  display: none !important;
+}
+
+#app[v-cloak] {
+  opacity: 0;
+}
 
         * {
             margin: 0;
@@ -2731,7 +2739,8 @@
     </style>
 </head>
 <body>
-    <div id="app">
+    <div id="app" v-cloak>
+
         <!-- ============ TOAST CONTAINER ============ -->
         <div class="toast-container">
             <div v-for="toast in toasts" :key="toast.id" 
