@@ -475,19 +475,111 @@ window.addEventListener('load', async function() {
                     });
                     
                     // On-call schedule management modal
-                    const onCallModal = reactive({
-                        show: false,                    // Modal visibility
-                        mode: 'add',                    // 'add' or 'edit' mode
-                        form: {                         // Form data structure
-                            duty_date: '',              // Duty date
-                            shift_type: 'backup_call',  // Shift type (primary/backup)
-                            start_time: '',             // Shift start time
-                            end_time: '',               // Shift end time
-                            primary_physician_id: '',   // Primary physician ID
-                            backup_physician_id: '',    // Backup physician ID
-                            coverage_notes: ''          // Coverage instructions/notes
-                        }
-                    });
+                // On-call schedule management modal
+const onCallModal = reactive({
+    show: false,
+    mode: 'add',
+    form: {
+        duty_date: new Date().toISOString().split('T')[0], // Set default to today
+        shift_type: 'primary_call',
+        start_time: '08:00',
+        end_time: '17:00',
+        primary_physician_id: '',
+        backup_physician_id: '',
+        coverage_notes: '',
+        status: 'scheduled'
+    }
+});
+
+// Reset on-call modal form
+const resetOnCallModal = () => {
+    onCallModal.form = {
+        duty_date: new Date().toISOString().split('T')[0],
+        shift_type: 'primary_call',
+        start_time: '08:00',
+        end_time: '17:00',
+        primary_physician_id: '',
+        backup_physician_id: '',
+        coverage_notes: '',
+        status: 'scheduled'
+    };
+};
+
+// Save on-call schedule (add or edit)
+const saveOnCall = async () => {
+    saving.value = true;
+    try {
+        if (!hasPermission('oncall_schedule', onCallModal.mode === 'add' ? 'create' : 'update')) {
+            throw new Error('Insufficient permissions');
+        }
+        
+        const formData = { ...onCallModal.form };
+        
+        // Ensure required fields
+        if (!formData.duty_date) {
+            throw new Error('Duty date is required');
+        }
+        if (!formData.primary_physician_id) {
+            throw new Error('Primary physician is required');
+        }
+        
+        let result;
+        if (onCallModal.mode === 'add') {
+            // Add new on-call schedule
+            formData.created_at = new Date().toISOString();
+            formData.updated_at = new Date().toISOString();
+            formData.scheduled_by = currentUser.value?.id;
+            
+            const { data, error } = await supabaseClient
+                .from(TABLE_NAMES.ONCALL_SCHEDULE)
+                .insert([formData])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            result = data;
+            onCallSchedule.value.unshift(result);
+            showToast('Success', 'On-call schedule added successfully', 'success');
+        } else {
+            // Edit existing on-call schedule
+            formData.updated_at = new Date().toISOString();
+            
+            const { data, error } = await supabaseClient
+                .from(TABLE_NAMES.ONCALL_SCHEDULE)
+                .update(formData)
+                .eq('id', formData.id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            result = data;
+            const index = onCallSchedule.value.findIndex(s => s.id === result.id);
+            if (index !== -1) onCallSchedule.value[index] = result;
+            showToast('Success', 'On-call schedule updated successfully', 'success');
+        }
+        
+        onCallModal.show = false;
+        resetOnCallModal();
+        return result;
+    } catch (error) {
+        console.error('Error saving on-call schedule:', error);
+        showToast('Error', error.message, 'error');
+        throw error;
+    } finally {
+        saving.value = false;
+    }
+};
+
+// Edit on-call schedule
+const editOnCallSchedule = (schedule) => {
+    if (!hasPermission('oncall_schedule', 'update')) {
+        showToast('Permission Denied', 'You need update permission', 'error');
+        return;
+    }
+    onCallModal.mode = 'edit';
+    onCallModal.show = true;
+    onCallModal.form = { ...schedule };
+};
                     
                     // Staff absence management modal
                     const absenceModal = reactive({
