@@ -3505,6 +3505,20 @@ const app = createApp({
     }
 });
 
-// ============ MOUNT THE APP ============
-app.mount('#app');
-console.log('Vue app mounted successfully');
+        // ============ MOUNT THE APP ============
+        app.mount('#app');
+        console.log('Vue app mounted successfully');
+        
+    } catch (error) {
+        console.error('FATAL ERROR: Application failed to initialize:', error);
+        document.body.innerHTML = `
+            <div style="padding: 40px; text-align: center; margin-top: 100px; color: #333; font-family: Arial, sans-serif;">
+                <h2 style="color: #dc3545;">System Error</h2>
+                <p style="margin: 20px 0; color: #666;">${error.message}</p>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Refresh Page
+                </button>
+            </div>
+        `;
+    }
+}); // <-- This closes window.addEventListener('load', async function() {
