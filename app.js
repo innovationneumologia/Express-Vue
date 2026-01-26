@@ -306,12 +306,6 @@ window.addEventListener('load', async function() {
         };
         
        // ============ CREATE VUE APP WITH ERROR BOUNDARY ============
-        window.addEventListener('load', async function() {
-    try {
-        // ============ CREATE VUE APP WITH ERROR BOUNDARY ============
-       // Main application entry point - waits for DOM to be fully loaded
-window.addEventListener('load', async function() {
-    try {
         // Create Vue application instance with error boundary support
         const app = createApp({
             // Component setup function - contains all reactive state and logic
