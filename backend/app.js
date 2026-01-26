@@ -49,9 +49,9 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
-// Replace with:
+// Replace the entire CORS configuration with:
 app.use(cors({
-    origin: ['https://innovationneumologia.github.io', 'http://localhost:*', 'https://neumocare.up.railway.app'],
+    origin: '*', // Allow ALL origins
     credentials: true
 }));
 
