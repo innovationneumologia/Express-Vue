@@ -2024,19 +2024,8 @@ const saveOnCall = async () => {
                         };
                     };
                     
-                    // Reset absence modal form to default values
-                    const resetAbsenceModal = () => {
-                        absenceModal.form = { // Default form values
-                            staff_member_id: '',
-                            absence_reason: '',
-                            start_date: '',
-                            end_date: '',
-                            notes: '',
-                            replacement_staff_id: '',
-                            coverage_instructions: ''
-                        };
-                    };
-                    
+                
+                            
                     // ============ UI FUNCTIONS ============
                     // Switch between different application views/pages
                     const switchView = (view) => {
