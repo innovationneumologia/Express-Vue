@@ -49,18 +49,21 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
-app.use(cors());
+// Configure CORS properly
+const corsOptions = {
+    origin: [
+        'https://innovationneumologia.github.io',
+        'https://innovationneumologia.github.io/',
+        'http://localhost:8080',
+        'http://localhost:3000'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan('combined'));
-
-// Rate limiting
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000
-});
-app.use('/api/', apiLimiter);
+app.use(cors(corsOptions));
 
 // ============ AUTHENTICATION MIDDLEWARE ============
 const authenticate = async (req, res, next) => {
