@@ -3422,6 +3422,22 @@ const showAdvancedSearchModal = () => {
     rotationDetailsModal,
     dashboardCustomizeModal,
     advancedSearchModal,
+                        getAbsenceTimelineStatus,
+    formatRotationType,
+    calculateRotationDuration,
+    getResidentTrainingLevel,
+    getRotationDepartment,
+    formatEvaluationStatus,
+    getEvaluationStatusClass,
+    formatFileSize,
+    formatDocumentType,
+    getDocumentStatusClass,
+       // New methods
+    showAbsenceDetails,
+    showImportExportModal,
+    showRotationDetails,
+    showDashboardCustomizeModal,
+    showAdvancedSearchModal
 
                         
                         // View Functions
