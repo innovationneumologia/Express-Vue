@@ -1,6 +1,7 @@
 {
-  "name": "neumocare-api",
+  "name": "neumocare-backend",
   "version": "1.0.0",
+  "description": "NeumoCare Hospital Management System API",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
