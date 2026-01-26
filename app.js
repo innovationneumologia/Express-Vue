@@ -816,7 +816,17 @@ const app = createApp({
                 }; 
                 return types[type] || type;
             };
-            
+            // Add this function:
+const getUserRoleDisplay = (role) => {
+    const roleNames = {
+        'system_admin': 'System Administrator',
+        'department_head': 'Head of Department',
+        'resident_manager': 'Resident Manager',
+        'attending_physician': 'Attending Physician',
+        'viewing_doctor': 'Viewing Doctor'
+    };
+    return roleNames[role] || role || 'Unknown Role';
+};
             // Add to your formatting functions
             const getAbsenceTimelineStatus = (absence) => {
                 const today = new Date().toISOString().split('T')[0];
