@@ -1,11 +1,9 @@
-// ============ NEUMOCARE HOSPITAL MANAGEMENT SYSTEM ============
-// PRODUCTION SYSTEM - COMPLETE IMPLEMENTATION WITH DATABASE MAPPING
-// VERSION 3.0 - FULLY SYNCHRONIZED WITH SUPABASE STRUCTURE
-// =======================================================
+// ============ COMPLETE INTEGRATED BACKEND LOGIC ============
+// This combines your frontend Vue app with your actual Supabase database schema
 
 // Wait for page to fully load
 window.addEventListener('load', async function() {
-    console.log('Page fully loaded, initializing NeumoCare Hospital Management System v3.0...');
+    console.log('Page fully loaded, initializing NeumoCare Hospital Management System v2.0...');
     
     try {
         // ============ ERROR BOUNDARY: CHECK VUE AVAILABILITY ============
@@ -18,7 +16,7 @@ window.addEventListener('load', async function() {
         // Get Vue functions
         const { createApp, ref, reactive, computed, onMounted, watch } = Vue;
         
-        // ============ SUPABASE CLIENT SETUP WITH ERROR HANDLING ============
+        // ============ SUPABASE CLIENT SETUP ============
         const SUPABASE_URL = 'https://vssmguzuvekkecbmwcjw.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzc21ndXp1dmVra2VjYm13Y2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI4NTIsImV4cCI6MjA4NDE2ODg1Mn0.8qPFsMEn4n5hDfxhgXvq2lQarts8OlL8hWiRYXb-vXw';
         
@@ -38,7 +36,7 @@ window.addEventListener('load', async function() {
             throw new Error(`Database connection failed: ${error.message}`);
         }
         
-        // ============ DATABASE TABLE NAMES ============
+        // ============ DATABASE TABLE NAMES (YOUR ACTUAL SCHEMA) ============
         const TABLE_NAMES = {
             USERS: 'app_users',
             MEDICAL_STAFF: 'medical_staff',
@@ -46,168 +44,359 @@ window.addEventListener('load', async function() {
             CLINICAL_UNITS: 'clinical_units',
             TRAINING_UNITS: 'training_units',
             RESIDENT_ROTATIONS: 'resident_rotations',
-            STAFF_ABSENCES: 'leave_requests',           // CORRECTED: Using leave_requests table
+            STAFF_ABSENCES: 'leave_requests',           // Your actual table name
             ONCALL_SCHEDULE: 'oncall_schedule',
-            ANNOUNCEMENTS: 'department_announcements',  // CORRECTED: Different table name
+            ANNOUNCEMENTS: 'department_announcements',  // Your actual table name
             DAILY_ASSIGNMENTS: 'daily_assignments',
             AUDIT_LOGS: 'audit_logs',
-            SYSTEM_AUDIT_LOG: 'system_audit_log',
             SYSTEM_SETTINGS: 'system_settings',
-            NOTIFICATIONS: 'notifications',
             SYSTEM_ROLES: 'system_roles',
-            SYSTEM_PERMISSIONS: 'system_permissions'
+            SYSTEM_PERMISSIONS: 'system_permissions',
+            NOTIFICATIONS: 'notifications'
         };
         
-        // ============ FIELD MAPPING FUNCTIONS ============
+        // ============ FIELD MAPPING SYSTEM ============
         const FieldMappers = {
-            // Map frontend field names to database field names
-            medicalStaff: {
-                toDB: (frontendData) => ({
-                    full_name: frontendData.full_name,
-                    professional_email: frontendData.professional_email,
-                    staff_type: frontendData.staff_type,
-                    staff_id: frontendData.staff_id || `MD-${Date.now()}`,
-                    resident_category: frontendData.resident_category,
-                    training_year: frontendData.training_level ? parseInt(frontendData.training_level.replace('pgy', '')) : null,
-                    employment_status: frontendData.employment_status,
-                    department_id: frontendData.department_id,
-                    specialization: frontendData.specialization,
-                    years_experience: frontendData.years_experience,
-                    biography: frontendData.biography,
-                    date_of_birth: frontendData.date_of_birth,
-                    mobile_phone: frontendData.mobile_phone,
-                    office_phone: frontendData.office_phone,
-                    medical_license: frontendData.medical_license
-                }),
-                fromDB: (dbData) => ({
-                    id: dbData.id,
-                    full_name: dbData.full_name,
-                    professional_email: dbData.professional_email,
-                    staff_type: dbData.staff_type,
-                    staff_id: dbData.staff_id,
-                    resident_category: dbData.resident_category,
-                    training_level: dbData.training_year ? `pgy${dbData.training_year}` : null,
-                    employment_status: dbData.employment_status,
-                    department_id: dbData.department_id,
-                    specialization: dbData.specialization,
-                    years_experience: dbData.years_experience,
-                    biography: dbData.biography,
-                    date_of_birth: dbData.date_of_birth,
-                    mobile_phone: dbData.mobile_phone,
-                    office_phone: dbData.office_phone,
-                    medical_license: dbData.medical_license,
-                    created_at: dbData.created_at,
-                    updated_at: dbData.updated_at
-                })
+            // Helper function to calculate absence duration
+            calculateDuration: (startDate, endDate) => {
+                try {
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    const diffTime = Math.abs(end - start);
+                    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                } catch {
+                    return 0;
+                }
             },
             
-            trainingUnits: {
-                toDB: (frontendData) => ({
-                    unit_code: frontendData.unit_code || `TU-${Date.now()}`,
-                    unit_name: frontendData.unit_name,
-                    department_name: frontendData.department_name || 'Unknown',
-                    maximum_residents: frontendData.max_capacity,
-                    department_id: frontendData.department_id,
-                    supervisor_id: frontendData.supervisor_id,
-                    max_capacity: frontendData.max_capacity,
-                    status: frontendData.status,
-                    description: frontendData.description
-                }),
-                fromDB: (dbData) => ({
-                    id: dbData.id,
-                    unit_name: dbData.unit_name,
-                    unit_code: dbData.unit_code,
-                    department_id: dbData.department_id,
-                    department_name: dbData.department_name,
-                    supervisor_id: dbData.supervisor_id,
-                    max_capacity: dbData.maximum_residents || dbData.max_capacity,
-                    status: dbData.unit_status || dbData.status,
-                    description: dbData.unit_description || dbData.description,
-                    current_residents: dbData.current_residents || 0,
-                    created_at: dbData.created_at,
-                    updated_at: dbData.updated_at
-                })
+            // Training Units
+            mapTrainingUnit: (dbUnit) => {
+                return {
+                    id: dbUnit.id,
+                    unit_name: dbUnit.unit_name,
+                    unit_code: dbUnit.unit_code,
+                    department_id: dbUnit.department_id,
+                    supervisor_id: dbUnit.supervisor_id,
+                    max_capacity: dbUnit.maximum_residents || dbUnit.max_capacity || 10,
+                    status: dbUnit.unit_status || dbUnit.status || 'active',
+                    description: dbUnit.unit_description,
+                    name: dbUnit.unit_name,
+                    code: dbUnit.unit_code,
+                    department_name: dbUnit.department_name,
+                    location_building: dbUnit.location_building,
+                    location_floor: dbUnit.location_floor,
+                    default_supervisor_id: dbUnit.default_supervisor_id,
+                    specialty: dbUnit.specialty,
+                    current_residents: dbUnit.current_residents || 0,
+                    created_at: dbUnit.created_at,
+                    updated_at: dbUnit.updated_at
+                };
             },
             
-            onCallSchedule: {
-                toDB: (frontendData) => ({
-                    schedule_id: `ONCALL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    duty_date: frontendData.duty_date,
-                    shift_type: frontendData.shift_type,
-                    primary_physician_id: frontendData.primary_physician_id,
-                    backup_physician_id: frontendData.backup_physician_id || null,
-                    start_time: frontendData.start_time || '08:00',
-                    end_time: frontendData.end_time || '17:00',
-                    coverage_notes: frontendData.coverage_notes || '',
-                    created_by: frontendData.created_by
-                }),
-                fromDB: (dbData) => ({
-                    id: dbData.id,
-                    duty_date: dbData.duty_date,
-                    shift_type: dbData.shift_type,
-                    primary_physician_id: dbData.primary_physician_id,
-                    backup_physician_id: dbData.backup_physician_id,
-                    start_time: dbData.start_time,
-                    end_time: dbData.end_time,
-                    coverage_notes: dbData.coverage_notes,
-                    created_by: dbData.created_by,
-                    created_at: dbData.created_at,
-                    updated_at: dbData.updated_at
-                })
+            mapTrainingUnitToDb: (frontendUnit) => {
+                return {
+                    unit_name: frontendUnit.unit_name || frontendUnit.name,
+                    unit_code: frontendUnit.unit_code || frontendUnit.code,
+                    department_id: frontendUnit.department_id,
+                    supervisor_id: frontendUnit.supervisor_id,
+                    maximum_residents: frontendUnit.max_capacity,
+                    unit_status: frontendUnit.status || 'active',
+                    unit_description: frontendUnit.description,
+                    department_name: frontendUnit.department_name || '',
+                    location_building: frontendUnit.location_building,
+                    location_floor: frontendUnit.location_floor,
+                    default_supervisor_id: frontendUnit.default_supervisor_id,
+                    specialty: frontendUnit.specialty,
+                    current_residents: frontendUnit.current_residents || 0
+                };
             },
             
-            staffAbsences: {
-                toDB: (frontendData) => ({
-                    request_id: `LEAVE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    staff_member_id: frontendData.staff_member_id,
-                    leave_category: frontendData.absence_reason,
-                    leave_start_date: frontendData.start_date,
-                    leave_end_date: frontendData.end_date,
-                    leave_reason: frontendData.notes || '',
-                    coverage_notes: frontendData.coverage_instructions || '',
-                    approval_status: frontendData.status || 'pending_review'
-                }),
-                fromDB: (dbData) => ({
-                    id: dbData.id,
-                    staff_member_id: dbData.staff_member_id,
-                    absence_reason: dbData.leave_category,
-                    start_date: dbData.leave_start_date,
-                    end_date: dbData.leave_end_date,
-                    notes: dbData.leave_reason,
-                    coverage_instructions: dbData.coverage_notes,
-                    status: dbData.approval_status,
-                    replacement_staff_id: null, // Not in your table structure
-                    created_at: dbData.created_at,
-                    updated_at: dbData.updated_at
-                })
+            // Medical Staff
+            mapMedicalStaff: (dbStaff) => {
+                // Convert training_year to training_level format
+                let trainingLevel = '';
+                if (dbStaff.training_year) {
+                    trainingLevel = `PGY-${dbStaff.training_year}`;
+                } else if (dbStaff.training_level) {
+                    trainingLevel = dbStaff.training_level;
+                }
+                
+                return {
+                    id: dbStaff.id,
+                    full_name: dbStaff.full_name,
+                    staff_type: dbStaff.staff_type,
+                    staff_id: dbStaff.staff_id,
+                    employment_status: dbStaff.employment_status || 'active',
+                    professional_email: dbStaff.professional_email,
+                    department_id: dbStaff.department_id,
+                    resident_category: dbStaff.resident_category,
+                    training_level: trainingLevel,
+                    specialization: dbStaff.specialization,
+                    years_experience: dbStaff.years_experience,
+                    biography: dbStaff.biography,
+                    office_phone: dbStaff.work_phone,
+                    mobile_phone: dbStaff.mobile_phone,
+                    medical_license: dbStaff.medical_license,
+                    date_of_birth: dbStaff.date_of_birth,
+                    training_year: dbStaff.training_year,
+                    primary_clinic: dbStaff.primary_clinic,
+                    can_supervise_residents: dbStaff.can_supervise_residents,
+                    special_notes: dbStaff.special_notes,
+                    resident_type: dbStaff.resident_type,
+                    home_department: dbStaff.home_department,
+                    external_institution: dbStaff.external_institution,
+                    created_at: dbStaff.created_at,
+                    updated_at: dbStaff.updated_at
+                };
             },
             
-            residentRotations: {
-                toDB: (frontendData) => ({
-                    rotation_id: frontendData.rotation_id || `ROT-${Date.now()}`,
-                    resident_id: frontendData.resident_id,
-                    training_unit_id: frontendData.training_unit_id,
-                    supervising_attending_id: frontendData.supervisor_id,
-                    start_date: frontendData.start_date,
-                    end_date: frontendData.end_date,
-                    rotation_status: frontendData.status,
-                    clinical_notes: frontendData.notes || '',
-                    supervisor_evaluation: frontendData.goals || ''
-                }),
-                fromDB: (dbData) => ({
-                    id: dbData.id,
-                    resident_id: dbData.resident_id,
-                    training_unit_id: dbData.training_unit_id,
-                    supervisor_id: dbData.supervising_attending_id,
-                    start_date: dbData.start_date,
-                    end_date: dbData.end_date,
-                    status: dbData.rotation_status,
-                    goals: dbData.supervisor_evaluation,
-                    notes: dbData.clinical_notes,
-                    rotation_id: dbData.rotation_id,
-                    created_at: dbData.created_at,
-                    updated_at: dbData.updated_at
-                })
+            mapMedicalStaffToDb: (frontendStaff) => {
+                // Extract PGY number from training_level
+                let trainingYear = null;
+                if (frontendStaff.training_level && frontendStaff.training_level.includes('PGY-')) {
+                    trainingYear = parseInt(frontendStaff.training_level.replace('PGY-', ''));
+                }
+                
+                return {
+                    full_name: frontendStaff.full_name,
+                    professional_email: frontendStaff.professional_email,
+                    staff_type: frontendStaff.staff_type,
+                    staff_id: frontendStaff.staff_id,
+                    resident_category: frontendStaff.resident_category,
+                    training_year: trainingYear,
+                    employment_status: frontendStaff.employment_status,
+                    department_id: frontendStaff.department_id,
+                    specialization: frontendStaff.specialization,
+                    years_experience: frontendStaff.years_experience,
+                    biography: frontendStaff.biography,
+                    work_phone: frontendStaff.office_phone,
+                    mobile_phone: frontendStaff.mobile_phone,
+                    medical_license: frontendStaff.medical_license,
+                    date_of_birth: frontendStaff.date_of_birth
+                };
+            },
+            
+            // Resident Rotations
+            mapResidentRotation: (dbRotation) => {
+                return {
+                    id: dbRotation.id,
+                    rotation_id: dbRotation.rotation_id,
+                    resident_id: dbRotation.resident_id,
+                    training_unit_id: dbRotation.training_unit_id,
+                    supervisor_id: dbRotation.supervising_attending_id,
+                    start_date: dbRotation.start_date,
+                    end_date: dbRotation.end_date,
+                    status: dbRotation.rotation_status,
+                    goals: dbRotation.goals,
+                    notes: dbRotation.notes || dbRotation.clinical_notes,
+                    rotation_category: dbRotation.rotation_category,
+                    supervisor_evaluation: dbRotation.supervisor_evaluation,
+                    created_at: dbRotation.created_at,
+                    updated_at: dbRotation.updated_at
+                };
+            },
+            
+            mapResidentRotationToDb: (frontendRotation) => {
+                return {
+                    rotation_id: frontendRotation.rotation_id || Utils.generateId('ROT'),
+                    resident_id: frontendRotation.resident_id,
+                    training_unit_id: frontendRotation.training_unit_id,
+                    supervising_attending_id: frontendRotation.supervisor_id,
+                    start_date: frontendRotation.start_date,
+                    end_date: frontendRotation.end_date,
+                    rotation_status: frontendRotation.status || 'active',
+                    goals: frontendRotation.goals,
+                    clinical_notes: frontendRotation.notes,
+                    rotation_category: frontendRotation.rotation_category || 'clinical_rotation'
+                };
+            },
+            
+            // Staff Absences (Leave Requests)
+            mapStaffAbsence: (dbAbsence) => {
+                return {
+                    id: dbAbsence.id,
+                    request_id: dbAbsence.request_id,
+                    staff_member_id: dbAbsence.staff_member_id,
+                    absence_reason: dbAbsence.leave_category,
+                    start_date: dbAbsence.leave_start_date,
+                    end_date: dbAbsence.leave_end_date,
+                    total_days: dbAbsence.total_days,
+                    notes: dbAbsence.leave_reason || dbAbsence.coverage_notes,
+                    status: dbAbsence.approval_status,
+                    coverage_required: dbAbsence.coverage_required,
+                    coverage_assigned: dbAbsence.coverage_assigned,
+                    coverage_notes: dbAbsence.coverage_notes,
+                    reviewed_by: dbAbsence.reviewed_by,
+                    reviewed_at: dbAbsence.reviewed_at,
+                    review_notes: dbAbsence.review_notes,
+                    leave_type: dbAbsence.leave_type,
+                    staff_name: dbAbsence.staff_name,
+                    staff_id: dbAbsence.staff_id,
+                    created_at: dbAbsence.created_at,
+                    updated_at: dbAbsence.updated_at
+                };
+            },
+            
+            mapStaffAbsenceToDb: (frontendAbsence) => {
+                return {
+                    request_id: frontendAbsence.request_id || Utils.generateId('ABS'),
+                    staff_member_id: frontendAbsence.staff_member_id,
+                    leave_category: frontendAbsence.absence_reason,
+                    leave_start_date: frontendAbsence.start_date,
+                    leave_end_date: frontendAbsence.end_date,
+                    total_days: FieldMappers.calculateDuration(frontendAbsence.start_date, frontendAbsence.end_date),
+                    leave_reason: frontendAbsence.notes,
+                    coverage_required: true,
+                    coverage_assigned: !!frontendAbsence.replacement_staff_id,
+                    coverage_notes: frontendAbsence.coverage_instructions || frontendAbsence.notes,
+                    approval_status: frontendAbsence.status || 'pending_review'
+                };
+            },
+            
+            // Announcements
+            mapAnnouncement: (dbAnnouncement) => {
+                return {
+                    id: dbAnnouncement.id,
+                    announcement_id: dbAnnouncement.announcement_id,
+                    announcement_title: dbAnnouncement.announcement_title,
+                    announcement_content: dbAnnouncement.announcement_content,
+                    priority_level: dbAnnouncement.priority_level,
+                    publish_start_date: dbAnnouncement.publish_start_date,
+                    publish_end_date: dbAnnouncement.publish_end_date,
+                    target_audience: dbAnnouncement.target_audience || 'all',
+                    created_by: dbAnnouncement.created_by,
+                    created_by_name: dbAnnouncement.created_by_name,
+                    announcement_type: dbAnnouncement.announcement_type,
+                    visible_to_roles: dbAnnouncement.visible_to_roles,
+                    created_at: dbAnnouncement.created_at,
+                    updated_at: dbAnnouncement.updated_at
+                };
+            },
+            
+            mapAnnouncementToDb: (frontendAnnouncement) => {
+                return {
+                    announcement_id: frontendAnnouncement.announcement_id || Utils.generateId('ANN'),
+                    announcement_title: frontendAnnouncement.announcement_title,
+                    announcement_content: frontendAnnouncement.announcement_content,
+                    priority_level: frontendAnnouncement.priority_level,
+                    publish_start_date: frontendAnnouncement.publish_start_date,
+                    publish_end_date: frontendAnnouncement.publish_end_date,
+                    target_audience: frontendAnnouncement.target_audience,
+                    announcement_type: 'department',
+                    visible_to_roles: ['viewing_doctor']
+                };
+            },
+            
+            // On-call Schedule
+            mapOnCallSchedule: (dbSchedule) => {
+                return {
+                    id: dbSchedule.id,
+                    schedule_id: dbSchedule.schedule_id,
+                    duty_date: dbSchedule.duty_date,
+                    shift_type: dbSchedule.shift_type,
+                    primary_physician_id: dbSchedule.primary_physician_id,
+                    backup_physician_id: dbSchedule.backup_physician_id,
+                    start_time: dbSchedule.start_time,
+                    end_time: dbSchedule.end_time,
+                    coverage_notes: dbSchedule.coverage_notes,
+                    created_by: dbSchedule.created_by,
+                    status: dbSchedule.status || 'scheduled',
+                    created_at: dbSchedule.created_at,
+                    updated_at: dbSchedule.updated_at
+                };
+            },
+            
+            mapOnCallScheduleToDb: (frontendSchedule) => {
+                return {
+                    schedule_id: frontendSchedule.schedule_id || Utils.generateId('ONCALL'),
+                    duty_date: frontendSchedule.duty_date,
+                    shift_type: frontendSchedule.shift_type,
+                    primary_physician_id: frontendSchedule.primary_physician_id,
+                    backup_physician_id: frontendSchedule.backup_physician_id,
+                    start_time: frontendSchedule.start_time,
+                    end_time: frontendSchedule.end_time,
+                    coverage_notes: frontendSchedule.coverage_notes,
+                    status: frontendSchedule.status || 'scheduled'
+                };
+            },
+            
+            // Users
+            mapUser: (dbUser) => {
+                return {
+                    id: dbUser.id,
+                    email: dbUser.email,
+                    full_name: dbUser.full_name,
+                    user_role: dbUser.user_role,
+                    department: dbUser.department,
+                    department_id: dbUser.department_id,
+                    user_id: dbUser.user_id,
+                    clinic_unit: dbUser.clinic_unit,
+                    phone_number: dbUser.phone_number,
+                    avatar_url: dbUser.avatar_url,
+                    account_status: dbUser.account_status,
+                    notifications_enabled: dbUser.notifications_enabled,
+                    absence_notifications: dbUser.absence_notifications,
+                    announcement_notifications: dbUser.announcement_notifications,
+                    created_at: dbUser.created_at,
+                    updated_at: dbUser.updated_at
+                };
+            }
+        };
+        
+        // ============ UTILITY FUNCTIONS ============
+        const Utils = {
+            formatDate: (dateString) => {
+                if (!dateString) return '';
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                } catch {
+                    return '';
+                }
+            },
+            
+            formatDateTime: (dateString) => {
+                if (!dateString) return '';
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                } catch {
+                    return '';
+                }
+            },
+            
+            formatTimeAgo: (dateString) => {
+                if (!dateString) return '';
+                try {
+                    const date = new Date(dateString);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMs / 3600000);
+                    const diffDays = Math.floor(diffMs / 86400000);
+                    
+                    if (diffMins < 1) return 'Just now';
+                    if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+                    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+                    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+                    return Utils.formatDate(dateString);
+                } catch {
+                    return '';
+                }
+            },
+            
+            getInitials: (name) => {
+                if (!name) return '??';
+                return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            },
+            
+            generateId: (prefix = 'ID') => {
+                return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
             }
         };
         
@@ -288,9 +477,9 @@ window.addEventListener('load', async function() {
         async function logAuditEvent(action, resource, details = {}, userId = null) {
             try {
                 const auditLog = {
-                    user_id: userId,
-                    user_name: 'System',
-                    user_role: 'system',
+                    user_id: userId || currentUser?.value?.id,
+                    user_name: currentUser?.value?.full_name || 'System',
+                    user_role: currentUser?.value?.user_role || 'system',
                     action: action,
                     details: JSON.stringify(details),
                     resource: resource,
@@ -304,163 +493,6 @@ window.addEventListener('load', async function() {
                 console.error('Audit logging error:', error);
             }
         }
-        
-        // ============ PERMISSION SYSTEM ============
-        const PermissionSystem = {
-            resources: {
-                medical_staff: { name: 'Medical Staff', actions: ['create', 'read', 'update', 'delete'] },
-                training_units: { name: 'Training Units', actions: ['create', 'read', 'update', 'delete', 'assign'] },
-                resident_rotations: { name: 'Resident Rotations', actions: ['create', 'read', 'update', 'delete', 'extend'] },
-                oncall_schedule: { name: 'On-call Schedule', actions: ['create', 'read', 'update', 'delete'] },
-                staff_absence: { name: 'Staff Absence', actions: ['create', 'read', 'update', 'delete'] },
-                communications: { name: 'Communications', actions: ['create', 'read', 'update', 'delete'] },
-                audit: { name: 'Audit Logs', actions: ['read'] },
-                system: { name: 'System Settings', actions: ['read', 'update'] },
-                permissions: { name: 'Permissions', actions: ['manage'] },
-                placements: { name: 'Placements', actions: ['create'] }
-            },
-
-            roles: {
-                system_admin: {
-                    name: 'System Administrator',
-                    permissions: {
-                        medical_staff: { create: true, read: true, update: true, delete: true },
-                        training_units: { create: true, read: true, update: true, delete: true, assign: true },
-                        resident_rotations: { create: true, read: true, update: true, delete: true, extend: true },
-                        oncall_schedule: { create: true, read: true, update: true, delete: true },
-                        staff_absence: { create: true, read: true, update: true, delete: true },
-                        communications: { create: true, read: true, update: true, delete: true },
-                        audit: { read: true },
-                        system: { read: true, update: true },
-                        permissions: { manage: true },
-                        placements: { create: true }
-                    }
-                },
-                department_head: {
-                    name: 'Head of Department',
-                    permissions: {
-                        medical_staff: { create: true, read: true, update: true, delete: false },
-                        training_units: { create: true, read: true, update: true, delete: false, assign: true },
-                        resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
-                        oncall_schedule: { create: true, read: true, update: true, delete: false },
-                        staff_absence: { create: true, read: true, update: true, delete: true },
-                        communications: { create: true, read: true, update: true, delete: true },
-                        audit: { read: true },
-                        system: { read: true, update: false },
-                        permissions: { manage: false },
-                        placements: { create: true }
-                    }
-                },
-                resident_manager: {
-                    name: 'Resident Manager',
-                    permissions: {
-                        medical_staff: { create: true, read: true, update: true, delete: false },
-                        training_units: { create: true, read: true, update: true, delete: false, assign: true },
-                        resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
-                        oncall_schedule: { create: false, read: true, update: false, delete: false },
-                        staff_absence: { create: true, read: true, update: false, delete: false },
-                        communications: { create: false, read: true, update: false, delete: false },
-                        audit: { read: false },
-                        system: { read: false, update: false },
-                        permissions: { manage: false },
-                        placements: { create: true }
-                    }
-                },
-                attending_physician: {
-                    name: 'Attending Physician',
-                    permissions: {
-                        medical_staff: { create: false, read: true, update: false, delete: false },
-                        training_units: { create: false, read: true, update: false, delete: false, assign: false },
-                        resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
-                        oncall_schedule: { create: false, read: true, update: false, delete: false },
-                        staff_absence: { create: true, read: true, update: false, delete: false },
-                        communications: { create: false, read: true, update: false, delete: false },
-                        audit: { read: false },
-                        system: { read: false, update: false },
-                        permissions: { manage: false },
-                        placements: { create: false }
-                    }
-                },
-                viewing_doctor: {
-                    name: 'Viewing Doctor',
-                    permissions: {
-                        medical_staff: { create: false, read: true, update: false, delete: false },
-                        training_units: { create: false, read: true, update: false, delete: false, assign: false },
-                        resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
-                        oncall_schedule: { create: false, read: true, update: false, delete: false },
-                        staff_absence: { create: false, read: true, update: false, delete: false },
-                        communications: { create: false, read: true, update: false, delete: false },
-                        audit: { read: false },
-                        system: { read: false, update: false },
-                        permissions: { manage: false },
-                        placements: { create: false }
-                    }
-                }
-            },
-
-            hasPermission(userRole, resource, action) {
-                const role = this.roles[userRole];
-                if (!role || !role.permissions[resource]) return false;
-                return role.permissions[resource][action] === true;
-            }
-        };
-        
-        // ============ UTILITY FUNCTIONS ============
-        const Utils = {
-            formatDate: (dateString) => {
-                if (!dateString) return '';
-                try {
-                    const date = new Date(dateString);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                } catch {
-                    return '';
-                }
-            },
-            
-            formatDateTime: (dateString) => {
-                if (!dateString) return '';
-                try {
-                    const date = new Date(dateString);
-                    return date.toLocaleString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    });
-                } catch {
-                    return '';
-                }
-            },
-            
-            formatTimeAgo: (dateString) => {
-                if (!dateString) return '';
-                try {
-                    const date = new Date(dateString);
-                    const now = new Date();
-                    const diffMs = now - date;
-                    const diffMins = Math.floor(diffMs / 60000);
-                    const diffHours = Math.floor(diffMs / 3600000);
-                    const diffDays = Math.floor(diffMs / 86400000);
-                    
-                    if (diffMins < 1) return 'Just now';
-                    if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-                    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-                    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-                    return Utils.formatDate(dateString);
-                } catch {
-                    return '';
-                }
-            },
-            
-            getInitials: (name) => {
-                if (!name) return '??';
-                return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-            },
-            
-            generateId: (prefix = 'ID') => {
-                return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
-            }
-        };
         
         // ============ CREATE VUE APP ============
         const app = createApp({
@@ -486,7 +518,7 @@ window.addEventListener('load', async function() {
                     const searchScope = ref('All');
                     const searchFilter = ref('all');
                     
-                    // ============ FILTER STATES ============
+                    // Filter states
                     const staffFilter = reactive({
                         staff_type: '',
                         employment_status: ''
@@ -509,7 +541,7 @@ window.addEventListener('load', async function() {
                         userId: ''
                     });
                     
-                    // ============ MODAL STATES ============
+                    // Modal states
                     const confirmationModal = reactive({
                         show: false,
                         title: '',
@@ -519,21 +551,6 @@ window.addEventListener('load', async function() {
                         confirmButtonClass: 'btn-primary',
                         onConfirm: null,
                         onCancel: null
-                    });
-                    
-                    const staffDetailsModal = reactive({
-                        show: false,
-                        staff: null,
-                        activeTab: 'personal',
-                        stats: {
-                            completedRotations: 0,
-                            oncallShifts: 0,
-                            absenceDays: 0,
-                            supervisionCount: 0
-                        },
-                        currentRotation: '',
-                        nextOncall: '',
-                        activityHistory: []
                     });
                     
                     const medicalStaffModal = reactive({
@@ -559,43 +576,15 @@ window.addEventListener('load', async function() {
                         }
                     });
                     
-                    const departmentModal = reactive({
-                        show: false,
-                        mode: 'add',
-                        form: {
-                            name: '',
-                            code: '',
-                            status: 'active',
-                            description: '',
-                            head_of_department_id: ''
-                        }
-                    });
-                    
-                    const clinicalUnitModal = reactive({
-                        show: false,
-                        mode: 'add',
-                        form: {
-                            name: '',
-                            code: '',
-                            department_id: '',
-                            unit_type: 'clinical',
-                            status: 'active',
-                            description: '',
-                            supervisor_id: ''
-                        }
-                    });
-                    
-                    // IMPORTANT: Training Unit modal matches your database structure
                     const trainingUnitModal = reactive({
                         show: false,
                         mode: 'add',
                         form: {
-                            unit_name: '',        // Maps to unit_name in DB
-                            unit_code: '',        // Maps to unit_code in DB
+                            unit_name: '',
+                            unit_code: '',
                             department_id: '',
-                            department_name: '',   // Also needed for DB
                             supervisor_id: '',
-                            max_capacity: 10,     // Maps to maximum_residents in DB
+                            max_capacity: 10,
                             status: 'active',
                             description: ''
                         }
@@ -616,7 +605,6 @@ window.addEventListener('load', async function() {
                         }
                     });
                     
-                    // IMPORTANT: On-call modal matches your database structure
                     const onCallModal = reactive({
                         show: false,
                         mode: 'add',
@@ -627,11 +615,11 @@ window.addEventListener('load', async function() {
                             end_time: '17:00',
                             primary_physician_id: '',
                             backup_physician_id: '',
-                            coverage_notes: ''
+                            coverage_notes: '',
+                            status: 'scheduled'
                         }
                     });
                     
-                    // IMPORTANT: Absence modal matches your database structure
                     const absenceModal = reactive({
                         show: false,
                         mode: 'add',
@@ -641,7 +629,7 @@ window.addEventListener('load', async function() {
                             start_date: '',
                             end_date: '',
                             notes: '',
-                            replacement_staff_id: '', // Not in your DB, but kept for UI
+                            replacement_staff_id: '',
                             coverage_instructions: ''
                         }
                     });
@@ -656,168 +644,10 @@ window.addEventListener('load', async function() {
                             publish_end_date: '',
                             priority_level: 'medium',
                             target_audience: 'all'
-                        },
-                        capacity: {
-                            er: { current: 0, max: 20, notes: '' },
-                            icu: { current: 0, max: 10, notes: '' },
-                            overall_notes: ''
-                        },
-                        quickUpdate: {
-                            message: '',
-                            priority: 'info',
-                            expires: '24',
-                            tags: ''
                         }
                     });
                     
-                    const quickPlacementModal = reactive({
-                        show: false,
-                        resident_id: '',
-                        training_unit_id: '',
-                        start_date: '',
-                        duration: 4,
-                        supervisor_id: '',
-                        notes: ''
-                    });
-                    
-                    const bulkAssignModal = reactive({
-                        show: false,
-                        selectedResidents: [],
-                        training_unit_id: '',
-                        start_date: '',
-                        duration: 4,
-                        supervisor_id: ''
-                    });
-                    
-                    const roleModal = reactive({
-                        show: false,
-                        mode: 'add',
-                        form: {
-                            name: '',
-                            description: '',
-                            permissions: []
-                        }
-                    });
-                    
-                    const userProfileModal = reactive({
-                        show: false,
-                        form: {
-                            full_name: '',
-                            email: '',
-                            phone: '',
-                            department_id: '',
-                            notifications_enabled: true,
-                            absence_notifications: true,
-                            announcement_notifications: true
-                        }
-                    });
-                    
-                    const systemSettingsModal = reactive({
-                        show: false,
-                        settings: {
-                            hospital_name: 'NeumoCare Hospital',
-                            default_department_id: '',
-                            max_residents_per_unit: 10,
-                            default_rotation_duration: 12,
-                            enable_audit_logging: true,
-                            require_mfa: false,
-                            maintenance_mode: false,
-                            notifications_enabled: true,
-                            absence_notifications: true,
-                            announcement_notifications: true
-                        }
-                    });
-                    
-                    const absenceDetailsModal = reactive({
-                        show: false,
-                        absence: null,
-                        activeTab: 'details'
-                    });
-                    
-                    const importExportModal = reactive({
-                        show: false,
-                        mode: 'import',
-                        selectedTable: '',
-                        selectedFile: null,
-                        exportFormat: 'csv',
-                        overwriteExisting: false,
-                        skipInvalidRows: true,
-                        includeMetadata: true,
-                        dateRange: { start: '', end: '' },
-                        fieldMapping: []
-                    });
-                    
-                    const rotationDetailsModal = reactive({
-                        show: false,
-                        rotation: null,
-                        activeTab: 'details',
-                        milestones: [],
-                        competencies: [],
-                        documents: [],
-                        activity: []
-                    });
-                    
-                    const dashboardCustomizeModal = reactive({
-                        show: false,
-                        availableWidgets: [
-                            { id: 'stats', title: 'Statistics', description: 'Key performance indicators', icon: 'fas fa-chart-line', visible: true },
-                            { id: 'oncall', title: 'On-call Schedule', description: 'Today\'s on-call physicians', icon: 'fas fa-phone-alt', visible: true },
-                            { id: 'announcements', title: 'Announcements', description: 'Recent department announcements', icon: 'fas fa-bullhorn', visible: true },
-                            { id: 'capacity', title: 'Capacity', description: 'Department capacity status', icon: 'fas fa-bed', visible: true },
-                            { id: 'alerts', title: 'Alerts', description: 'System alerts and notifications', icon: 'fas fa-exclamation-triangle', visible: true }
-                        ],
-                        appearance: {
-                            cardDensity: 'normal',
-                            colorTheme: 'medical',
-                            fontSize: 'medium',
-                            animationSpeed: 'normal'
-                        },
-                        notifications: {
-                            showAlerts: true,
-                            showNotifications: true,
-                            autoRefresh: true,
-                            refreshInterval: 60
-                        }
-                    });
-                    
-                    const advancedSearchModal = reactive({
-                        show: false,
-                        activeTab: 'medical_staff',
-                        filters: {
-                            medical_staff: {
-                                name: '',
-                                staff_type: [],
-                                department_id: '',
-                                employment_status: '',
-                                join_date_start: '',
-                                join_date_end: '',
-                                training_level: ''
-                            },
-                            rotations: {
-                                resident_name: '',
-                                training_unit_id: '',
-                                status: '',
-                                supervisor_id: '',
-                                date_start: '',
-                                date_end: '',
-                                min_duration: ''
-                            }
-                        },
-                        sort: {
-                            medical_staff: {
-                                field: 'full_name',
-                                order: 'asc'
-                            }
-                        },
-                        display: {
-                            medical_staff: {
-                                resultsPerPage: 25,
-                                showInactive: false
-                            }
-                        }
-                    });
-                    
-                    // ============ DATA STORES ============
+                    // Data stores
                     const medicalStaff = ref([]);
                     const departments = ref([]);
                     const clinicalUnits = ref([]);
@@ -831,13 +661,13 @@ window.addEventListener('load', async function() {
                     const auditLogs = ref([]);
                     const systemSettings = ref({});
                     
-                    // ============ UI STATE ============
+                    // UI state
                     const toasts = ref([]);
                     const activeAlerts = ref([]);
                     const staffSearch = ref('');
                     const unreadNotifications = ref(0);
                     
-                    // ============ LOADING STATES ============
+                    // Loading states
                     const loadingStats = ref(false);
                     const loadingStaff = ref(false);
                     const loadingDepartments = ref(false);
@@ -848,7 +678,113 @@ window.addEventListener('load', async function() {
                     const loadingAnnouncements = ref(false);
                     const loadingAuditLogs = ref(false);
                     
-                    // ============ TOAST SYSTEM ============
+                    // ============ PERMISSION SYSTEM ============
+                    const PermissionSystem = {
+                        resources: {
+                            medical_staff: { name: 'Medical Staff', actions: ['create', 'read', 'update', 'delete'] },
+                            training_units: { name: 'Training Units', actions: ['create', 'read', 'update', 'delete', 'assign'] },
+                            resident_rotations: { name: 'Resident Rotations', actions: ['create', 'read', 'update', 'delete', 'extend'] },
+                            oncall_schedule: { name: 'On-call Schedule', actions: ['create', 'read', 'update', 'delete'] },
+                            staff_absence: { name: 'Staff Absence', actions: ['create', 'read', 'update', 'delete'] },
+                            communications: { name: 'Communications', actions: ['create', 'read', 'update', 'delete'] },
+                            audit: { name: 'Audit Logs', actions: ['read'] },
+                            system: { name: 'System Settings', actions: ['read', 'update'] },
+                            permissions: { name: 'Permissions', actions: ['manage'] },
+                            placements: { name: 'Placements', actions: ['create'] }
+                        },
+
+                        roles: {
+                            system_admin: {
+                                name: 'System Administrator',
+                                permissions: {
+                                    medical_staff: { create: true, read: true, update: true, delete: true },
+                                    training_units: { create: true, read: true, update: true, delete: true, assign: true },
+                                    resident_rotations: { create: true, read: true, update: true, delete: true, extend: true },
+                                    oncall_schedule: { create: true, read: true, update: true, delete: true },
+                                    staff_absence: { create: true, read: true, update: true, delete: true },
+                                    communications: { create: true, read: true, update: true, delete: true },
+                                    audit: { read: true },
+                                    system: { read: true, update: true },
+                                    permissions: { manage: true },
+                                    placements: { create: true }
+                                }
+                            },
+                            department_head: {
+                                name: 'Head of Department',
+                                permissions: {
+                                    medical_staff: { create: true, read: true, update: true, delete: false },
+                                    training_units: { create: true, read: true, update: true, delete: false, assign: true },
+                                    resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
+                                    oncall_schedule: { create: true, read: true, update: true, delete: false },
+                                    staff_absence: { create: true, read: true, update: true, delete: true },
+                                    communications: { create: true, read: true, update: true, delete: true },
+                                    audit: { read: true },
+                                    system: { read: true, update: false },
+                                    permissions: { manage: false },
+                                    placements: { create: true }
+                                }
+                            },
+                            resident_manager: {
+                                name: 'Resident Manager',
+                                permissions: {
+                                    medical_staff: { create: true, read: true, update: true, delete: false },
+                                    training_units: { create: true, read: true, update: true, delete: false, assign: true },
+                                    resident_rotations: { create: true, read: true, update: true, delete: false, extend: true },
+                                    oncall_schedule: { create: false, read: true, update: false, delete: false },
+                                    staff_absence: { create: true, read: true, update: false, delete: false },
+                                    communications: { create: false, read: true, update: false, delete: false },
+                                    audit: { read: false },
+                                    system: { read: false, update: false },
+                                    permissions: { manage: false },
+                                    placements: { create: true }
+                                }
+                            },
+                            attending_physician: {
+                                name: 'Attending Physician',
+                                permissions: {
+                                    medical_staff: { create: false, read: true, update: false, delete: false },
+                                    training_units: { create: false, read: true, update: false, delete: false, assign: false },
+                                    resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
+                                    oncall_schedule: { create: false, read: true, update: false, delete: false },
+                                    staff_absence: { create: true, read: true, update: false, delete: false },
+                                    communications: { create: false, read: true, update: false, delete: false },
+                                    audit: { read: false },
+                                    system: { read: false, update: false },
+                                    permissions: { manage: false },
+                                    placements: { create: false }
+                                }
+                            },
+                            viewing_doctor: {
+                                name: 'Viewing Doctor',
+                                permissions: {
+                                    medical_staff: { create: false, read: true, update: false, delete: false },
+                                    training_units: { create: false, read: true, update: false, delete: false, assign: false },
+                                    resident_rotations: { create: false, read: true, update: false, delete: false, extend: false },
+                                    oncall_schedule: { create: false, read: true, update: false, delete: false },
+                                    staff_absence: { create: false, read: true, update: false, delete: false },
+                                    communications: { create: false, read: true, update: false, delete: false },
+                                    audit: { read: false },
+                                    system: { read: false, update: false },
+                                    permissions: { manage: false },
+                                    placements: { create: false }
+                                }
+                            }
+                        },
+
+                        hasPermission(userRole, resource, action) {
+                            const role = this.roles[userRole];
+                            if (!role || !role.permissions[resource]) return false;
+                            return role.permissions[resource][action] === true;
+                        }
+                    };
+                    
+                    // ============ HELPER FUNCTIONS ============
+                    const hasPermission = (resource, action) => {
+                        if (!currentUser.value) return false;
+                        if (currentUser.value.user_role === 'system_admin') return true;
+                        return PermissionSystem.hasPermission(currentUser.value.user_role, resource, action);
+                    };
+                    
                     const showToast = (title, message, type = 'info', duration = 5000) => {
                         const icons = {
                             info: 'fas fa-info-circle', 
@@ -873,13 +809,6 @@ window.addEventListener('load', async function() {
                         if (index > -1) toasts.value.splice(index, 1);
                     };
                     
-                    // ============ ALERT SYSTEM ============
-                    const dismissAlert = (alertId) => {
-                        const index = activeAlerts.value.findIndex(alert => alert.id === alertId);
-                        if (index > -1) activeAlerts.value.splice(index, 1);
-                    };
-                    
-                    // ============ CONFIRMATION MODAL ============
                     const showConfirmation = (options) => {
                         Object.assign(confirmationModal, {
                             show: true,
@@ -916,196 +845,7 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // ============ FORMATTING FUNCTIONS ============
-                    const formatStaffType = (type) => {
-                        const types = { 
-                            medical_resident: 'Medical Resident', 
-                            attending_physician: 'Attending Physician',
-                            fellow: 'Fellow', 
-                            nurse_practitioner: 'Nurse Practitioner' 
-                        }; 
-                        return types[type] || type;
-                    };
-                    
-                    const getUserRoleDisplay = (role) => {
-                        const roleNames = {
-                            'system_admin': 'System Administrator',
-                            'department_head': 'Head of Department',
-                            'resident_manager': 'Resident Manager',
-                            'attending_physician': 'Attending Physician',
-                            'viewing_doctor': 'Viewing Doctor'
-                        };
-                        return roleNames[role] || role || 'Unknown Role';
-                    };
-                    
-                    const formatEmploymentStatus = (status) => {
-                        const statuses = { active: 'Active', on_leave: 'On Leave', inactive: 'Inactive' };
-                        return statuses[status] || status;
-                    };
-                    
-                    const getStaffTypeClass = (type) => {
-                        const classes = {
-                            medical_resident: 'badge-primary',
-                            attending_physician: 'badge-success',
-                            fellow: 'badge-info',
-                            nurse_practitioner: 'badge-warning'
-                        };
-                        return classes[type] || 'badge-secondary';
-                    };
-                    
-                    const formatTrainingLevel = (level) => {
-                        const levels = {
-                            pgy1: 'PGY-1',
-                            pgy2: 'PGY-2',
-                            pgy3: 'PGY-3',
-                            pgy4: 'PGY-4',
-                            other: 'Other'
-                        };
-                        return levels[level] || level;
-                    };
-                    
-                    const formatRotationStatus = (status) => {
-                        const statuses = {
-                            active: 'Active',
-                            upcoming: 'Upcoming',
-                            completed: 'Completed',
-                            cancelled: 'Cancelled'
-                        };
-                        return statuses[status] || status;
-                    };
-                    
-                    const getRotationStatusClass = (status) => {
-                        const classes = {
-                            active: 'status-available',
-                            upcoming: 'status-oncall',
-                            completed: 'status-busy',
-                            cancelled: 'status-critical'
-                        };
-                        return classes[status] || 'badge-secondary';
-                    };
-                    
-                    const formatAbsenceReason = (reason) => {
-                        const reasons = {
-                            vacation: 'Vacation',
-                            sick_leave: 'Sick Leave',
-                            conference: 'Conference/Education',
-                            personal: 'Personal',
-                            maternity_paternity: 'Maternity/Paternity',
-                            administrative: 'Administrative Duty',
-                            other: 'Other'
-                        };
-                        return reasons[reason] || reason;
-                    };
-                    
-                    const formatAbsenceStatus = (status) => {
-                        const statuses = {
-                            pending: 'Pending',
-                            approved: 'Approved',
-                            rejected: 'Rejected',
-                            completed: 'Completed'
-                        };
-                        return statuses[status] || status;
-                    };
-                    
-                    const getAbsenceStatusClass = (status) => {
-                        const classes = {
-                            pending: 'status-busy',
-                            approved: 'status-available',
-                            rejected: 'status-critical',
-                            completed: 'status-oncall'
-                        };
-                        return classes[status] || 'badge-secondary';
-                    };
-                    
-                    const calculateAbsenceDuration = (startDate, endDate) => {
-                        try {
-                            const start = new Date(startDate);
-                            const end = new Date(endDate);
-                            const diffTime = Math.abs(end - start);
-                            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                        } catch {
-                            return 0;
-                        }
-                    };
-                    
-                    const formatTimeRange = (startTime, endTime) => {
-                        if (!startTime || !endTime) return '';
-                        return `${startTime.substring(0, 5)} - ${endTime.substring(0, 5)}`;
-                    };
-                    
-                    const formatAuditAction = (action) => {
-                        const actions = {
-                            create: 'Created',
-                            update: 'Updated',
-                            delete: 'Deleted',
-                            login: 'Logged in',
-                            logout: 'Logged out'
-                        };
-                        return actions[action] || action;
-                    };
-                    
-                    // ============ PERMISSION FUNCTIONS ============
-                    const hasPermission = (resource, action) => {
-                        if (!currentUser.value) return false;
-                        if (currentUser.value.user_role === 'system_admin') return true;
-                        return PermissionSystem.hasPermission(currentUser.value.user_role, resource, action);
-                    };
-                    
-                    // ============ DATA RELATIONSHIP FUNCTIONS ============
-                    const getDepartmentName = (departmentId) => {
-                        if (!departmentId) return 'Unassigned';
-                        const department = departments.value.find(d => d.id === departmentId);
-                        return department ? department.name : `Department ${departmentId?.substring(0, 8) || 'Unknown'}`;
-                    };
-                    
-                    const getStaffName = (staffId) => {
-                        if (!staffId) return 'Unknown';
-                        const staff = medicalStaff.value.find(s => s.id === staffId);
-                        return staff ? staff.full_name : `Staff ${staffId?.substring(0, 8) || 'Unknown'}`;
-                    };
-                    
-                    // IMPORTANT: Training unit name getter matches your DB structure
-                    const getTrainingUnitName = (unitId) => {
-                        if (!unitId) return 'Unknown Unit';
-                        const unit = trainingUnits.value.find(u => u.id === unitId);
-                        return unit ? unit.unit_name : `Unit ${unitId?.substring(0, 8) || 'Unknown'}`;
-                    };
-                    
-                    const getSupervisorName = (supervisorId) => {
-                        if (!supervisorId) return 'Not assigned';
-                        return getStaffName(supervisorId);
-                    };
-                    
-                    const getResidentName = (residentId) => {
-                        return getStaffName(residentId);
-                    };
-                    
-                    const getDepartmentUnits = (departmentId) => {
-                        return clinicalUnits.value.filter(unit => unit.department_id === departmentId);
-                    };
-                    
-                    const getUnitResidents = (unitId) => {
-                        const rotations = residentRotations.value.filter(rotation => 
-                            rotation.training_unit_id === unitId && 
-                            rotation.status === 'active'
-                        );
-                        return rotations.map(rotation => {
-                            const resident = medicalStaff.value.find(s => s.id === rotation.resident_id);
-                            return resident ? {
-                                id: resident.id,
-                                full_name: resident.full_name,
-                                training_level: resident.training_level
-                            } : null;
-                        }).filter(r => r !== null);
-                    };
-                    
-                    const getUserName = (userId) => {
-                        if (!userId) return 'System';
-                        const user = users.value.find(u => u.id === userId);
-                        return user ? user.full_name : `User ${userId.substring(0, 8)}`;
-                    };
-                    
-                    // ============ DATA LOADING FUNCTIONS (UPDATED FOR YOUR DB) ============
+                    // ============ DATA LOADING FUNCTIONS ============
                     const loadMedicalStaff = async () => {
                         loadingStaff.value = true;
                         try {
@@ -1113,16 +853,8 @@ window.addEventListener('load', async function() {
                                 .from(TABLE_NAMES.MEDICAL_STAFF)
                                 .select('*')
                                 .order('full_name');
-                            
                             if (error) throw error;
-                            
-                            // Map database fields to frontend format
-                            medicalStaff.value = (data || []).map(staff => 
-                                FieldMappers.medicalStaff.fromDB(staff)
-                            );
-                            
-                            console.log('Loaded medical staff:', medicalStaff.value.length, 'records');
-                            
+                            medicalStaff.value = data.map(staff => FieldMappers.mapMedicalStaff(staff));
                         } catch (error) {
                             console.error('Error loading medical staff:', error);
                             showToast('Error', 'Failed to load medical staff', 'error');
@@ -1139,10 +871,8 @@ window.addEventListener('load', async function() {
                                 .from(TABLE_NAMES.DEPARTMENTS)
                                 .select('*')
                                 .order('name');
-                            
                             if (error) throw error;
                             departments.value = data || [];
-                            console.log('Loaded departments:', departments.value.length, 'records');
                         } catch (error) {
                             console.error('Error loading departments:', error);
                             departments.value = [];
@@ -1151,22 +881,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    const loadClinicalUnits = async () => {
-                        try {
-                            const { data, error } = await supabaseClient
-                                .from(TABLE_NAMES.CLINICAL_UNITS)
-                                .select('*')
-                                .order('name');
-                            
-                            if (error) throw error;
-                            clinicalUnits.value = data || [];
-                        } catch (error) {
-                            console.error('Error loading clinical units:', error);
-                            clinicalUnits.value = [];
-                        }
-                    };
-                    
-                    // IMPORTANT: Training units loader matches your DB structure
                     const loadTrainingUnits = async () => {
                         loadingTrainingUnits.value = true;
                         try {
@@ -1174,16 +888,8 @@ window.addEventListener('load', async function() {
                                 .from(TABLE_NAMES.TRAINING_UNITS)
                                 .select('*')
                                 .order('unit_name');
-                            
                             if (error) throw error;
-                            
-                            // Map database fields to frontend format
-                            trainingUnits.value = (data || []).map(unit => 
-                                FieldMappers.trainingUnits.fromDB(unit)
-                            );
-                            
-                            console.log('Loaded training units:', trainingUnits.value.length, 'records');
-                            
+                            trainingUnits.value = data.map(unit => FieldMappers.mapTrainingUnit(unit));
                         } catch (error) {
                             console.error('Error loading training units:', error);
                             trainingUnits.value = [];
@@ -1192,7 +898,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // IMPORTANT: Resident rotations loader matches your DB structure
                     const loadResidentRotations = async () => {
                         loadingRotations.value = true;
                         try {
@@ -1200,16 +905,8 @@ window.addEventListener('load', async function() {
                                 .from(TABLE_NAMES.RESIDENT_ROTATIONS)
                                 .select('*')
                                 .order('start_date', { ascending: false });
-                            
                             if (error) throw error;
-                            
-                            // Map database fields to frontend format
-                            residentRotations.value = (data || []).map(rotation => 
-                                FieldMappers.residentRotations.fromDB(rotation)
-                            );
-                            
-                            console.log('Loaded resident rotations:', residentRotations.value.length, 'records');
-                            
+                            residentRotations.value = data.map(rotation => FieldMappers.mapResidentRotation(rotation));
                         } catch (error) {
                             console.error('Error loading resident rotations:', error);
                             residentRotations.value = [];
@@ -1218,7 +915,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // IMPORTANT: Staff absences loader matches your DB structure
                     const loadStaffAbsences = async () => {
                         loadingAbsences.value = true;
                         try {
@@ -1228,16 +924,8 @@ window.addEventListener('load', async function() {
                                 .select('*')
                                 .gte('leave_end_date', today)
                                 .order('leave_start_date');
-                            
                             if (error) throw error;
-                            
-                            // Map database fields to frontend format
-                            staffAbsences.value = (data || []).map(absence => 
-                                FieldMappers.staffAbsences.fromDB(absence)
-                            );
-                            
-                            console.log('Loaded staff absences:', staffAbsences.value.length, 'records');
-                            
+                            staffAbsences.value = data.map(absence => FieldMappers.mapStaffAbsence(absence));
                         } catch (error) {
                             console.error('Error loading staff absences:', error);
                             staffAbsences.value = [];
@@ -1246,7 +934,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // IMPORTANT: On-call schedule loader matches your DB structure
                     const loadOnCallSchedule = async () => {
                         loadingSchedule.value = true;
                         try {
@@ -1257,16 +944,8 @@ window.addEventListener('load', async function() {
                                 .gte('duty_date', today)
                                 .order('duty_date')
                                 .limit(7);
-                            
                             if (error) throw error;
-                            
-                            // Map database fields to frontend format
-                            onCallSchedule.value = (data || []).map(schedule => 
-                                FieldMappers.onCallSchedule.fromDB(schedule)
-                            );
-                            
-                            console.log('Loaded on-call schedule:', onCallSchedule.value.length, 'records');
-                            
+                            onCallSchedule.value = data.map(schedule => FieldMappers.mapOnCallSchedule(schedule));
                         } catch (error) {
                             console.error('Error loading on-call schedule:', error);
                             onCallSchedule.value = [];
@@ -1286,9 +965,8 @@ window.addEventListener('load', async function() {
                                 .or(`publish_end_date.gte.${today},publish_end_date.is.null`)
                                 .order('publish_start_date', { ascending: false })
                                 .limit(5);
-                            
                             if (error) throw error;
-                            recentAnnouncements.value = data || [];
+                            recentAnnouncements.value = data.map(announcement => FieldMappers.mapAnnouncement(announcement));
                         } catch (error) {
                             console.error('Error loading announcements:', error);
                             recentAnnouncements.value = [];
@@ -1303,9 +981,8 @@ window.addEventListener('load', async function() {
                                 .from(TABLE_NAMES.USERS)
                                 .select('*')
                                 .order('full_name');
-                            
                             if (error) throw error;
-                            users.value = data || [];
+                            users.value = data.map(user => FieldMappers.mapUser(user));
                         } catch (error) {
                             console.error('Error loading users:', error);
                             users.value = [];
@@ -1317,7 +994,6 @@ window.addEventListener('load', async function() {
                             const { data, error } = await supabaseClient
                                 .from(TABLE_NAMES.SYSTEM_ROLES)
                                 .select('*');
-                            
                             if (error) throw error;
                             userRoles.value = data || [];
                         } catch (error) {
@@ -1334,7 +1010,6 @@ window.addEventListener('load', async function() {
                                 .select('*')
                                 .order('created_at', { ascending: false })
                                 .limit(100);
-                            
                             if (error) throw error;
                             auditLogs.value = data || [];
                         } catch (error) {
@@ -1352,7 +1027,6 @@ window.addEventListener('load', async function() {
                                 .select('*')
                                 .limit(1)
                                 .single();
-                            
                             if (error) {
                                 const defaultSettings = {
                                     hospital_name: 'NeumoCare Hospital',
@@ -1386,7 +1060,6 @@ window.addEventListener('load', async function() {
                             await Promise.all([
                                 loadMedicalStaff(),
                                 loadDepartments(),
-                                loadClinicalUnits(),
                                 loadTrainingUnits(),
                                 loadResidentRotations(),
                                 loadStaffAbsences(),
@@ -1406,103 +1079,7 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // ============ MODAL RESET FUNCTIONS ============
-                    const resetMedicalStaffModal = () => {
-                        medicalStaffModal.form = {
-                            full_name: '',
-                            staff_type: 'medical_resident',
-                            staff_id: '',
-                            employment_status: 'active',
-                            professional_email: '',
-                            department_id: '',
-                            resident_category: '',
-                            training_level: '',
-                            specialization: '',
-                            years_experience: '',
-                            biography: '',
-                            office_phone: '',
-                            mobile_phone: '',
-                            medical_license: '',
-                            date_of_birth: ''
-                        };
-                    };
-                    
-                    const resetDepartmentModal = () => {
-                        departmentModal.form = {
-                            name: '',
-                            code: '',
-                            status: 'active',
-                            description: '',
-                            head_of_department_id: ''
-                        };
-                    };
-                    
-                    const resetClinicalUnitModal = () => {
-                        clinicalUnitModal.form = {
-                            name: '',
-                            code: '',
-                            department_id: '',
-                            unit_type: 'clinical',
-                            status: 'active',
-                            description: '',
-                            supervisor_id: ''
-                        };
-                    };
-                    
-                    // IMPORTANT: Training unit reset matches your DB structure
-                    const resetTrainingUnitModal = () => {
-                        trainingUnitModal.form = {
-                            unit_name: '',
-                            unit_code: '',
-                            department_id: '',
-                            department_name: '',
-                            supervisor_id: '',
-                            max_capacity: 10,
-                            status: 'active',
-                            description: ''
-                        };
-                    };
-                    
-                    const resetRotationModal = () => {
-                        rotationModal.form = {
-                            resident_id: '',
-                            training_unit_id: '',
-                            start_date: '',
-                            end_date: '',
-                            supervisor_id: '',
-                            status: 'active',
-                            goals: '',
-                            notes: ''
-                        };
-                    };
-                    
-                    // IMPORTANT: On-call modal reset matches your DB structure
-                    const resetOnCallModal = () => {
-                        onCallModal.form = {
-                            duty_date: new Date().toISOString().split('T')[0],
-                            shift_type: 'primary_call',
-                            start_time: '08:00',
-                            end_time: '17:00',
-                            primary_physician_id: '',
-                            backup_physician_id: '',
-                            coverage_notes: ''
-                        };
-                    };
-                    
-                    // IMPORTANT: Absence modal reset matches your DB structure
-                    const resetAbsenceModal = () => {
-                        absenceModal.form = {
-                            staff_member_id: '',
-                            absence_reason: '',
-                            start_date: '',
-                            end_date: '',
-                            notes: '',
-                            replacement_staff_id: '',
-                            coverage_instructions: ''
-                        };
-                    };
-                    
-                    // ============ DATA SAVE FUNCTIONS (UPDATED FOR YOUR DB) ============
+                    // ============ DATA SAVE FUNCTIONS ============
                     const saveMedicalStaff = async () => {
                         saving.value = true;
                         try {
@@ -1510,11 +1087,19 @@ window.addEventListener('load', async function() {
                                 throw new Error('Insufficient permissions');
                             }
                             
-                            // Map to database structure
-                            const dbFormData = FieldMappers.medicalStaff.toDB(medicalStaffModal.form);
+                            // Validate form
+                            Validators.required(medicalStaffModal.form.full_name, 'Full name');
+                            Validators.required(medicalStaffModal.form.staff_type, 'Staff type');
+                            Validators.required(medicalStaffModal.form.employment_status, 'Employment status');
+                            if (medicalStaffModal.form.professional_email) {
+                                Validators.email(medicalStaffModal.form.professional_email, 'Email');
+                            }
                             
+                            const dbFormData = FieldMappers.mapMedicalStaffToDb(medicalStaffModal.form);
                             let result;
+                            
                             if (medicalStaffModal.mode === 'add') {
+                                dbFormData.staff_id = dbFormData.staff_id || Utils.generateId('MD');
                                 dbFormData.created_at = new Date().toISOString();
                                 dbFormData.updated_at = new Date().toISOString();
                                 
@@ -1525,7 +1110,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.medicalStaff.fromDB(data);
+                                result = FieldMappers.mapMedicalStaff(data);
                                 medicalStaff.value.unshift(result);
                                 showToast('Success', 'Medical staff added successfully', 'success');
                                 await logAuditEvent('CREATE', 'medical_staff', { staff_id: result.id, name: result.full_name });
@@ -1541,7 +1126,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.medicalStaff.fromDB(data);
+                                result = FieldMappers.mapMedicalStaff(data);
                                 const index = medicalStaff.value.findIndex(s => s.id === result.id);
                                 if (index !== -1) medicalStaff.value[index] = result;
                                 showToast('Success', 'Medical staff updated successfully', 'success');
@@ -1560,60 +1145,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    const saveDepartment = async () => {
-                        saving.value = true;
-                        try {
-                            if (!hasPermission('system', 'update')) {
-                                throw new Error('Insufficient permissions');
-                            }
-                            
-                            const formData = { ...departmentModal.form };
-                            let result;
-                            
-                            if (departmentModal.mode === 'add') {
-                                formData.created_at = new Date().toISOString();
-                                formData.updated_at = new Date().toISOString();
-                                
-                                const { data, error } = await supabaseClient
-                                    .from(TABLE_NAMES.DEPARTMENTS)
-                                    .insert([formData])
-                                    .select()
-                                    .single();
-                                
-                                if (error) throw error;
-                                result = data;
-                                departments.value.unshift(result);
-                                showToast('Success', 'Department added successfully', 'success');
-                            } else {
-                                formData.updated_at = new Date().toISOString();
-                                
-                                const { data, error } = await supabaseClient
-                                    .from(TABLE_NAMES.DEPARTMENTS)
-                                    .update(formData)
-                                    .eq('id', formData.id)
-                                    .select()
-                                    .single();
-                                
-                                if (error) throw error;
-                                result = data;
-                                const index = departments.value.findIndex(d => d.id === result.id);
-                                if (index !== -1) departments.value[index] = result;
-                                showToast('Success', 'Department updated successfully', 'success');
-                            }
-                            
-                            departmentModal.show = false;
-                            resetDepartmentModal();
-                            return result;
-                        } catch (error) {
-                            console.error('Error saving department:', error);
-                            showToast('Error', error.message, 'error');
-                            throw error;
-                        } finally {
-                            saving.value = false;
-                        }
-                    };
-                    
-                    // IMPORTANT: Training unit save matches your DB structure
                     const saveTrainingUnit = async () => {
                         saving.value = true;
                         try {
@@ -1621,18 +1152,14 @@ window.addEventListener('load', async function() {
                                 throw new Error('Insufficient permissions');
                             }
                             
-                            // Get department name if not provided
-                            if (!trainingUnitModal.form.department_name && trainingUnitModal.form.department_id) {
-                                const department = departments.value.find(d => d.id === trainingUnitModal.form.department_id);
-                                if (department) {
-                                    trainingUnitModal.form.department_name = department.name;
-                                }
-                            }
+                            Validators.required(trainingUnitModal.form.unit_name, 'Unit name');
+                            Validators.required(trainingUnitModal.form.unit_code, 'Unit code');
+                            Validators.required(trainingUnitModal.form.department_id, 'Department');
+                            Validators.minValue(trainingUnitModal.form.max_capacity, 'Max capacity', 1);
                             
-                            // Map to database structure
-                            const dbFormData = FieldMappers.trainingUnits.toDB(trainingUnitModal.form);
-                            
+                            const dbFormData = FieldMappers.mapTrainingUnitToDb(trainingUnitModal.form);
                             let result;
+                            
                             if (trainingUnitModal.mode === 'add') {
                                 dbFormData.created_at = new Date().toISOString();
                                 dbFormData.updated_at = new Date().toISOString();
@@ -1644,7 +1171,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.trainingUnits.fromDB(data);
+                                result = FieldMappers.mapTrainingUnit(data);
                                 trainingUnits.value.unshift(result);
                                 showToast('Success', 'Training unit added successfully', 'success');
                             } else {
@@ -1659,7 +1186,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.trainingUnits.fromDB(data);
+                                result = FieldMappers.mapTrainingUnit(data);
                                 const index = trainingUnits.value.findIndex(u => u.id === result.id);
                                 if (index !== -1) trainingUnits.value[index] = result;
                                 showToast('Success', 'Training unit updated successfully', 'success');
@@ -1677,7 +1204,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // IMPORTANT: Rotation save matches your DB structure
                     const saveRotation = async () => {
                         saving.value = true;
                         try {
@@ -1685,16 +1211,22 @@ window.addEventListener('load', async function() {
                                 throw new Error('Insufficient permissions');
                             }
                             
+                            Validators.required(rotationModal.form.resident_id, 'Resident');
+                            Validators.required(rotationModal.form.training_unit_id, 'Training unit');
+                            Validators.required(rotationModal.form.start_date, 'Start date');
+                            Validators.required(rotationModal.form.end_date, 'End date');
+                            Validators.date(rotationModal.form.start_date, 'Start date');
+                            Validators.date(rotationModal.form.end_date, 'End date');
+                            
                             const startDate = new Date(rotationModal.form.start_date);
                             const endDate = new Date(rotationModal.form.end_date);
                             if (endDate <= startDate) {
                                 throw new Error('End date must be after start date');
                             }
                             
-                            // Map to database structure
-                            const dbFormData = FieldMappers.residentRotations.toDB(rotationModal.form);
-                            
+                            const dbFormData = FieldMappers.mapResidentRotationToDb(rotationModal.form);
                             let result;
+                            
                             if (rotationModal.mode === 'add') {
                                 dbFormData.created_at = new Date().toISOString();
                                 dbFormData.updated_at = new Date().toISOString();
@@ -1706,7 +1238,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.residentRotations.fromDB(data);
+                                result = FieldMappers.mapResidentRotation(data);
                                 residentRotations.value.unshift(result);
                                 showToast('Success', 'Rotation added successfully', 'success');
                             } else {
@@ -1721,7 +1253,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.residentRotations.fromDB(data);
+                                result = FieldMappers.mapResidentRotation(data);
                                 const index = residentRotations.value.findIndex(r => r.id === result.id);
                                 if (index !== -1) residentRotations.value[index] = result;
                                 showToast('Success', 'Rotation updated successfully', 'success');
@@ -1739,7 +1271,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // IMPORTANT: On-call save matches your DB structure
                     const saveOnCall = async () => {
                         saving.value = true;
                         try {
@@ -1747,24 +1278,17 @@ window.addEventListener('load', async function() {
                                 throw new Error('Insufficient permissions');
                             }
                             
-                            const formData = { ...onCallModal.form };
+                            Validators.required(onCallModal.form.duty_date, 'Duty date');
+                            Validators.required(onCallModal.form.primary_physician_id, 'Primary physician');
+                            Validators.date(onCallModal.form.duty_date, 'Duty date');
                             
-                            // Ensure required fields
-                            if (!formData.duty_date) {
-                                throw new Error('Duty date is required');
-                            }
-                            if (!formData.primary_physician_id) {
-                                throw new Error('Primary physician is required');
-                            }
-                            
-                            // Map to database structure
-                            const dbFormData = FieldMappers.onCallSchedule.toDB(formData);
-                            dbFormData.created_by = currentUser.value?.id;
-                            
+                            const dbFormData = FieldMappers.mapOnCallScheduleToDb(onCallModal.form);
                             let result;
+                            
                             if (onCallModal.mode === 'add') {
                                 dbFormData.created_at = new Date().toISOString();
                                 dbFormData.updated_at = new Date().toISOString();
+                                dbFormData.created_by = currentUser.value?.id;
                                 
                                 const { data, error } = await supabaseClient
                                     .from(TABLE_NAMES.ONCALL_SCHEDULE)
@@ -1773,13 +1297,12 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.onCallSchedule.fromDB(data);
+                                result = FieldMappers.mapOnCallSchedule(data);
                                 onCallSchedule.value.unshift(result);
                                 showToast('Success', 'On-call schedule added successfully', 'success');
-                                await logAuditEvent('CREATE', 'oncall_schedule', { schedule_id: result.id });
                             } else {
                                 dbFormData.updated_at = new Date().toISOString();
-                                dbFormData.id = formData.id;
+                                dbFormData.id = onCallModal.form.id;
                                 
                                 const { data, error } = await supabaseClient
                                     .from(TABLE_NAMES.ONCALL_SCHEDULE)
@@ -1789,16 +1312,14 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.onCallSchedule.fromDB(data);
+                                result = FieldMappers.mapOnCallSchedule(data);
                                 const index = onCallSchedule.value.findIndex(s => s.id === result.id);
                                 if (index !== -1) onCallSchedule.value[index] = result;
                                 showToast('Success', 'On-call schedule updated successfully', 'success');
-                                await logAuditEvent('UPDATE', 'oncall_schedule', { schedule_id: result.id });
                             }
                             
                             onCallModal.show = false;
                             resetOnCallModal();
-                            await loadOnCallSchedule(); // Refresh the list
                             return result;
                         } catch (error) {
                             console.error('Error saving on-call schedule:', error);
@@ -1809,7 +1330,6 @@ window.addEventListener('load', async function() {
                         }
                     };
                     
-                    // IMPORTANT: Absence save matches your DB structure
                     const saveAbsence = async () => {
                         saving.value = true;
                         try {
@@ -1817,20 +1337,22 @@ window.addEventListener('load', async function() {
                                 throw new Error('Insufficient permissions');
                             }
                             
+                            Validators.required(absenceModal.form.staff_member_id, 'Staff member');
+                            Validators.required(absenceModal.form.absence_reason, 'Absence reason');
+                            Validators.required(absenceModal.form.start_date, 'Start date');
+                            Validators.required(absenceModal.form.end_date, 'End date');
+                            Validators.date(absenceModal.form.start_date, 'Start date');
+                            Validators.date(absenceModal.form.end_date, 'End date');
+                            
                             const startDate = new Date(absenceModal.form.start_date);
                             const endDate = new Date(absenceModal.form.end_date);
                             if (endDate <= startDate) {
                                 throw new Error('End date must be after start date');
                             }
                             
-                            // Calculate total days
-                            const totalDays = calculateAbsenceDuration(startDate, endDate);
-                            
-                            // Map to database structure
-                            const dbFormData = FieldMappers.staffAbsences.toDB(absenceModal.form);
-                            dbFormData.total_days = totalDays;
-                            
+                            const dbFormData = FieldMappers.mapStaffAbsenceToDb(absenceModal.form);
                             let result;
+                            
                             if (absenceModal.mode === 'add') {
                                 dbFormData.created_at = new Date().toISOString();
                                 dbFormData.updated_at = new Date().toISOString();
@@ -1842,7 +1364,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.staffAbsences.fromDB(data);
+                                result = FieldMappers.mapStaffAbsence(data);
                                 staffAbsences.value.unshift(result);
                                 showToast('Success', 'Absence request submitted successfully', 'success');
                             } else {
@@ -1857,7 +1379,7 @@ window.addEventListener('load', async function() {
                                     .single();
                                 
                                 if (error) throw error;
-                                result = FieldMappers.staffAbsences.fromDB(data);
+                                result = FieldMappers.mapStaffAbsence(data);
                                 const index = staffAbsences.value.findIndex(a => a.id === result.id);
                                 if (index !== -1) staffAbsences.value[index] = result;
                                 showToast('Success', 'Absence request updated successfully', 'success');
@@ -1868,6 +1390,47 @@ window.addEventListener('load', async function() {
                             return result;
                         } catch (error) {
                             console.error('Error saving absence:', error);
+                            showToast('Error', error.message, 'error');
+                            throw error;
+                        } finally {
+                            saving.value = false;
+                        }
+                    };
+                    
+                    const saveCommunication = async () => {
+                        saving.value = true;
+                        try {
+                            if (!hasPermission('communications', 'create')) {
+                                throw new Error('Insufficient permissions');
+                            }
+                            
+                            Validators.required(communicationsModal.form.announcement_title, 'Title');
+                            Validators.required(communicationsModal.form.announcement_content, 'Content');
+                            Validators.required(communicationsModal.form.publish_start_date, 'Publish date');
+                            Validators.date(communicationsModal.form.publish_start_date, 'Publish date');
+                            
+                            const dbFormData = FieldMappers.mapAnnouncementToDb(communicationsModal.form);
+                            dbFormData.created_by = currentUser.value?.id;
+                            dbFormData.created_by_name = currentUser.value?.full_name;
+                            dbFormData.created_at = new Date().toISOString();
+                            dbFormData.updated_at = new Date().toISOString();
+                            
+                            const { data, error } = await supabaseClient
+                                .from(TABLE_NAMES.ANNOUNCEMENTS)
+                                .insert([dbFormData])
+                                .select()
+                                .single();
+                            
+                            if (error) throw error;
+                            
+                            const result = FieldMappers.mapAnnouncement(data);
+                            recentAnnouncements.value.unshift(result);
+                            communicationsModal.show = false;
+                            showToast('Success', 'Announcement posted successfully', 'success');
+                            await logAuditEvent('CREATE', 'announcements', { announcement_id: data.id, title: data.announcement_title });
+                            return result;
+                        } catch (error) {
+                            console.error('Error saving communication:', error);
                             showToast('Error', error.message, 'error');
                             throw error;
                         } finally {
@@ -1905,7 +1468,6 @@ window.addEventListener('load', async function() {
                         });
                     };
                     
-                    // IMPORTANT: On-call delete function
                     const deleteOnCallSchedule = (scheduleId) => {
                         showConfirmation({
                             title: 'Delete On-call Schedule',
@@ -1926,13 +1488,111 @@ window.addEventListener('load', async function() {
                                     const index = onCallSchedule.value.findIndex(s => s.id === scheduleId);
                                     if (index !== -1) onCallSchedule.value.splice(index, 1);
                                     showToast('Deleted', 'On-call schedule has been removed', 'success');
-                                    await logAuditEvent('DELETE', 'oncall_schedule', { schedule_id: scheduleId });
                                 } catch (error) {
                                     console.error('Error deleting on-call schedule:', error);
                                     showToast('Error', error.message, 'error');
                                 }
                             }
                         });
+                    };
+                    
+                    const deleteAbsence = (absenceId) => {
+                        showConfirmation({
+                            title: 'Delete Absence Record',
+                            message: 'Are you sure you want to delete this absence record?',
+                            icon: 'fa-trash',
+                            confirmButtonText: 'Delete',
+                            confirmButtonClass: 'btn-danger',
+                            onConfirm: async () => {
+                                try {
+                                    if (!hasPermission('staff_absence', 'delete')) {
+                                        throw new Error('Insufficient permissions');
+                                    }
+                                    const { error } = await supabaseClient
+                                        .from(TABLE_NAMES.STAFF_ABSENCES)
+                                        .delete()
+                                        .eq('id', absenceId);
+                                    if (error) throw error;
+                                    const index = staffAbsences.value.findIndex(a => a.id === absenceId);
+                                    if (index !== -1) staffAbsences.value.splice(index, 1);
+                                    showToast('Deleted', 'Absence record has been removed', 'success');
+                                } catch (error) {
+                                    console.error('Error deleting absence record:', error);
+                                    showToast('Error', error.message, 'error');
+                                }
+                            }
+                        });
+                    };
+                    
+                    // ============ RESET FUNCTIONS ============
+                    const resetMedicalStaffModal = () => {
+                        medicalStaffModal.form = {
+                            full_name: '',
+                            staff_type: 'medical_resident',
+                            staff_id: '',
+                            employment_status: 'active',
+                            professional_email: '',
+                            department_id: '',
+                            resident_category: '',
+                            training_level: '',
+                            specialization: '',
+                            years_experience: '',
+                            biography: '',
+                            office_phone: '',
+                            mobile_phone: '',
+                            medical_license: '',
+                            date_of_birth: ''
+                        };
+                    };
+                    
+                    const resetTrainingUnitModal = () => {
+                        trainingUnitModal.form = {
+                            unit_name: '',
+                            unit_code: '',
+                            department_id: '',
+                            supervisor_id: '',
+                            max_capacity: 10,
+                            status: 'active',
+                            description: ''
+                        };
+                    };
+                    
+                    const resetRotationModal = () => {
+                        rotationModal.form = {
+                            resident_id: '',
+                            training_unit_id: '',
+                            start_date: '',
+                            end_date: '',
+                            supervisor_id: '',
+                            status: 'active',
+                            goals: '',
+                            notes: ''
+                        };
+                    };
+                    
+                    const resetOnCallModal = () => {
+                        onCallModal.form = {
+                            duty_date: new Date().toISOString().split('T')[0],
+                            shift_type: 'primary_call',
+                            start_time: '08:00',
+                            end_time: '17:00',
+                            primary_physician_id: '',
+                            backup_physician_id: '',
+                            coverage_notes: '',
+                            status: 'scheduled'
+                        };
+                    };
+                    
+                    const resetAbsenceModal = () => {
+                        absenceModal.form = {
+                            staff_member_id: '',
+                            absence_reason: '',
+                            start_date: '',
+                            end_date: '',
+                            notes: '',
+                            replacement_staff_id: '',
+                            coverage_instructions: ''
+                        };
                     };
                     
                     // ============ UI FUNCTIONS ============
@@ -1946,7 +1606,6 @@ window.addEventListener('load', async function() {
                                 break;
                             case 'department_management':
                                 loadDepartments();
-                                loadClinicalUnits();
                                 break;
                             case 'training_units':
                                 loadTrainingUnits();
@@ -1997,33 +1656,6 @@ window.addEventListener('load', async function() {
                         return titles[currentView.value] || 'NeumoCare';
                     };
                     
-                    const getCurrentSubtitle = () => {
-                        const subtitles = {
-                            daily_operations: 'Dashboard Overview',
-                            medical_staff: 'Manage Medical Staff',
-                            resident_rotations: 'Resident Rotation Management',
-                            oncall_schedule: 'On-call Scheduling',
-                            staff_absence: 'Staff Absence Tracking',
-                            training_units: 'Training Units Management',
-                            department_management: 'Department Structure',
-                            communications: 'Department Communications',
-                            audit_logs: 'System Audit Trail',
-                            permission_manager: 'User Permissions Management',
-                            system_settings: 'System Configuration'
-                        };
-                        return subtitles[currentView.value] || '';
-                    };
-                    
-                    const getSearchPlaceholder = () => {
-                        const placeholders = {
-                            medical_staff: 'Search medical staff...',
-                            resident_rotations: 'Search rotations...',
-                            training_units: 'Search training units...',
-                            communications: 'Search announcements...'
-                        };
-                        return placeholders[currentView.value] || 'Search...';
-                    };
-                    
                     // ============ MODAL FUNCTIONS ============
                     const showAddMedicalStaffModal = () => {
                         if (!hasPermission('medical_staff', 'create')) {
@@ -2047,47 +1679,6 @@ window.addEventListener('load', async function() {
                         medicalStaffModal.form = { ...staff };
                     };
                     
-                    const showAddDepartmentModal = () => {
-                        if (!hasPermission('system', 'update')) {
-                            showToast('Permission Denied', 'You need permission to manage departments', 'error');
-                            return;
-                        }
-                        departmentModal.mode = 'add';
-                        departmentModal.show = true;
-                        resetDepartmentModal();
-                    };
-                    
-                    const editDepartment = (department) => {
-                        if (!hasPermission('system', 'update')) {
-                            showToast('Permission Denied', 'You need permission to edit departments', 'error');
-                            return;
-                        }
-                        departmentModal.mode = 'edit';
-                        departmentModal.show = true;
-                        departmentModal.form = { ...department };
-                    };
-                    
-                    const showAddClinicalUnitModal = () => {
-                        if (!hasPermission('system', 'update')) {
-                            showToast('Permission Denied', 'You need permission to add clinical units', 'error');
-                            return;
-                        }
-                        clinicalUnitModal.mode = 'add';
-                        clinicalUnitModal.show = true;
-                        resetClinicalUnitModal();
-                    };
-                    
-                    const editClinicalUnit = (unit) => {
-                        if (!hasPermission('system', 'update')) {
-                            showToast('Permission Denied', 'You need permission to edit clinical units', 'error');
-                            return;
-                        }
-                        clinicalUnitModal.mode = 'edit';
-                        clinicalUnitModal.show = true;
-                        clinicalUnitModal.form = { ...unit };
-                    };
-                    
-                    // IMPORTANT: Training unit modal functions
                     const showAddTrainingUnitModal = () => {
                         if (!hasPermission('training_units', 'create')) {
                             showToast('Permission Denied', 'You need create permission', 'error');
@@ -2128,25 +1719,14 @@ window.addEventListener('load', async function() {
                         rotationModal.form = { ...rotation };
                     };
                     
-                    // IMPORTANT: On-call modal functions
                     const showAddOnCallModal = () => {
-                        console.log('showAddOnCallModal called');
-                        
                         if (!hasPermission('oncall_schedule', 'create')) {
                             showToast('Permission Denied', 'You need create permission', 'error');
                             return;
                         }
-                        
                         onCallModal.mode = 'add';
                         onCallModal.show = true;
-                        
-                        // Set defaults
-                        onCallModal.form.duty_date = new Date().toISOString().split('T')[0];
-                        onCallModal.form.start_time = '08:00';
-                        onCallModal.form.end_time = '17:00';
-                        
-                        console.log('Modal state:', onCallModal);
-                        console.log('Available physicians count:', availablePhysicians.value.length);
+                        resetOnCallModal();
                     };
                     
                     const editOnCallSchedule = (schedule) => {
@@ -2159,7 +1739,6 @@ window.addEventListener('load', async function() {
                         onCallModal.form = { ...schedule };
                     };
                     
-                    // IMPORTANT: Absence modal functions
                     const showAddAbsenceModal = () => {
                         if (!hasPermission('staff_absence', 'create')) {
                             showToast('Permission Denied', 'You need create permission', 'error');
@@ -2180,93 +1759,23 @@ window.addEventListener('load', async function() {
                         absenceModal.show = true;
                         absenceModal.form = {
                             ...absence,
-                            id: absence.id
+                            staff_member_id: absence.staff_member_id,
+                            absence_reason: absence.absence_reason,
+                            start_date: absence.start_date,
+                            end_date: absence.end_date,
+                            notes: absence.notes
                         };
                     };
                     
-                    // ============ COMPUTED PROPERTIES ============
-                    const filteredMedicalStaff = computed(() => {
-                        let filtered = medicalStaff.value;
-                        if (staffSearch.value) {
-                            const search = staffSearch.value.toLowerCase();
-                            filtered = filtered.filter(s => 
-                                s.full_name.toLowerCase().includes(search) ||
-                                (s.staff_id && s.staff_id.toLowerCase().includes(search)) ||
-                                (s.professional_email && s.professional_email.toLowerCase().includes(search))
-                            );
+                    const showCommunicationsModal = () => {
+                        if (!hasPermission('communications', 'create')) {
+                            showToast('Permission Denied', 'You need create permission', 'error');
+                            return;
                         }
-                        if (staffFilter.staff_type) {
-                            filtered = filtered.filter(s => s.staff_type === staffFilter.staff_type);
-                        }
-                        if (staffFilter.employment_status) {
-                            filtered = filtered.filter(s => s.employment_status === staffFilter.employment_status);
-                        }
-                        return filtered;
-                    });
-                    
-                    const filteredRotations = computed(() => {
-                        let filtered = residentRotations.value;
-                        if (rotationFilter.resident_id) {
-                            filtered = filtered.filter(r => r.resident_id === rotationFilter.resident_id);
-                        }
-                        if (rotationFilter.status) {
-                            filtered = filtered.filter(r => r.status === rotationFilter.status);
-                        }
-                        return filtered;
-                    });
-                    
-                    const todaysOnCall = computed(() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        return onCallSchedule.value
-                            .filter(schedule => schedule.duty_date === today)
-                            .map(schedule => ({
-                                ...schedule,
-                                physician_name: getStaffName(schedule.primary_physician_id),
-                                role: schedule.shift_type === 'primary_call' ? 'Primary' : 'Backup',
-                                contact_number: 'Ext. 5555'
-                            }));
-                    });
-                    
-                    // IMPORTANT: Available physicians computed property
-                    const availablePhysicians = computed(() => {
-                        const physicians = medicalStaff.value.filter(staff => 
-                            (['attending_physician', 'fellow'].includes(staff.staff_type) && 
-                            staff.employment_status === 'active')
-                        );
-                        
-                        console.log('availablePhysicians computed:', physicians.length, 'physicians found');
-                        return physicians;
-                    });
-                    
-                    const availableResidents = computed(() => {
-                        return medicalStaff.value.filter(staff => 
-                            staff.staff_type === 'medical_resident' && 
-                            staff.employment_status === 'active'
-                        );
-                    });
-                    
-                    const availableTrainingUnits = computed(() => {
-                        return trainingUnits.value.filter(unit => unit.status === 'active');
-                    });
-                    
-                    const stats = computed(() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        const activeStaff = medicalStaff.value.filter(s => s.employment_status === 'active').length;
-                        const residentsCount = medicalStaff.value.filter(s => s.staff_type === 'medical_resident' && s.employment_status === 'active').length;
-                        const todayOnCall = onCallSchedule.value.filter(s => s.duty_date === today).length;
-                        const activeAbsences = staffAbsences.value.filter(a => 
-                            a.start_date <= today && a.end_date >= today && a.status === 'approved'
-                        ).length;
-                        return {
-                            totalStaff: activeStaff,
-                            activePatients: 0,
-                            todayAppointments: 0,
-                            pendingAlerts: activeAlerts.value.length,
-                            activeResidents: residentsCount,
-                            todayOnCall: todayOnCall,
-                            activeAbsences: activeAbsences
-                        };
-                    });
+                        communicationsModal.show = true;
+                        communicationsModal.activeTab = 'announcement';
+                        communicationsModal.form.publish_start_date = new Date().toISOString().split('T')[0];
+                    };
                     
                     // ============ AUTHENTICATION ============
                     const handleLogin = async () => {
@@ -2274,16 +1783,20 @@ window.addEventListener('load', async function() {
                         try {
                             const email = loginForm.email.trim().toLowerCase();
                             const password = loginForm.password;
+                            Validators.required(email, 'Email');
+                            Validators.required(password, 'Password');
+                            Validators.email(email, 'Email');
                             
                             if (email === 'admin@neumocare.org' && password === 'password123') {
+                                // Try to fetch user from database
                                 const { data: users, error } = await supabaseClient
                                     .from(TABLE_NAMES.USERS)
                                     .select('*')
                                     .eq('email', email)
                                     .limit(1);
                                 
-                                if (error) {
-                                    console.warn('Could not fetch user from database:', error);
+                                if (error || !users || users.length === 0) {
+                                    // Create demo admin user
                                     currentUser.value = {
                                         id: Utils.generateId('USR'),
                                         email: email,
@@ -2292,17 +1805,8 @@ window.addEventListener('load', async function() {
                                         department: 'Administration',
                                         account_status: 'active'
                                     };
-                                } else if (users && users.length > 0) {
-                                    currentUser.value = users[0];
                                 } else {
-                                    currentUser.value = {
-                                        id: Utils.generateId('USR'),
-                                        email: email,
-                                        full_name: 'System Administrator',
-                                        user_role: 'system_admin',
-                                        department: 'Administration',
-                                        account_status: 'active'
-                                    };
+                                    currentUser.value = FieldMappers.mapUser(users[0]);
                                 }
                                 
                                 showToast('Login Successful', `Welcome ${currentUser.value.full_name}!`, 'success');
@@ -2338,23 +1842,199 @@ window.addEventListener('load', async function() {
                         });
                     };
                     
-                    // ============ EVENT HANDLERS ============
-                    const toggleStatsSidebar = () => {
-                        statsSidebarOpen.value = !statsSidebarOpen.value;
+                    // ============ COMPUTED PROPERTIES ============
+                    const filteredMedicalStaff = computed(() => {
+                        let filtered = medicalStaff.value;
+                        if (staffSearch.value) {
+                            const search = staffSearch.value.toLowerCase();
+                            filtered = filtered.filter(s => 
+                                s.full_name.toLowerCase().includes(search) ||
+                                (s.staff_id && s.staff_id.toLowerCase().includes(search)) ||
+                                (s.professional_email && s.professional_email.toLowerCase().includes(search))
+                            );
+                        }
+                        if (staffFilter.staff_type) {
+                            filtered = filtered.filter(s => s.staff_type === staffFilter.staff_type);
+                        }
+                        if (staffFilter.employment_status) {
+                            filtered = filtered.filter(s => s.employment_status === staffFilter.employment_status);
+                        }
+                        return filtered;
+                    });
+                    
+                    const filteredRotations = computed(() => {
+                        let filtered = residentRotations.value;
+                        if (rotationFilter.resident_id) {
+                            filtered = filtered.filter(r => r.resident_id === rotationFilter.resident_id);
+                        }
+                        if (rotationFilter.status) {
+                            filtered = filtered.filter(r => r.status === rotationFilter.status);
+                        }
+                        return filtered;
+                    });
+                    
+                    const filteredAbsences = computed(() => {
+                        let filtered = staffAbsences.value;
+                        if (absenceFilter.staff_id) {
+                            filtered = filtered.filter(a => a.staff_member_id === absenceFilter.staff_id);
+                        }
+                        if (absenceFilter.status) {
+                            filtered = filtered.filter(a => a.status === absenceFilter.status);
+                        }
+                        if (absenceFilter.start_date) {
+                            filtered = filtered.filter(a => a.start_date >= absenceFilter.start_date);
+                        }
+                        return filtered;
+                    });
+                    
+                    const residents = computed(() => {
+                        return medicalStaff.value.filter(staff => staff.staff_type === 'medical_resident');
+                    });
+                    
+                    const stats = computed(() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        const activeStaff = medicalStaff.value.filter(s => s.employment_status === 'active').length;
+                        const residentsCount = medicalStaff.value.filter(s => s.staff_type === 'medical_resident' && s.employment_status === 'active').length;
+                        const todayOnCall = onCallSchedule.value.filter(s => s.duty_date === today).length;
+                        const activeAbsences = staffAbsences.value.filter(a => 
+                            a.start_date <= today && a.end_date >= today && a.status === 'approved'
+                        ).length;
+                        return {
+                            totalStaff: activeStaff,
+                            activePatients: 0,
+                            todayAppointments: 0,
+                            pendingAlerts: activeAlerts.value.length,
+                            activeResidents: residentsCount,
+                            todayOnCall: todayOnCall,
+                            activeAbsences: activeAbsences
+                        };
+                    });
+                    
+                    const todaysOnCall = computed(() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        return onCallSchedule.value.filter(schedule => schedule.duty_date === today)
+                            .map(schedule => ({
+                                ...schedule,
+                                physician_name: getStaffName(schedule.primary_physician_id),
+                                role: schedule.shift_type === 'primary_call' ? 'Primary' : 'Backup',
+                                contact_number: 'Ext. 5555'
+                            }));
+                    });
+                    
+                    const availableAttendings = computed(() => {
+                        return medicalStaff.value.filter(staff => 
+                            staff.staff_type === 'attending_physician' &&
+                            staff.employment_status === 'active'
+                        );
+                    });
+                    
+                    const availableResidents = computed(() => {
+                        return medicalStaff.value.filter(staff => 
+                            staff.staff_type === 'medical_resident' &&
+                            staff.employment_status === 'active'
+                        );
+                    });
+                    
+                    const availableTrainingUnits = computed(() => {
+                        return trainingUnits.value.filter(unit => unit.status === 'active');
+                    });
+                    
+                    const availableStaff = computed(() => {
+                        return medicalStaff.value.filter(staff => staff.employment_status === 'active');
+                    });
+                    
+                    // ============ UTILITY GETTER FUNCTIONS ============
+                    const getDepartmentName = (departmentId) => {
+                        if (!departmentId) return 'Unassigned';
+                        const department = departments.value.find(d => d.id === departmentId);
+                        return department ? department.name : `Department ${departmentId?.substring(0, 8) || 'Unknown'}`;
                     };
                     
-                    const toggleUserMenu = () => {
-                        userMenuOpen.value = !userMenuOpen.value;
+                    const getStaffName = (staffId) => {
+                        if (!staffId) return 'Unknown';
+                        const staff = medicalStaff.value.find(s => s.id === staffId);
+                        return staff ? staff.full_name : `Staff ${staffId?.substring(0, 8) || 'Unknown'}`;
                     };
                     
-                    const toggleActionMenu = (event) => {
-                        event.stopPropagation();
-                        const dropdown = event.target.closest('.action-dropdown');
-                        if (dropdown) {
-                            const menu = dropdown.querySelector('.action-menu');
-                            if (menu) {
-                                menu.classList.toggle('show');
-                            }
+                    const getTrainingUnitName = (unitId) => {
+                        if (!unitId) return 'Unknown Unit';
+                        const unit = trainingUnits.value.find(u => u.id === unitId);
+                        return unit ? unit.unit_name : `Unit ${unitId?.substring(0, 8) || 'Unknown'}`;
+                    };
+                    
+                    const getSupervisorName = (supervisorId) => {
+                        if (!supervisorId) return 'Not assigned';
+                        return getStaffName(supervisorId);
+                    };
+                    
+                    // ============ FORMATTING FUNCTIONS ============
+                    const formatStaffType = (type) => {
+                        const types = { 
+                            medical_resident: 'Medical Resident', 
+                            attending_physician: 'Attending Physician',
+                            fellow: 'Fellow', 
+                            nurse_practitioner: 'Nurse Practitioner' 
+                        }; 
+                        return types[type] || type;
+                    };
+                    
+                    const formatTrainingLevel = (level) => {
+                        const levels = {
+                            pgy1: 'PGY-1',
+                            pgy2: 'PGY-2',
+                            pgy3: 'PGY-3',
+                            pgy4: 'PGY-4',
+                            other: 'Other'
+                        };
+                        return levels[level] || level;
+                    };
+                    
+                    const formatEmploymentStatus = (status) => {
+                        const statuses = { active: 'Active', on_leave: 'On Leave', inactive: 'Inactive' };
+                        return statuses[status] || status;
+                    };
+                    
+                    const formatRotationStatus = (status) => {
+                        const statuses = {
+                            active: 'Active',
+                            upcoming: 'Upcoming',
+                            completed: 'Completed',
+                            cancelled: 'Cancelled'
+                        };
+                        return statuses[status] || status;
+                    };
+                    
+                    const formatAbsenceReason = (reason) => {
+                        const reasons = {
+                            vacation: 'Vacation',
+                            sick_leave: 'Sick Leave',
+                            conference: 'Conference/Education',
+                            personal: 'Personal',
+                            maternity_paternity: 'Maternity/Paternity',
+                            administrative: 'Administrative Duty',
+                            other: 'Other'
+                        };
+                        return reasons[reason] || reason;
+                    };
+                    
+                    const formatAbsenceStatus = (status) => {
+                        const statuses = {
+                            pending: 'Pending',
+                            approved: 'Approved',
+                            rejected: 'Rejected',
+                            completed: 'Completed'
+                        };
+                        return statuses[status] || status;
+                    };
+                    
+                    const calculateAbsenceDuration = (startDate, endDate) => {
+                        try {
+                            const start = new Date(startDate);
+                            const end = new Date(endDate);
+                            const diffTime = Math.abs(end - start);
+                            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                        } catch {
+                            return 0;
                         }
                     };
                     
@@ -2392,26 +2072,12 @@ window.addEventListener('load', async function() {
                         
                         // Modal States
                         confirmationModal,
-                        staffDetailsModal,
                         medicalStaffModal,
-                        departmentModal,
-                        clinicalUnitModal,
                         trainingUnitModal,
                         rotationModal,
                         onCallModal,
                         absenceModal,
                         communicationsModal,
-                        quickPlacementModal,
-                        bulkAssignModal,
-                        roleModal,
-                        userProfileModal,
-                        systemSettingsModal,
-                        absenceDetailsModal,
-                        importExportModal,
-                        rotationDetailsModal,
-                        dashboardCustomizeModal,
-                        advancedSearchModal,
-                        getUserRoleDisplay,
                         
                         // Data Stores
                         medicalStaff,
@@ -2451,12 +2117,15 @@ window.addEventListener('load', async function() {
                         
                         // Computed Properties
                         stats,
-                        todaysOnCall,
                         filteredMedicalStaff,
                         filteredRotations,
-                        availablePhysicians,
+                        filteredAbsences,
+                        todaysOnCall,
+                        residents,
+                        availableAttendings,
                         availableResidents,
                         availableTrainingUnits,
+                        availableStaff,
                         
                         // Core Functions
                         hasPermission,
@@ -2467,31 +2136,20 @@ window.addEventListener('load', async function() {
                         formatDateTime: Utils.formatDateTime,
                         formatTimeAgo: Utils.formatTimeAgo,
                         formatStaffType,
-                        getStaffTypeClass,
                         formatEmploymentStatus,
                         formatTrainingLevel,
+                        formatRotationStatus,
+                        formatAbsenceReason,
+                        formatAbsenceStatus,
+                        calculateAbsenceDuration,
                         getDepartmentName,
                         getStaffName,
                         getTrainingUnitName,
                         getSupervisorName,
-                        getResidentName,
-                        formatRotationStatus,
-                        getRotationStatusClass,
-                        formatAbsenceReason,
-                        formatAbsenceStatus,
-                        getAbsenceStatusClass,
-                        calculateAbsenceDuration,
-                        formatTimeRange,
-                        formatAuditAction,
-                        getDepartmentUnits,
-                        getUnitResidents,
-                        getUserName,
                         
                         // Navigation Functions
                         switchView,
                         getCurrentTitle,
-                        getCurrentSubtitle,
-                        getSearchPlaceholder,
                         
                         // Modal Functions
                         showConfirmation,
@@ -2501,11 +2159,6 @@ window.addEventListener('load', async function() {
                         editMedicalStaff,
                         saveMedicalStaff,
                         deleteMedicalStaff,
-                        showAddDepartmentModal,
-                        editDepartment,
-                        saveDepartment,
-                        showAddClinicalUnitModal,
-                        editClinicalUnit,
                         showAddTrainingUnitModal,
                         editTrainingUnit,
                         saveTrainingUnit,
@@ -2519,19 +2172,24 @@ window.addEventListener('load', async function() {
                         showAddAbsenceModal,
                         editAbsence,
                         saveAbsence,
-                        showAddOnCallModal,
+                        deleteAbsence,
+                        showCommunicationsModal,
+                        saveCommunication,
                         
-                        // UI Functions
-                        removeToast,
-                        showToast,
-                        dismissAlert,
-                        toggleStatsSidebar,
-                        toggleUserMenu,
-                        toggleActionMenu,
+                        // Reset Functions
+                        resetMedicalStaffModal,
+                        resetTrainingUnitModal,
+                        resetRotationModal,
+                        resetOnCallModal,
+                        resetAbsenceModal,
                         
                         // Authentication Functions
                         handleLogin,
-                        handleLogout
+                        handleLogout,
+                        
+                        // UI Functions
+                        removeToast,
+                        showToast
                     };
                     
                 } catch (error) {
@@ -2554,6 +2212,40 @@ window.addEventListener('load', async function() {
         // ============ MOUNT THE APP ============
         app.mount('#app');
         console.log('Vue app mounted successfully');
+        
+        // ============ TEST DATABASE CONNECTION ============
+        async function testAllTables() {
+            console.log('Testing all database tables...');
+            const tests = [
+                { table: TABLE_NAMES.USERS, name: 'Users' },
+                { table: TABLE_NAMES.MEDICAL_STAFF, name: 'Medical Staff' },
+                { table: TABLE_NAMES.DEPARTMENTS, name: 'Departments' },
+                { table: TABLE_NAMES.TRAINING_UNITS, name: 'Training Units' },
+                { table: TABLE_NAMES.RESIDENT_ROTATIONS, name: 'Resident Rotations' },
+                { table: TABLE_NAMES.STAFF_ABSENCES, name: 'Staff Absences' },
+                { table: TABLE_NAMES.ONCALL_SCHEDULE, name: 'On-call Schedule' },
+                { table: TABLE_NAMES.ANNOUNCEMENTS, name: 'Announcements' }
+            ];
+            
+            for (const test of tests) {
+                try {
+                    const { data, error, count } = await supabaseClient
+                        .from(test.table)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        console.warn(`❌ ${test.name}: ${error.message}`);
+                    } else {
+                        console.log(`✅ ${test.name}: Connected (${count || 0} records)`);
+                    }
+                } catch (err) {
+                    console.warn(`❌ ${test.name}: ${err.message}`);
+                }
+            }
+        }
+        
+        // Run test after a short delay
+        setTimeout(testAllTables, 1000);
         
     } catch (error) {
         console.error('FATAL ERROR: Application failed to initialize:', error);
