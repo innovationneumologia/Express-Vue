@@ -49,11 +49,10 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
+// Replace with:
 app.use(cors({
-    origin: ['https://innovationneumologia.github.io', 'http://localhost:3000', 'http://localhost:8080'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: ['https://innovationneumologia.github.io', 'http://localhost:*', 'https://neumocare.up.railway.app'],
+    credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
