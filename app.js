@@ -572,6 +572,95 @@ window.addEventListener('load', async function() {
                             announcement_notifications: true
                         }
                     });
+                            // Add these to your modal states section in app.js
+const absenceDetailsModal = reactive({
+    show: false,
+    absence: null,
+    activeTab: 'details'
+});
+
+const importExportModal = reactive({
+    show: false,
+    mode: 'import', // 'import' or 'export'
+    selectedTable: '',
+    selectedFile: null,
+    exportFormat: 'csv',
+    overwriteExisting: false,
+    skipInvalidRows: true,
+    includeMetadata: true,
+    dateRange: { start: '', end: '' },
+    fieldMapping: []
+});
+
+const rotationDetailsModal = reactive({
+    show: false,
+    rotation: null,
+    activeTab: 'details',
+    milestones: [],
+    competencies: [],
+    documents: [],
+    activity: []
+});
+
+const dashboardCustomizeModal = reactive({
+    show: false,
+    availableWidgets: [
+        { id: 'stats', title: 'Statistics', description: 'Key performance indicators', icon: 'fas fa-chart-line', visible: true },
+        { id: 'oncall', title: 'On-call Schedule', description: 'Today\'s on-call physicians', icon: 'fas fa-phone-alt', visible: true },
+        { id: 'announcements', title: 'Announcements', description: 'Recent department announcements', icon: 'fas fa-bullhorn', visible: true },
+        { id: 'capacity', title: 'Capacity', description: 'Department capacity status', icon: 'fas fa-bed', visible: true },
+        { id: 'alerts', title: 'Alerts', description: 'System alerts and notifications', icon: 'fas fa-exclamation-triangle', visible: true }
+    ],
+    appearance: {
+        cardDensity: 'normal',
+        colorTheme: 'medical',
+        fontSize: 'medium',
+        animationSpeed: 'normal'
+    },
+    notifications: {
+        showAlerts: true,
+        showNotifications: true,
+        autoRefresh: true,
+        refreshInterval: 60
+    }
+});
+
+const advancedSearchModal = reactive({
+    show: false,
+    activeTab: 'medical_staff',
+    filters: {
+        medical_staff: {
+            name: '',
+            staff_type: [],
+            department_id: '',
+            employment_status: '',
+            join_date_start: '',
+            join_date_end: '',
+            training_level: ''
+        },
+        rotations: {
+            resident_name: '',
+            training_unit_id: '',
+            status: '',
+            supervisor_id: '',
+            date_start: '',
+            date_end: '',
+            min_duration: ''
+        }
+    },
+    sort: {
+        medical_staff: {
+            field: 'full_name',
+            order: 'asc'
+        }
+    },
+    display: {
+        medical_staff: {
+            resultsPerPage: 25,
+            showInactive: false
+        }
+    }
+});
                     
                     // ============ DATA STORES ============
                     const medicalStaff = ref([]);
@@ -729,6 +818,110 @@ window.addEventListener('load', async function() {
                         }; 
                         return types[type] || type;
                     };
+                            // Add to your formatting functions
+const getAbsenceTimelineStatus = (absence) => {
+    const today = new Date().toISOString().split('T')[0];
+    const startDate = absence.start_date;
+    const endDate = absence.end_date;
+    
+    if (today < startDate) {
+        return 'Starts ' + formatTimeAgo(startDate);
+    } else if (today > endDate) {
+        return 'Ended ' + formatTimeAgo(endDate);
+    } else {
+        const start = new Date(startDate);
+        const now = new Date(today);
+        const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+        return `Day ${diffDays + 1} of absence`;
+    }
+};
+
+const formatRotationType = (type) => {
+    const types = {
+        'clinical': 'Clinical Rotation',
+        'research': 'Research Rotation',
+        'elective': 'Elective Rotation',
+        'required': 'Required Rotation'
+    };
+    return types[type] || type || 'Clinical Rotation';
+};
+
+const calculateRotationDuration = (startDate, endDate) => {
+    try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end - start);
+        const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+        return diffWeeks + ' weeks';
+    } catch {
+        return 'N/A';
+    }
+};
+
+const getResidentTrainingLevel = (residentId) => {
+    const resident = medicalStaff.value.find(s => s.id === residentId);
+    return resident ? formatTrainingLevel(resident.training_level) : 'N/A';
+};
+
+const getRotationDepartment = (rotation) => {
+    const unit = trainingUnits.value.find(u => u.id === rotation.training_unit_id);
+    if (unit && unit.department_id) {
+        return getDepartmentName(unit.department_id);
+    }
+    return 'N/A';
+};
+
+const formatEvaluationStatus = (status) => {
+    const statuses = {
+        'pending': 'Pending',
+        'in_progress': 'In Progress',
+        'completed': 'Completed',
+        'overdue': 'Overdue'
+    };
+    return statuses[status] || status || 'Not Started';
+};
+
+const getEvaluationStatusClass = (status) => {
+    const classes = {
+        'pending': 'status-busy',
+        'in_progress': 'status-oncall',
+        'completed': 'status-available',
+        'overdue': 'status-critical'
+    };
+    return classes[status] || 'badge-secondary';
+};
+
+const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const formatDocumentType = (type) => {
+    const types = {
+        'pdf': 'PDF',
+        'doc': 'Word Document',
+        'docx': 'Word Document',
+        'xls': 'Excel',
+        'xlsx': 'Excel',
+        'jpg': 'Image',
+        'png': 'Image',
+        'txt': 'Text File'
+    };
+    return types[type] || type || 'Document';
+};
+
+const getDocumentStatusClass = (status) => {
+    const classes = {
+        'approved': 'status-available',
+        'pending_review': 'status-busy',
+        'rejected': 'status-critical',
+        'draft': 'status-oncall'
+    };
+    return classes[status] || 'badge-secondary';
+};
                     
                     const formatEmploymentStatus = (status) => {
                         const statuses = { active: 'Active', on_leave: 'On Leave', inactive: 'Inactive' };
@@ -2640,6 +2833,32 @@ window.addEventListener('load', async function() {
                                 contact_number: 'Ext. 5555'
                             }));
                     });
+                            // Add to your return statement
+const showAbsenceDetails = (absence) => {
+    absenceDetailsModal.show = true;
+    absenceDetailsModal.absence = absence;
+    absenceDetailsModal.activeTab = 'details';
+};
+
+const showImportExportModal = (mode) => {
+    importExportModal.show = true;
+    importExportModal.mode = mode;
+};
+
+const showRotationDetails = (rotation) => {
+    rotationDetailsModal.show = true;
+    rotationDetailsModal.rotation = rotation;
+    rotationDetailsModal.activeTab = 'details';
+    // You would load additional data here
+};
+
+const showDashboardCustomizeModal = () => {
+    dashboardCustomizeModal.show = true;
+};
+
+const showAdvancedSearchModal = () => {
+    advancedSearchModal.show = true;
+};
                     
                     const currentCapacity = computed(() => ({
                         er: { current: 12, max: 20, status: 'medium' },
@@ -3197,6 +3416,13 @@ window.addEventListener('load', async function() {
                         showSystemSettingsModal,
                         saveSystemSettings,
                         showPermissionManager,
+                            // New modal states
+    absenceDetailsModal,
+    importExportModal,
+    rotationDetailsModal,
+    dashboardCustomizeModal,
+    advancedSearchModal,
+
                         
                         // View Functions
                         viewStaffDetails,
