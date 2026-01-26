@@ -505,81 +505,6 @@ const resetOnCallModal = () => {
     };
 };
 
-// Save on-call schedule (add or edit)
-const saveOnCall = async () => {
-    saving.value = true;
-    try {
-        if (!hasPermission('oncall_schedule', onCallModal.mode === 'add' ? 'create' : 'update')) {
-            throw new Error('Insufficient permissions');
-        }
-        
-        const formData = { ...onCallModal.form };
-        
-        // Ensure required fields
-        if (!formData.duty_date) {
-            throw new Error('Duty date is required');
-        }
-        if (!formData.primary_physician_id) {
-            throw new Error('Primary physician is required');
-        }
-        
-        let result;
-        if (onCallModal.mode === 'add') {
-            // Add new on-call schedule
-            formData.created_at = new Date().toISOString();
-            formData.updated_at = new Date().toISOString();
-            formData.scheduled_by = currentUser.value?.id;
-            
-            const { data, error } = await supabaseClient
-                .from(TABLE_NAMES.ONCALL_SCHEDULE)
-                .insert([formData])
-                .select()
-                .single();
-            
-            if (error) throw error;
-            result = data;
-            onCallSchedule.value.unshift(result);
-            showToast('Success', 'On-call schedule added successfully', 'success');
-        } else {
-            // Edit existing on-call schedule
-            formData.updated_at = new Date().toISOString();
-            
-            const { data, error } = await supabaseClient
-                .from(TABLE_NAMES.ONCALL_SCHEDULE)
-                .update(formData)
-                .eq('id', formData.id)
-                .select()
-                .single();
-            
-            if (error) throw error;
-            result = data;
-            const index = onCallSchedule.value.findIndex(s => s.id === result.id);
-            if (index !== -1) onCallSchedule.value[index] = result;
-            showToast('Success', 'On-call schedule updated successfully', 'success');
-        }
-        
-        onCallModal.show = false;
-        resetOnCallModal();
-        return result;
-    } catch (error) {
-        console.error('Error saving on-call schedule:', error);
-        showToast('Error', error.message, 'error');
-        throw error;
-    } finally {
-        saving.value = false;
-    }
-};
-
-// Edit on-call schedule
-const editOnCallSchedule = (schedule) => {
-    if (!hasPermission('oncall_schedule', 'update')) {
-        showToast('Permission Denied', 'You need update permission', 'error');
-        return;
-    }
-    onCallModal.mode = 'edit';
-    onCallModal.show = true;
-    onCallModal.form = { ...schedule };
-};
                     
                     // Staff absence management modal
                     const absenceModal = reactive({
@@ -1770,58 +1695,84 @@ const editOnCallSchedule = (schedule) => {
                         }
                     };
                     
-                    // Save on-call schedule (add or edit)
-                    const saveOnCall = async () => {
-                        saving.value = true; // Set saving state
-                        try {
-                            if (!hasPermission('oncall_schedule', onCallModal.mode === 'add' ? 'create' : 'update')) {
-                                throw new Error('Insufficient permissions'); // Check permissions
-                            }
-                            const formData = { ...onCallModal.form }; // Clone form data
-                            if (!formData.duty_date) {
-                                throw new Error('Duty date is required'); // Validate duty date
-                            }
-                            if (!formData.primary_physician_id) {
-                                throw new Error('Primary physician is required'); // Validate primary physician
-                            }
-                            let result;
-                            if (onCallModal.mode === 'add') { // Add new on-call schedule
-                                formData.created_at = new Date().toISOString(); // Set created timestamp
-                                formData.updated_at = new Date().toISOString(); // Set updated timestamp
-                                const { data, error } = await supabaseClient // Insert to database
-                                    .from(TABLE_NAMES.ONCALL_SCHEDULE)
-                                    .insert([formData])
-                                    .select()
-                                    .single();
-                                if (error) throw error; // Throw error if insert fails
-                                result = data; // Store result
-                                onCallSchedule.value.unshift(result); // Add to beginning of array
-                                showToast('Success', 'On-call schedule added successfully', 'success'); // Success toast
-                            } else { // Edit existing on-call schedule
-                                formData.updated_at = new Date().toISOString(); // Update timestamp
-                                const { data, error } = await supabaseClient // Update in database
-                                    .from(TABLE_NAMES.ONCALL_SCHEDULE)
-                                    .update(formData)
-                                    .eq('id', formData.id)
-                                    .select()
-                                    .single();
-                                if (error) throw error; // Throw error if update fails
-                                result = data; // Store result
-                                const index = onCallSchedule.value.findIndex(s => s.id === result.id); // Find index
-                                if (index !== -1) onCallSchedule.value[index] = result; // Update in array
-                                showToast('Success', 'On-call schedule updated successfully', 'success'); // Success toast
-                            }
-                            onCallModal.show = false; // Close modal
-                            resetOnCallModal(); // Reset form
-                            return result; // Return saved data
-                        } catch (error) {
-                            console.error('Error saving on-call schedule:', error);
-                            showToast('Error', error.message, 'error'); // Error toast
-                            throw error; // Re-throw error
-                        } finally {
-                            saving.value = false; // Reset saving state
-                        }
-                    };
+                   // Save on-call schedule (add or edit)
+const saveOnCall = async () => {
+    saving.value = true;
+    try {
+        if (!hasPermission('oncall_schedule', onCallModal.mode === 'add' ? 'create' : 'update')) {
+            throw new Error('Insufficient permissions');
+        }
+        
+        const formData = { ...onCallModal.form };
+        
+        // Ensure required fields
+        if (!formData.duty_date) {
+            throw new Error('Duty date is required');
+        }
+        if (!formData.primary_physician_id) {
+            throw new Error('Primary physician is required');
+        }
+        
+        // Map form data to database structure
+        const dbFormData = {
+            duty_date: formData.duty_date,
+            shift_type: formData.shift_type || 'primary_call',
+            start_time: formData.start_time || '08:00',
+            end_time: formData.end_time || '17:00',
+            primary_physician_id: formData.primary_physician_id,
+            backup_physician_id: formData.backup_physician_id || null,
+            coverage_notes: formData.coverage_notes || '',
+            status: formData.status || 'scheduled'
+        };
+        
+        let result;
+        if (onCallModal.mode === 'add') {
+            // Add new on-call schedule
+            dbFormData.created_at = new Date().toISOString();
+            dbFormData.updated_at = new Date().toISOString();
+            dbFormData.scheduled_by = currentUser.value?.id;
+            
+            const { data, error } = await supabaseClient
+                .from(TABLE_NAMES.ONCALL_SCHEDULE)
+                .insert([dbFormData])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            result = data;
+            onCallSchedule.value.unshift(result);
+            showToast('Success', 'On-call schedule added successfully', 'success');
+        } else {
+            // Edit existing on-call schedule
+            dbFormData.updated_at = new Date().toISOString();
+            dbFormData.id = formData.id; // Ensure ID is included
+            
+            const { data, error } = await supabaseClient
+                .from(TABLE_NAMES.ONCALL_SCHEDULE)
+                .update(dbFormData)
+                .eq('id', dbFormData.id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            result = data;
+            const index = onCallSchedule.value.findIndex(s => s.id === result.id);
+            if (index !== -1) onCallSchedule.value[index] = result;
+            showToast('Success', 'On-call schedule updated successfully', 'success');
+        }
+        
+        onCallModal.show = false;
+        resetOnCallModal();
+        await loadOnCallSchedule(); // Refresh the list
+        return result;
+    } catch (error) {
+        console.error('Error saving on-call schedule:', error);
+        showToast('Error', error.message, 'error');
+        throw error;
+    } finally {
+        saving.value = false;
+    }
+};
                     
                     // Save absence request (add or edit)
                     const saveAbsence = async () => {
