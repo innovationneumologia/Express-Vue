@@ -3289,6 +3289,8 @@ const getUserRoleDisplay = (role) => {
                 rotationDetailsModal,
                 dashboardCustomizeModal,
                 advancedSearchModal,
+                    getUserRoleDisplay,
+
                 
                 // Data Stores
                 medicalStaff,
