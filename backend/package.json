@@ -1,22 +1,31 @@
+
 {
-  "name": "neumocare-backend",
-  "version": "1.0.0",
-  "description": "NeumoCare Hospital Management System API",
+  "name": "neumocare-hospital-api",
+  "version": "2.0.0",
+  "description": "RESTful API for NeumoCare Hospital Management System",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
+  "keywords": ["hospital", "medical", "api", "rest"],
+  "author": "NeumoCare Team",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "@supabase/supabase-js": "^2.39.0",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.0.3",
     "express-rate-limit": "^6.10.0",
-    "helmet": "^7.0.0"
+    "@supabase/supabase-js": "^2.38.0",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=16.0.0"
   }
 }
