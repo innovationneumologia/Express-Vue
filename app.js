@@ -2011,19 +2011,6 @@ const saveOnCall = async () => {
                         };
                     };
                     
-                    // Reset on-call modal form to default values
-                    const resetOnCallModal = () => {
-                        onCallModal.form = { // Default form values
-                            duty_date: '',
-                            shift_type: 'backup_call',
-                            start_time: '',
-                            end_time: '',
-                            primary_physician_id: '',
-                            backup_physician_id: '',
-                            coverage_notes: ''
-                        };
-                    };
-                    
                 
                             
                     // ============ UI FUNCTIONS ============
