@@ -3242,252 +3242,6 @@ const showAdvancedSearchModal = () => {
                     });
                     
                     // ============ RETURN STATEMENT ============
-                    return {
-                        // State Variables
-                        currentUser,
-                        loginForm,
-                        loading,
-                        saving,
-                        currentView,
-                        sidebarCollapsed,
-                        mobileMenuOpen,
-                        userMenuOpen,
-                        statsSidebarOpen,
-                        searchQuery,
-                        searchScope,
-                        searchFilter,
-                        staffSearch,
-                        
-                        // Modal States
-                        confirmationModal,
-                        staffDetailsModal,
-                        medicalStaffModal,
-                        departmentModal,
-                        clinicalUnitModal,
-                        trainingUnitModal,
-                        rotationModal,
-                        onCallModal,
-                        absenceModal,
-                        communicationsModal,
-                        quickPlacementModal,
-                        bulkAssignModal,
-                        roleModal,
-                        userProfileModal,
-                        systemSettingsModal,
-                        
-                        // Data Stores
-                        medicalStaff,
-                        departments,
-                        clinicalUnits,
-                        trainingUnits,
-                        residentRotations,
-                        staffAbsences,
-                        onCallSchedule,
-                        recentAnnouncements,
-                        users,
-                        userRoles,
-                        auditLogs,
-                        systemSettings,
-                        
-                        // UI State
-                        toasts,
-                        activeAlerts,
-                        unreadNotifications,
-                        
-                        // Filters
-                        staffFilter,
-                        rotationFilter,
-                        absenceFilter,
-                        auditFilters,
-                        
-                        // Loading States
-                        loadingStats,
-                        loadingStaff,
-                        loadingDepartments,
-                        loadingTrainingUnits,
-                        loadingRotations,
-                        loadingAbsences,
-                        loadingSchedule,
-                        loadingAnnouncements,
-                        loadingAuditLogs,
-                        
-                        // Computed Properties
-                        stats,
-                        liveStats,
-                        currentCapacity,
-                        filteredMedicalStaff,
-                        filteredRotations,
-                        filteredAbsences,
-                        filteredAuditLogs,
-                        todaysOnCall,
-                        residents,
-                        availableAttendings,
-                        availableHeadsOfDepartment,
-                        availableSupervisors,
-                        availablePhysicians,
-                        availableResidents,
-                        availableTrainingUnits,
-                        availableStaff,
-                        availableCoverageStaff,
-                        
-                        // Core Functions
-                        hasPermission,
-                        
-                        // Utility Functions
-                        getInitials: Utils.getInitials,
-                        formatDate: Utils.formatDate,
-                        formatDateTime: Utils.formatDateTime,
-                        formatTimeAgo: Utils.formatTimeAgo,
-                        formatStaffType,
-                        getStaffTypeClass,
-                        formatEmploymentStatus,
-                        formatTrainingLevel,
-                        formatResidentCategory,
-                        formatRotationStatus,
-                        getRotationStatusClass,
-                        formatAbsenceReason,
-                        formatAbsenceStatus,
-                        getAbsenceStatusClass,
-                        calculateAbsenceDuration,
-                        formatTimeRange,
-                        formatAuditAction,
-                        getDepartmentName,
-                        getStaffName,
-                        getTrainingUnitName,
-                        getSupervisorName,
-                        getResidentName,
-                        getDepartmentUnits,
-                        getUnitResidents,
-                        getUserName,
-                        getPriorityColor,
-                        getCapacityStatus,
-                        getCommunicationIcon,
-                        getCommunicationButtonText,
-                        
-                        // Navigation Functions
-                        switchView,
-                        getCurrentTitle,
-                        getCurrentSubtitle,
-                        getSearchPlaceholder,
-                        
-                        // Modal Functions
-                        showConfirmation,
-                        confirmAction,
-                        cancelConfirmation,
-                        showAddMedicalStaffModal,
-                        editMedicalStaff,
-                        saveMedicalStaff,
-                        deleteMedicalStaff,
-                        showAddDepartmentModal,
-                        editDepartment,
-                        saveDepartment,
-                        deleteDepartment,
-                        showAddClinicalUnitModal,
-                        editClinicalUnit,
-                        saveClinicalUnit,
-                        showAddTrainingUnitModal,
-                        editTrainingUnit,
-                        saveTrainingUnit,
-                        showAddRotationModal,
-                        editRotation,
-                        saveRotation,
-                        showAddOnCallModal,
-                        editOnCallSchedule,
-                        saveOnCall,
-                        deleteOnCallSchedule,
-                        showAddAbsenceModal,
-                        editAbsence,
-                        assignCoverage,
-                        deleteAbsence,
-                        saveAbsence,
-                        showQuickPlacementModal,
-                        saveQuickPlacement,
-                        showBulkAssignModal,
-                        saveBulkAssignment,
-                        showCommunicationsModal,
-                        saveCommunication,
-                        showAddRoleModal,
-                        editRole,
-                        deleteRole,
-                        toggleRolePermission,
-                        editUserPermissions,
-                        showUserProfile,
-                        saveUserProfile,
-                        showSystemSettingsModal,
-                        saveSystemSettings,
-                        showPermissionManager,
-                            // New modal states
-    absenceDetailsModal,
-    importExportModal,
-    rotationDetailsModal,
-    dashboardCustomizeModal,
-    advancedSearchModal,
-                        getAbsenceTimelineStatus,
-    formatRotationType,
-    calculateRotationDuration,
-    getResidentTrainingLevel,
-    getRotationDepartment,
-    formatEvaluationStatus,
-    getEvaluationStatusClass,
-    formatFileSize,
-    formatDocumentType,
-    getDocumentStatusClass,
-       // New methods
-    showAbsenceDetails,
-    showImportExportModal,
-    showRotationDetails,
-    showDashboardCustomizeModal,
-    showAdvancedSearchModal
-
-                        
-                        // View Functions
-                        viewStaffDetails,
-                        assignRotationToStaff,
-                        assignResidentToUnit,
-                        removeResidentFromUnit,
-                        viewRotationDetails,
-                        viewDepartmentDetails,
-                        viewAbsenceDetails,
-                        
-                        // Filter Functions
-                        applyStaffFilters,
-                        resetStaffFilters,
-                        applyRotationFilters,
-                        resetRotationFilters,
-                        applyAbsenceFilters,
-                        resetAbsenceFilters,
-                        applyAuditFilters,
-                        resetAuditFilters,
-                        
-                        // Search Functions
-                        handleSearch,
-                        toggleSearchScope,
-                        setSearchFilter,
-                        
-                        // Capacity Functions
-                        updateCapacity,
-                        
-                        // Audit Functions
-                        exportAuditLogs,
-                        
-                        // Calendar Functions
-                        showAbsenceCalendar,
-                        
-                        // Notification Functions
-                        showNotifications,
-                        
-                        // Authentication Functions
-                        handleLogin,
-                        handleLogout,
-                        
-                        // UI Functions
-                        removeToast,
-                        showToast,
-                        dismissAlert,
-                        toggleStatsSidebar,
-                        toggleUserMenu,
-                        toggleActionMenu
-                    };
                     
                 } catch (error) {
                     console.error('Vue component setup failed:', error);
@@ -3501,7 +3255,256 @@ const showAdvancedSearchModal = () => {
             },
             
             // Template error handler
-            errorCaptured(err, instance, info) {
+            errorCaptured(err, instance, info) {// ============ RETURN STATEMENT ============
+return {
+    // State Variables
+    currentUser,
+    loginForm,
+    loading,
+    saving,
+    currentView,
+    sidebarCollapsed,
+    mobileMenuOpen,
+    userMenuOpen,
+    statsSidebarOpen,
+    searchQuery,
+    searchScope,
+    searchFilter,
+    staffSearch,
+    
+    // Modal States
+    confirmationModal,
+    staffDetailsModal,
+    medicalStaffModal,
+    departmentModal,
+    clinicalUnitModal,
+    trainingUnitModal,
+    rotationModal,
+    onCallModal,
+    absenceModal,
+    communicationsModal,
+    quickPlacementModal,
+    bulkAssignModal,
+    roleModal,
+    userProfileModal,
+    systemSettingsModal,
+    
+    // Data Stores
+    medicalStaff,
+    departments,
+    clinicalUnits,
+    trainingUnits,
+    residentRotations,
+    staffAbsences,
+    onCallSchedule,
+    recentAnnouncements,
+    users,
+    userRoles,
+    auditLogs,
+    systemSettings,
+    
+    // UI State
+    toasts,
+    activeAlerts,
+    unreadNotifications,
+    
+    // Filters
+    staffFilter,
+    rotationFilter,
+    absenceFilter,
+    auditFilters,
+    
+    // Loading States
+    loadingStats,
+    loadingStaff,
+    loadingDepartments,
+    loadingTrainingUnits,
+    loadingRotations,
+    loadingAbsences,
+    loadingSchedule,
+    loadingAnnouncements,
+    loadingAuditLogs,
+    
+    // Computed Properties
+    stats,
+    liveStats,
+    currentCapacity,
+    filteredMedicalStaff,
+    filteredRotations,
+    filteredAbsences,
+    filteredAuditLogs,
+    todaysOnCall,
+    residents,
+    availableAttendings,
+    availableHeadsOfDepartment,
+    availableSupervisors,
+    availablePhysicians,
+    availableResidents,
+    availableTrainingUnits,
+    availableStaff,
+    availableCoverageStaff,
+    
+    // Core Functions
+    hasPermission,
+    
+    // Utility Functions
+    getInitials: Utils.getInitials,
+    formatDate: Utils.formatDate,
+    formatDateTime: Utils.formatDateTime,
+    formatTimeAgo: Utils.formatTimeAgo,
+    formatStaffType,
+    getStaffTypeClass,
+    formatEmploymentStatus,
+    formatTrainingLevel,
+    formatResidentCategory,
+    formatRotationStatus,
+    getRotationStatusClass,
+    formatAbsenceReason,
+    formatAbsenceStatus,
+    getAbsenceStatusClass,
+    calculateAbsenceDuration,
+    formatTimeRange,
+    formatAuditAction,
+    getDepartmentName,
+    getStaffName,
+    getTrainingUnitName,
+    getSupervisorName,
+    getResidentName,
+    getDepartmentUnits,
+    getUnitResidents,
+    getUserName,
+    getPriorityColor,
+    getCapacityStatus,
+    getCommunicationIcon,
+    getCommunicationButtonText,
+    
+    // Navigation Functions
+    switchView,
+    getCurrentTitle,
+    getCurrentSubtitle,
+    getSearchPlaceholder,
+    
+    // Modal Functions
+    showConfirmation,
+    confirmAction,
+    cancelConfirmation,
+    showAddMedicalStaffModal,
+    editMedicalStaff,
+    saveMedicalStaff,
+    deleteMedicalStaff,
+    showAddDepartmentModal,
+    editDepartment,
+    saveDepartment,
+    deleteDepartment,
+    showAddClinicalUnitModal,
+    editClinicalUnit,
+    saveClinicalUnit,
+    showAddTrainingUnitModal,
+    editTrainingUnit,
+    saveTrainingUnit,
+    showAddRotationModal,
+    editRotation,
+    saveRotation,
+    showAddOnCallModal,
+    editOnCallSchedule,
+    saveOnCall,
+    deleteOnCallSchedule,
+    showAddAbsenceModal,
+    editAbsence,
+    assignCoverage,
+    deleteAbsence,
+    saveAbsence,
+    showQuickPlacementModal,
+    saveQuickPlacement,
+    showBulkAssignModal,
+    saveBulkAssignment,
+    showCommunicationsModal,
+    saveCommunication,
+    showAddRoleModal,
+    editRole,
+    deleteRole,
+    toggleRolePermission,
+    editUserPermissions,
+    showUserProfile,
+    saveUserProfile,
+    showSystemSettingsModal,
+    saveSystemSettings,
+    showPermissionManager,
+    
+    // New modal states
+    absenceDetailsModal,
+    importExportModal,
+    rotationDetailsModal,
+    dashboardCustomizeModal,
+    advancedSearchModal,
+    
+    // New utility functions
+    getAbsenceTimelineStatus,
+    formatRotationType,
+    calculateRotationDuration,
+    getResidentTrainingLevel,
+    getRotationDepartment,
+    formatEvaluationStatus,
+    getEvaluationStatusClass,
+    formatFileSize,
+    formatDocumentType,
+    getDocumentStatusClass,
+    
+    // New methods
+    showAbsenceDetails,
+    showImportExportModal,
+    showRotationDetails,
+    showDashboardCustomizeModal,
+    showAdvancedSearchModal,
+    
+    // View Functions
+    viewStaffDetails,
+    assignRotationToStaff,
+    assignResidentToUnit,
+    removeResidentFromUnit,
+    viewRotationDetails,
+    viewDepartmentDetails,
+    viewAbsenceDetails,
+    
+    // Filter Functions
+    applyStaffFilters,
+    resetStaffFilters,
+    applyRotationFilters,
+    resetRotationFilters,
+    applyAbsenceFilters,
+    resetAbsenceFilters,
+    applyAuditFilters,
+    resetAuditFilters,
+    
+    // Search Functions
+    handleSearch,
+    toggleSearchScope,
+    setSearchFilter,
+    
+    // Capacity Functions
+    updateCapacity,
+    
+    // Audit Functions
+    exportAuditLogs,
+    
+    // Calendar Functions
+    showAbsenceCalendar,
+    
+    // Notification Functions
+    showNotifications,
+    
+    // Authentication Functions
+    handleLogin,
+    handleLogout,
+    
+    // UI Functions
+    removeToast,
+    showToast,
+    dismissAlert,
+    toggleStatsSidebar,
+    toggleUserMenu,
+    toggleActionMenu
+};
                 console.error('Vue error captured:', err, info);
                 this.showToast?.('System Error', 'An error occurred. Please refresh the page.', 'error');
                 return false;
