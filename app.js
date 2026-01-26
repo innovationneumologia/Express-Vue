@@ -3536,4 +3536,4 @@ window.addEventListener('load', async function() {
             </div>
         `;
     }
-}); // <-- This closes window.addEventListener('load', async function() {
+}); 
