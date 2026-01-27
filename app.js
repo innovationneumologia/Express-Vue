@@ -406,7 +406,7 @@ window.addEventListener('load', async function() {
                             resident_category: '',      // Resident category
                             training_level: '',         // Training level (PGY-1, etc.)
                             specialization: '',         // Medical specialization
-                            years_experience: '',       // Years of experience
+                            years_experience:null,      // Years of experience
                             biography: '',              // Professional biography
                             office_phone: '',           // Office phone number
                             mobile_phone: '',           // Mobile phone number
